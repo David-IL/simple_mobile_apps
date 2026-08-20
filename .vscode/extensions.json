@@ -1,0 +1,12 @@
+{
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "expo.vscode-expo-tools",
+    "msjsdiag.vscode-react-native",
+    "usernamehw.errorlens",
+    "editorconfig.editorconfig",
+    "pomdtr.excalidraw-editor",
+    "github.vscode-github-actions"
+  ]
+}
