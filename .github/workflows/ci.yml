@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  pull_request:
+    paths:
+      - "apps/**"
+      - "packages/**"
+      - "blueprint/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "turbo.json"
+      - ".github/workflows/ci.yml"
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Turbo's affected-filter needs history to diff the base branch against.
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Lint / typecheck / test (PR - affected packages only)
+        if: github.event_name == 'pull_request'
+        run: pnpm turbo run lint typecheck test --filter=...[origin/${{ github.base_ref }}]
+
+      - name: Lint / typecheck / test (main - everything)
+        if: github.event_name != 'pull_request'
+        run: pnpm turbo run lint typecheck test

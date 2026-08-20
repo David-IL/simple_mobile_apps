@@ -1,0 +1,53 @@
+# NOT YET RUNNABLE. Requires:
+#   1. An Expo account and `eas init` run once inside the app directory (creates the EAS project id).
+#   2. An expo.dev access token stored as the repo secret EXPO_TOKEN.
+#   3. For `eas submit`: a Google Play service account JSON configured in eas.json / EAS secrets.
+# See docs/adr/0004-eas-for-android-deployment.md.
+
+name: EAS Build (Android)
+
+on:
+  workflow_dispatch:
+    inputs:
+      app:
+        description: "App slug under apps/ (e.g. habit-tracker)"
+        required: true
+      profile:
+        description: "EAS build profile"
+        required: true
+        default: preview
+        type: choice
+        options: [development, preview, production]
+      submit:
+        description: "Submit to Google Play after a successful build"
+        type: boolean
+        default: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build
+        working-directory: apps/${{ inputs.app }}
+        run: eas build --platform android --profile ${{ inputs.profile }} --non-interactive
+
+      - name: Submit to Google Play
+        if: inputs.submit
+        working-directory: apps/${{ inputs.app }}
+        run: eas submit --platform android --profile ${{ inputs.profile }} --non-interactive --latest
