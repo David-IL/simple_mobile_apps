@@ -15,10 +15,32 @@ function writeJson(file: string, value: unknown) {
 }
 
 function scaffoldExpoApp(slug: string) {
+  const isWindows = process.platform === "win32";
+  const args = [
+    "--yes",
+    "create-expo-app@latest",
+    slug,
+    "--template",
+    "blank-typescript",
+    "--no-install",
+  ];
+
   execFileSync(
-    process.platform === "win32" ? "npx.cmd" : "npx",
-    ["--yes", "create-expo-app@latest", slug, "--template", "blank-typescript", "--no-install"],
-    { cwd: appsDir, stdio: "inherit" },
+    // Windows: go through cmd.exe explicitly. Calling "npx.cmd" directly throws
+    // `spawnSync npx.cmd EINVAL` on Node >= 18.20.2 / 20.12.2, which hardened .cmd/.bat
+    // spawning for CVE-2024-27980. `shell: true` also works but emits DEP0190 on every
+    // run, so spawn the interpreter instead of asking Node to infer one.
+    isWindows ? "cmd.exe" : "npx",
+    isWindows ? ["/c", "npx", ...args] : args,
+    {
+      cwd: appsDir,
+      stdio: "inherit",
+      // CI=1 is required, not cosmetic. This repo is a git repo, so create-expo-app asks
+      // "Skip initializing a new git repository?" after writing the files, and that prompt
+      // hangs or fails the call when there is no TTY. create-expo-app's own --yes flag does
+      // NOT cover it; CI=1 does. Verified 2026-08-21 against create-expo-app for SDK 57.
+      env: { ...process.env, CI: "1" },
+    },
   );
 }
 

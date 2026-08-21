@@ -1,7 +1,7 @@
 # Penalty Chaos
 
 - **Slug:** `penalty-chaos`
-- **Status:** draft <!-- draft | proceed | shelved -->
+- **Status:** proceed <!-- draft | proceed | shelved -->
 - **Date:** 2026-08-21
 
 > Fill this in before running `pnpm blueprint:new`. The point is not to be rigorous —

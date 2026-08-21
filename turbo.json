@@ -9,7 +9,7 @@
       "outputs": []
     },
     "test": {
-      "outputs": ["coverage/**"]
+      "outputs": []
     },
     "build": {
       "dependsOn": ["^build"],

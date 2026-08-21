@@ -1,0 +1,94 @@
+import { useCallback, useState } from "react";
+import { StyleSheet, View } from "react-native";
+import { StatusBar } from "expo-status-bar";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import { HomeScreen } from "./src/screens/HomeScreen";
+import { MatchScreen } from "./src/screens/MatchScreen";
+import { ResultScreen } from "./src/screens/ResultScreen";
+import { SetupScreen } from "./src/screens/SetupScreen";
+import { newMatch, type MatchMode, type MatchState } from "./src/game/match";
+import type { KeeperArchetype } from "./src/game/types";
+import { displayName, useKeeperNames } from "./src/state/keeperNames";
+import { palette } from "./src/theme";
+
+/**
+ * Four screens and no deep links, so a discriminated union beats pulling in a
+ * navigation library. Revisit if this ever grows a fifth screen or a back stack.
+ */
+type Screen =
+  | { kind: "home" }
+  | { kind: "setup"; mode: MatchMode }
+  | { kind: "match"; keeper: KeeperArchetype; state: MatchState }
+  | { kind: "result"; keeper: KeeperArchetype; state: MatchState };
+
+export default function App() {
+  const { names, rename } = useKeeperNames();
+  const [screen, setScreen] = useState<Screen>({ kind: "home" });
+
+  const startMatch = useCallback(
+    (mode: MatchMode, keeper: KeeperArchetype, players: [string, string]) => {
+      setScreen({ kind: "match", keeper, state: newMatch(mode, players) });
+    },
+    [],
+  );
+
+  const playAgain = useCallback(() => {
+    setScreen((current) => {
+      if (current.kind !== "result") return current;
+      const { mode, names: players } = current.state;
+      return {
+        kind: "match",
+        keeper: current.keeper,
+        state: newMatch(mode, players),
+      };
+    });
+  }, []);
+
+  return (
+    <SafeAreaProvider>
+      <SafeAreaView style={styles.root} edges={["top", "bottom"]}>
+        <StatusBar style="light" />
+        <View style={styles.root}>
+          {screen.kind === "home" ? (
+            <HomeScreen onPick={(mode) => setScreen({ kind: "setup", mode })} />
+          ) : null}
+
+          {screen.kind === "setup" ? (
+            <SetupScreen
+              mode={screen.mode}
+              names={names}
+              onRename={rename}
+              onStart={(keeper, players) => startMatch(screen.mode, keeper, players)}
+              onBack={() => setScreen({ kind: "home" })}
+            />
+          ) : null}
+
+          {screen.kind === "match" ? (
+            <MatchScreen
+              keeper={screen.keeper}
+              keeperName={displayName(screen.keeper, names)}
+              initialState={screen.state}
+              onFinish={(final) =>
+                setScreen({ kind: "result", keeper: screen.keeper, state: final })
+              }
+              onQuit={() => setScreen({ kind: "home" })}
+            />
+          ) : null}
+
+          {screen.kind === "result" ? (
+            <ResultScreen
+              state={screen.state}
+              keeper={screen.keeper}
+              onPlayAgain={playAgain}
+              onChangeKeeper={() => setScreen({ kind: "setup", mode: screen.state.mode })}
+            />
+          ) : null}
+        </View>
+      </SafeAreaView>
+    </SafeAreaProvider>
+  );
+}
+
+const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: palette.night },
+});
