@@ -5,10 +5,10 @@ import { splitZone } from "../game/engine";
 import { ZONE_COLS, type Aim, type KeeperArchetype, type KeeperPose } from "../game/types";
 import type { RoundSetup, ShotResult, Zone, ZoneCol } from "../game/types";
 import { palette } from "../theme";
-import { Ball, Mascot, PitchInvader } from "./art/Characters";
+import { Ball, PitchInvader, Steward } from "./art/Characters";
 import { KeeperFigure, type Direction } from "./art/KeeperFigure";
 import { looksFor } from "./art/keeperLooks";
-import { CrowdBank, MudPatch, NightSky, SunGlare, WindSock } from "./art/Scenery";
+import { CrowdBank, MudPatch, NightSky, Rain, SunGlare, WindSock } from "./art/Scenery";
 
 export type ScenePhase = "aiming" | "flying" | "settled";
 
@@ -49,6 +49,9 @@ const BALL_SIZE = 24;
  * expo-font plus an OFL face — worth doing if the look matters on iOS.
  */
 const TAUNT_FONT = Platform.select({ android: "casual", default: undefined });
+
+/** Churned-up pitch colour for the muddy round. */
+const MUD = "#4a3a20";
 const FLIGHT_MS = 520;
 
 function directionOf(col: ZoneCol): Direction {
@@ -175,7 +178,9 @@ export function GoalScene({
   const ballScale = useRef(new Animated.Value(1)).current;
   const ballSpin = useRef(new Animated.Value(0)).current;
   const keeperMove = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
-  const mascotWiggle = useRef(new Animated.Value(0)).current;
+  const invaderPace = useRef(new Animated.Value(0)).current;
+  const stewardRun = useRef(new Animated.Value(0)).current;
+  const rainFall = useRef(new Animated.Value(0)).current;
 
   const restingKeeper = geo.zoneCentre("centre-low");
   const { effect, disruption, keeperTell, keeperDive } = setup;
@@ -237,21 +242,29 @@ export function GoalScene({
     }).start();
   }, [phase, keeperTell, geo, keeperMove, restingKeeper.x, restingKeeper.y]);
 
-  // The badger never stops dancing. It is the only thing in the scene that
-  // animates on its own, because that is the entire joke.
+  /**
+   * The invader paces on the spot while you aim.
+   *
+   * Deliberately *within* his own column, and only while aiming. He was reported
+   * as merely annoying when he stood still, so he needed to move — but a target
+   * that wandered across columns during the drag would change the safe zone
+   * after the player had chosen it, and sprung-after-commit is the one thing
+   * this design refuses to do. Local movement makes him alive; the blocked
+   * column never changes.
+   */
   useEffect(() => {
-    if (disruption?.id !== "mascot") return;
+    if (!effect.blockedCol || phase !== "aiming") return;
     const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(mascotWiggle, {
+        Animated.timing(invaderPace, {
           toValue: 1,
-          duration: 340,
+          duration: 900,
           easing: Easing.inOut(Easing.quad),
           useNativeDriver: true,
         }),
-        Animated.timing(mascotWiggle, {
+        Animated.timing(invaderPace, {
           toValue: -1,
-          duration: 340,
+          duration: 900,
           easing: Easing.inOut(Easing.quad),
           useNativeDriver: true,
         }),
@@ -259,7 +272,44 @@ export function GoalScene({
     );
     loop.start();
     return () => loop.stop();
-  }, [disruption, mascotWiggle]);
+  }, [effect.blockedCol, phase, invaderPace]);
+
+  /**
+   * The steward arrives only once the shot has been taken, so he can never
+   * affect it — he is the payoff, not a mechanic. What people actually enjoy
+   * about a pitch invasion is the tackle.
+   */
+  useEffect(() => {
+    if (!effect.blockedCol) return;
+    if (phase !== "settled") {
+      stewardRun.setValue(0);
+      return;
+    }
+    const run = Animated.timing(stewardRun, {
+      toValue: 1,
+      duration: 900,
+      delay: 260,
+      easing: Easing.inOut(Easing.quad),
+      useNativeDriver: true,
+    });
+    run.start();
+    return () => run.stop();
+  }, [effect.blockedCol, phase, stewardRun]);
+
+  // One looping value drives the whole rain tile.
+  useEffect(() => {
+    if (disruption?.id !== "muddy-spot") return;
+    const loop = Animated.loop(
+      Animated.timing(rainFall, {
+        toValue: 1,
+        duration: 900,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      }),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [disruption, rainFall]);
 
   useEffect(() => {
     if (phase !== "flying" || !result) return;
@@ -395,31 +445,17 @@ export function GoalScene({
       <View
         style={[
           styles.grass,
-          { top: geo.goalBottom - 6, height: height - geo.goalBottom + 6, width },
+          {
+            top: geo.goalBottom - 6,
+            height: height - geo.goalBottom + 6,
+            width,
+            // The muddy round churns the whole pitch, not one patch by the spot.
+            // A local splat was too small to read as "the conditions are against
+            // you"; the surface itself has to change.
+            backgroundColor: disruption?.id === "muddy-spot" ? MUD : palette.grass,
+          },
         ]}
       />
-
-      {disruption?.id === "mascot" ? (
-        <Animated.View
-          style={[
-            styles.absolute,
-            {
-              left: geo.goalLeft + geo.goalWidth * 0.72,
-              top: geo.goalTop - geo.goalHeight * 0.34,
-              transform: [
-                {
-                  rotate: mascotWiggle.interpolate({
-                    inputRange: [-1, 1],
-                    outputRange: ["-9deg", "9deg"],
-                  }),
-                },
-              ],
-            },
-          ]}
-        >
-          <Mascot width={geo.goalHeight * 0.52} height={geo.goalHeight * 0.58} />
-        </Animated.View>
-      ) : null}
 
       {/* Goal frame, with the net and zone dividers drawn inside it. */}
       <View
@@ -456,23 +492,87 @@ export function GoalScene({
       </Animated.View>
 
       {effect.blockedCol ? (
-        <View
-          style={[
-            styles.absolute,
-            {
-              left: geo.colCentre(effect.blockedCol) - geo.keeperHeight * 0.24,
-              top: geo.goalBottom - geo.keeperHeight * 0.78,
-            },
-          ]}
-        >
-          <PitchInvader width={geo.keeperHeight * 0.48} height={geo.keeperHeight * 0.75} />
-        </View>
+        <>
+          <Animated.View
+            style={[
+              styles.absolute,
+              {
+                left: geo.colCentre(effect.blockedCol) - geo.keeperHeight * 0.33,
+                top: geo.goalBottom - geo.keeperHeight * 1.02,
+                transform: [
+                  {
+                    translateX: Animated.add(
+                      invaderPace.interpolate({
+                        inputRange: [-1, 1],
+                        outputRange: [-geo.goalWidth * 0.05, geo.goalWidth * 0.05],
+                      }),
+                      stewardRun.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0, geo.goalWidth * 0.75],
+                      }),
+                    ),
+                  },
+                ],
+              },
+            ]}
+          >
+            <PitchInvader width={geo.keeperHeight * 0.66} height={geo.keeperHeight} />
+          </Animated.View>
+
+          <Animated.View
+            style={[
+              styles.absolute,
+              {
+                left: geo.colCentre(effect.blockedCol) - geo.keeperHeight * 0.33,
+                top: geo.goalBottom - geo.keeperHeight * 1.02,
+                opacity: stewardRun.interpolate({
+                  inputRange: [0, 0.12, 1],
+                  outputRange: [0, 1, 1],
+                }),
+                transform: [
+                  {
+                    translateX: stewardRun.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [-geo.goalWidth * 0.7, geo.goalWidth * 0.62],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          >
+            <Steward width={geo.keeperHeight * 0.66} height={geo.keeperHeight} />
+          </Animated.View>
+        </>
       ) : null}
 
       {disruption?.id === "muddy-spot" ? (
-        <View style={[styles.absolute, { left: geo.spotX - 45, top: geo.spotY - 4 }]}>
-          <MudPatch width={90} height={34} />
-        </View>
+        <>
+          <Animated.View
+            style={[
+              styles.absolute,
+              {
+                left: 0,
+                top: 0,
+                width,
+                height,
+                transform: [
+                  {
+                    translateY: rainFall.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [-height, 0],
+                    }),
+                  },
+                ],
+              },
+            ]}
+            pointerEvents="none"
+          >
+            <Rain width={width} height={height * 2} />
+          </Animated.View>
+          <View style={[styles.absolute, { left: geo.spotX - 52, top: geo.spotY - 6 }]}>
+            <MudPatch width={104} height={38} />
+          </View>
+        </>
       ) : null}
 
       {disruption?.id === "crosswind" ? (

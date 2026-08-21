@@ -47,14 +47,19 @@ export function effectFor(disruption: Disruption | null, rng: Rng): DisruptionEf
       return { ...NO_EFFECT, windX: rng() < 0.5 ? -strength : strength };
     }
     case "pitch-invader":
-      return { ...NO_EFFECT, blockedCol: pick(ZONE_COLS, rng) };
+      // He also distracts the keeper, who is watching him rather than the ball.
+      // That turns him from a pure tax into a trade: a column is shut, but the
+      // keeper gives more away and reaches less.
+      return {
+        ...NO_EFFECT,
+        blockedCol: pick(ZONE_COLS, rng),
+        telegraphBonus: 0.4,
+        reachBonus: -0.12,
+      };
     case "low-sun":
       return { ...NO_EFFECT, blindAim: true };
     case "muddy-spot":
       return { ...NO_EFFECT, powerCap: 0.62 };
-    case "mascot":
-      // Keeper stops reading you. Free hit for anyone who has been predictable.
-      return { ...NO_EFFECT, readDepthMultiplier: 0 };
     case "away-end":
       // Shows you exactly where he's going, then very nearly gets there anyway.
       return { ...NO_EFFECT, telegraphBonus: 1, reachBonus: 0.15 };

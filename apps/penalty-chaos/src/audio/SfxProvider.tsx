@@ -59,7 +59,6 @@ export function SfxProvider({ children }: { children: ReactNode }) {
   const miss = useAudioPlayer(SFX_SOURCES.miss);
   const blocked = useAudioPlayer(SFX_SOURCES.blocked);
   const taunt = useAudioPlayer(SFX_SOURCES.taunt);
-  const mascot = useAudioPlayer(SFX_SOURCES.mascot);
   const chant = useAudioPlayer(SFX_SOURCES.chant);
   const whistle = useAudioPlayer(SFX_SOURCES.whistle);
   const music = useAudioPlayer(MUSIC_SOURCE);
@@ -70,8 +69,8 @@ export function SfxProvider({ children }: { children: ReactNode }) {
   const [ambienceActive, setAmbienceActive] = useState(false);
 
   const players = useMemo<Record<SfxId, AudioPlayer>>(
-    () => ({ kick, goal, save, miss, blocked, taunt, mascot, chant, whistle }),
-    [kick, goal, save, miss, blocked, taunt, mascot, chant, whistle],
+    () => ({ kick, goal, save, miss, blocked, taunt, chant, whistle }),
+    [kick, goal, save, miss, blocked, taunt, chant, whistle],
   );
 
   useEffect(() => {

@@ -9,7 +9,6 @@ const ICONS: Record<DisruptionId, string> = {
   "pitch-invader": "🏃",
   "low-sun": "🌇",
   "muddy-spot": "🌧️",
-  mascot: "🦡",
   "away-end": "📣",
 };
 

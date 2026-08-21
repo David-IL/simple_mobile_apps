@@ -41,13 +41,28 @@ keepers. Same mechanism, different motive, still fine.
 
 ## What it did *not* validate
 
-**The riskiest assumption is still untested.** §3 says the whole idea rests on
-whether telegraphed comedic disruptions land as funny rather than unfair. No
-laughter at a disruption was observed or reported. That is not evidence they
-failed — the session was absorbed in the head-to-head, and nobody was watching
-for it — but it means the central question is still open after the first
-playtest. **Next session should watch for it deliberately:** does a pitch invader
-or a crosswind get a reaction, and is the reaction a laugh or a protest?
+**The riskiest assumption partly failed.** (Added after a follow-up conversation.)
+Several disruptions were **not understood and not reacted to**. The badger was
+"only annoying". The pitch invader was "only annoying". The sun, the mud and the
+away-end chant all worked.
+
+The pattern is not telegraphed-versus-sprung. It is **whether the effect is
+legible from the picture**:
+
+| Gag | Effect | Visible? | Landed |
+| --- | --- | --- | --- |
+| Low sun | aim line disappears | immediately | yes |
+| Muddy spot | power bar caps | on the bar | yes |
+| Away end | keeper commits early and showily | in his lean | yes |
+| Badger | keeper's `readDepth` drops to 0 | **nothing** | no |
+| Pitch invader | a column is blocked | a small static figure + a paragraph | no |
+
+The badger's effect was invisible *by construction* — it is a negative, the
+keeper quietly stopping something you could not see him doing. No amount of art
+fixes that.
+
+The invader's effect was legible only in text, and the text was a paragraph two
+children were not going to read mid-game.
 
 **"They said nothing about the graphics" is not "the graphics are fine."**
 Children rarely articulate visual complaints; they just stop playing. The correct
@@ -93,6 +108,27 @@ Fixed in the same session:
   than the ball flying past him to wherever it was aimed.
 - Sound was split from the verdict so the glove noise fires at contact rather
   than after the ball has finished bouncing.
+
+## Changes made in response
+
+- **Badger removed entirely.** Not reworked — deleted. Its effect cannot be made
+  visible, so it could only ever be decoration that occasionally seemed to
+  matter.
+- **Pitch invader reworked to carry itself.** Much bigger, waving the KAOS sign
+  from the banner art, pacing while you aim, and a steward now sprints on after
+  the shot and hauls him off. He also *distracts the keeper* — telegraph up,
+  reach down — so he is a trade rather than a pure tax: a shut column in
+  exchange for a keeper giving more away.
+- **Banner copy cut to an exclamation.** "Banestormer! Treffer du ham, ryker
+  skuddet." The figure on the grass is the announcement now; the text is a
+  backup, not the mechanism.
+- **Muddy round churns the whole pitch and rains.** A splat by the spot was too
+  small to read as conditions being against you.
+
+The one thing deliberately **not** taken from the feedback was making the invader
+arrive unannounced and wander across the goal during the drag. Moving him within
+his own column keeps him alive without letting the safe zone change after the
+player has chosen it — see the reasoning in `GoalScene.tsx`.
 
 ## What to do next
 

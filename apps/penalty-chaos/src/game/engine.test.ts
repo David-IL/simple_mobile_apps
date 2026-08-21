@@ -167,12 +167,14 @@ describe("chooseDive", () => {
     expect(chooseDive(reader, [], NO_EFFECT, scriptedRng([0.5]))).toBeTruthy();
   });
 
-  it("is distracted by the mascot", () => {
-    const effect = effectFor({ id: "mascot" }, scriptedRng([0]));
+  it("can be stopped from reading at all", () => {
+    // No disruption currently zeroes readDepthMultiplier — the badger that did
+    // was cut after playtesting, because "the keeper has quietly stopped reading
+    // you" is an effect with nothing visible to show for it. The engine still
+    // supports it, and this keeps that honest for the next gag that wants it.
+    const distracted = { ...NO_EFFECT, readDepthMultiplier: 0 };
     const history: Zone[] = ["right-high", "right-high", "right-high"];
-    // readDepthMultiplier 0 means the pattern is ignored; a dive to the far side
-    // is only reachable through the random branch.
-    expect(chooseDive(reader, history, effect, scriptedRng([0]))).toBe("left-low");
+    expect(chooseDive(reader, history, distracted, scriptedRng([0]))).toBe("left-low");
   });
 });
 

@@ -74,7 +74,6 @@ export const DISRUPTION_IDS = [
   "pitch-invader",
   "low-sun",
   "muddy-spot",
-  "mascot",
   "away-end",
 ] as const;
 

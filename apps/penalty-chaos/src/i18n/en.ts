@@ -131,8 +131,8 @@ export const en: Messages = {
       brief: "The flag is horizontal. The ball will drift — aim into it.",
     },
     "pitch-invader": {
-      name: "Pitch invader",
-      brief: "Someone's uncle is on the pitch. He is blocking one side of the goal.",
+      name: "Pitch invader!",
+      brief: "Hit him and you lose the shot.",
     },
     "low-sun": {
       name: "Low sun",
@@ -141,10 +141,6 @@ export const en: Messages = {
     "muddy-spot": {
       name: "Muddy penalty spot",
       brief: "No run-up worth having. You cannot get full power on it — place it.",
-    },
-    mascot: {
-      name: "Mascot behind the goal",
-      brief: "A giant badger is dancing. The keeper has stopped paying attention to you.",
     },
     "away-end": {
       name: "The away end starts singing",

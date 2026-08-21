@@ -3,6 +3,7 @@ import Svg, {
   Defs,
   Ellipse,
   G,
+  Line,
   LinearGradient,
   Path,
   RadialGradient,
@@ -130,6 +131,42 @@ export function NightSky({ width, height }: Size) {
         <Circle cx={186} cy={12} r={0.9} />
         <Circle cx={214} cy={30} r={0.8} />
       </G>
+    </Svg>
+  );
+}
+
+/**
+ * Rain, for the muddy-pitch round.
+ *
+ * Not a particle system — ADR 7 is clear that dozens of independently moving
+ * bodies is a signal to change the idea. This is one static SVG of streaks,
+ * drawn twice so the tile repeats seamlessly, moved by a single `Animated`
+ * transform on the caller's side. Two dozen lines, one animated value.
+ */
+export function Rain({ width, height }: Size) {
+  const streaks = Array.from({ length: 26 }, (_, index) => {
+    // A fixed pseudo-scatter: deterministic, so it never re-rolls on re-render.
+    const x = (index * 37) % 100;
+    const y = (index * 61) % 100;
+    return { x, y, length: 6 + ((index * 13) % 7) };
+  });
+
+  return (
+    <Svg width={width} height={height} viewBox="0 0 100 200" preserveAspectRatio="none">
+      {[0, 100].map((offset) =>
+        streaks.map((streak, index) => (
+          <Line
+            key={`${offset}-${index}`}
+            x1={streak.x}
+            y1={streak.y + offset}
+            x2={streak.x - 2}
+            y2={streak.y + offset + streak.length}
+            stroke="#cbd5e1"
+            strokeWidth={0.7}
+            opacity={0.5}
+          />
+        )),
+      )}
     </Svg>
   );
 }

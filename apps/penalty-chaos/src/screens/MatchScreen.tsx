@@ -81,7 +81,6 @@ const OUTCOME_SFX: Record<ShotResultKind, readonly SfxId[]> = {
  * gag would turn the start of every other round into a noise.
  */
 const DISRUPTION_SFX: Partial<Record<DisruptionId, SfxId>> = {
-  mascot: "mascot",
   "away-end": "chant",
 };
 

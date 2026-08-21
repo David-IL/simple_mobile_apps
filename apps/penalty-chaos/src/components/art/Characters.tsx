@@ -1,4 +1,4 @@
-import Svg, { Circle, Ellipse, Path, Rect } from "react-native-svg";
+import Svg, { Circle, Ellipse, G, Path, Rect, Text as SvgText } from "react-native-svg";
 
 /**
  * The two comic characters that wander into shot. Flat vector, no animation
@@ -10,7 +10,15 @@ import Svg, { Circle, Ellipse, Path, Rect } from "react-native-svg";
 
 type Size = { width: number; height: number };
 
-/** Someone's uncle, mid-run, scarf streaming. Blocks a column of the goal. */
+/**
+ * Someone's uncle, mid-run, scarf streaming, brandishing a KAOS sign.
+ *
+ * Redrawn after the first playtest, where two children found him "only
+ * annoying" — he stood still, small, in a column, and the only thing telling you
+ * he mattered was a paragraph of text above the pitch. The sign and the scale
+ * are the fix: he has to be the loudest thing on the grass, because he *is* the
+ * announcement now.
+ */
 export function PitchInvader({ width, height }: Size) {
   return (
     <Svg width={width} height={height} viewBox="0 0 54 84">
@@ -65,6 +73,13 @@ export function PitchInvader({ width, height }: Size) {
       />
       <Circle cx={44} cy={20} r={4} fill="#d9a074" />
       <Circle cx={13} cy={54} r={4} fill="#d9a074" />
+      {/* The sign, straight off the banner art. */}
+      <G transform="rotate(-12 46 14)">
+        <Rect x={30} y={2} width={34} height={19} rx={3} fill="#dc2626" stroke="#7f1d1d" strokeWidth={1.5} />
+        <SvgText x={47} y={16} fontSize={11} fontWeight="bold" fill="#fde68a" textAnchor="middle">
+          KAOS!
+        </SvgText>
+      </G>
       {/* Head, delighted with himself */}
       <Circle cx={29} cy={17} r={10} fill="#d9a074" />
       <Ellipse cx={29} cy={10} rx={10} ry={5} fill="#78350f" />
@@ -74,58 +89,6 @@ export function PitchInvader({ width, height }: Size) {
         d="M24 21 Q 29 25.5, 34 21"
         stroke="#7f1d1d"
         strokeWidth={2}
-        strokeLinecap="round"
-        fill="none"
-      />
-    </Svg>
-  );
-}
-
-/** A giant badger, dancing. The keeper cannot stop watching it. */
-export function Mascot({ width, height }: Size) {
-  return (
-    <Svg width={width} height={height} viewBox="0 0 72 80">
-      {/* Arms up, mid-wiggle */}
-      <Rect
-        x={8}
-        y={30}
-        width={8}
-        height={24}
-        rx={4}
-        fill="#475569"
-        transform="rotate(28 12 42)"
-      />
-      <Rect
-        x={56}
-        y={30}
-        width={8}
-        height={24}
-        rx={4}
-        fill="#475569"
-        transform="rotate(-28 60 42)"
-      />
-      {/* Body */}
-      <Ellipse cx={36} cy={56} rx={20} ry={21} fill="#64748b" />
-      <Ellipse cx={36} cy={60} rx={12} ry={14} fill="#e2e8f0" />
-      {/* Feet */}
-      <Ellipse cx={26} cy={76} rx={8} ry={4} fill="#334155" />
-      <Ellipse cx={46} cy={76} rx={8} ry={4} fill="#334155" />
-      {/* Head */}
-      <Circle cx={36} cy={26} r={19} fill="#f1f5f9" />
-      {/* The badger stripes */}
-      <Path d="M28 9 L 22 40 L 29 41 L 33 10 Z" fill="#1e293b" />
-      <Path d="M44 9 L 50 40 L 43 41 L 39 10 Z" fill="#1e293b" />
-      <Circle cx={28} cy={25} r={2.6} fill="#f8fafc" />
-      <Circle cx={44} cy={25} r={2.6} fill="#f8fafc" />
-      <Ellipse cx={36} cy={35} rx={5} ry={4} fill="#0f172a" />
-      {/* Ears */}
-      <Circle cx={20} cy={12} r={5.5} fill="#cbd5e1" />
-      <Circle cx={52} cy={12} r={5.5} fill="#cbd5e1" />
-      {/* Grin */}
-      <Path
-        d="M30 40 Q 36 44, 42 40"
-        stroke="#0f172a"
-        strokeWidth={1.8}
         strokeLinecap="round"
         fill="none"
       />
@@ -151,6 +114,39 @@ export function Ball({ width, height }: Size) {
       <Path d="M17.8 20.9 L 14.7 22.2 L 12.6 18.4 L 15 15 L 18.9 17 Z" fill="#111827" opacity={0.9} />
       {/* A touch of shading so it does not read as a flat disc. */}
       <Ellipse cx={8.4} cy={7.6} rx={4.6} ry={3.4} fill="#ffffff" opacity={0.5} />
+    </Svg>
+  );
+}
+
+/**
+ * The steward, arriving too late to prevent anything.
+ *
+ * He exists for the payoff rather than the mechanic — the research doc found
+ * that what people actually enjoy about pitch invasions is the tackle, not the
+ * invasion. He only ever appears after the shot has been taken, so he can never
+ * affect it.
+ */
+export function Steward({ width, height }: Size) {
+  return (
+    <Svg width={width} height={height} viewBox="0 0 54 84">
+      {/* Legs mid-stride */}
+      <Rect x={21} y={52} width={7} height={26} rx={3.5} fill="#1f2937" transform="rotate(22 24 54)" />
+      <Rect x={29} y={52} width={7} height={26} rx={3.5} fill="#1f2937" transform="rotate(-26 32 54)" />
+      {/* High-vis vest */}
+      <Ellipse cx={28} cy={40} rx={12} ry={14} fill="#a3e635" />
+      <Rect x={22} y={32} width={12} height={4} rx={2} fill="#f8fafc" opacity={0.8} />
+      <Rect x={22} y={44} width={12} height={4} rx={2} fill="#f8fafc" opacity={0.8} />
+      {/* Arms reaching for a collar */}
+      <Rect x={36} y={28} width={6} height={22} rx={3} fill="#a3e635" transform="rotate(58 39 39)" />
+      <Rect x={16} y={30} width={6} height={20} rx={3} fill="#a3e635" transform="rotate(-38 19 40)" />
+      <Circle cx={49} cy={31} r={4} fill="#d9a074" />
+      <Circle cx={11} cy={44} r={4} fill="#d9a074" />
+      {/* Head, unimpressed */}
+      <Circle cx={28} cy={17} r={10} fill="#d9a074" />
+      <Ellipse cx={28} cy={9} rx={10} ry={5} fill="#1f2937" />
+      <Circle cx={24.5} cy={17} r={1.5} fill="#1f2937" />
+      <Circle cx={31.5} cy={17} r={1.5} fill="#1f2937" />
+      <Rect x={24} y={21.5} width={8} height={1.8} rx={0.9} fill="#7f1d1d" />
     </Svg>
   );
 }

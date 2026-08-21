@@ -138,8 +138,8 @@ export const nb: Messages = {
       brief: "Flagget står rett ut. Ballen kommer til å dra — sikt mot vinden.",
     },
     "pitch-invader": {
-      name: "Banestormer",
-      brief: "En tilfeldig onkel har løpt ut på banen. Han sperrer den ene siden av målet.",
+      name: "Banestormer!",
+      brief: "Treffer du ham, ryker skuddet.",
     },
     "low-sun": {
       name: "Lavtstående sol",
@@ -148,10 +148,6 @@ export const nb: Messages = {
     "muddy-spot": {
       name: "Gjørmete straffemerke",
       brief: "Ikke noe tilløp å snakke om. Du får ikke full kraft — plasser den.",
-    },
-    mascot: {
-      name: "Maskot bak målet",
-      brief: "En diger grevling danser. Keeperen har sluttet å følge med på deg.",
     },
     "away-end": {
       name: "Bortefansen begynner å synge",

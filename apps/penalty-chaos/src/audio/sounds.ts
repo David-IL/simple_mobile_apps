@@ -20,7 +20,6 @@ export const SFX_IDS = [
   "miss",
   "blocked",
   "taunt",
-  "mascot",
   "chant",
   "whistle",
 ] as const;
@@ -35,7 +34,6 @@ export const SFX_SOURCES: Record<SfxId, number> = {
   miss: require("../../assets/sfx/miss.mp3"),
   blocked: require("../../assets/sfx/blocked.mp3"),
   taunt: require("../../assets/sfx/taunt.mp3"),
-  mascot: require("../../assets/sfx/mascot.mp3"),
   chant: require("../../assets/sfx/chant.mp3"),
   whistle: require("../../assets/sfx/whistle.mp3"),
 };
@@ -77,7 +75,6 @@ export const SFX_VOLUME: Record<SfxId, number> = {
   blocked: 0.9,
   // Short and speech-like: quiet enough to be atmosphere, loud enough to hear.
   taunt: 0.85,
-  mascot: 0.75,
   chant: 0.85,
   whistle: 0.8,
 };
