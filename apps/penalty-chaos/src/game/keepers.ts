@@ -5,8 +5,9 @@ import type { KeeperArchetype, KeeperId } from "./types";
  * real goalkeeper's name or likeness ships in this app. See
  * docs/adr/0008-no-real-person-likenesses-or-club-ip.md.
  *
- * Names, blurbs and taunts are translated copy and live in src/i18n keyed by
- * `id`. Nothing a player reads belongs in this file.
+ * Names, blurbs and taunts are translated copy (src/i18n); shirt colours, build
+ * and squad numbers are art (src/components/art/keeperLooks.ts). Both are keyed
+ * by `id`. Nothing a player reads or looks at belongs in this file.
  *
  * A keeper is a parameter set, so the roster is also the difficulty curve. The
  * balancing axis is readDepth vs. telegraph: a keeper allowed to read your
@@ -15,9 +16,6 @@ import type { KeeperArchetype, KeeperId } from "./types";
 export const KEEPERS: readonly KeeperArchetype[] = [
   {
     id: "sunday",
-    monogram: "SK",
-    shirt: "#84cc16",
-    shirtTrim: "#4d7c0f",
     tauntRate: 0.5,
     readDepth: 0,
     readAccuracy: 0,
@@ -28,9 +26,6 @@ export const KEEPERS: readonly KeeperArchetype[] = [
   },
   {
     id: "statue",
-    monogram: "ST",
-    shirt: "#64748b",
-    shirtTrim: "#334155",
     tauntRate: 0.3,
     readDepth: 0,
     readAccuracy: 0,
@@ -41,9 +36,6 @@ export const KEEPERS: readonly KeeperArchetype[] = [
   },
   {
     id: "chatterbox",
-    monogram: "CB",
-    shirt: "#f59e0b",
-    shirtTrim: "#b45309",
     tauntRate: 0.95,
     // readDepth 2, not 1: a read now needs a genuine repeat, so a window of one
     // shot could never fire and this keeper would lose its read entirely.
@@ -56,9 +48,6 @@ export const KEEPERS: readonly KeeperArchetype[] = [
   },
   {
     id: "line-dancer",
-    monogram: "LD",
-    shirt: "#ec4899",
-    shirtTrim: "#9d174d",
     tauntRate: 0.7,
     readDepth: 2,
     readAccuracy: 0.4,
@@ -69,9 +58,6 @@ export const KEEPERS: readonly KeeperArchetype[] = [
   },
   {
     id: "showboat",
-    monogram: "SB",
-    shirt: "#a855f7",
-    shirtTrim: "#6b21a8",
     tauntRate: 0.8,
     readDepth: 2,
     readAccuracy: 0.45,
@@ -82,9 +68,6 @@ export const KEEPERS: readonly KeeperArchetype[] = [
   },
   {
     id: "veteran",
-    monogram: "VT",
-    shirt: "#0ea5e9",
-    shirtTrim: "#075985",
     tauntRate: 0.5,
     readDepth: 2,
     readAccuracy: 0.55,
@@ -95,9 +78,6 @@ export const KEEPERS: readonly KeeperArchetype[] = [
   },
   {
     id: "wall",
-    monogram: "WL",
-    shirt: "#ef4444",
-    shirtTrim: "#991b1b",
     tauntRate: 0.4,
     readDepth: 2,
     readAccuracy: 0.5,
@@ -108,9 +88,6 @@ export const KEEPERS: readonly KeeperArchetype[] = [
   },
   {
     id: "mind-reader",
-    monogram: "MR",
-    shirt: "#1e293b",
-    shirtTrim: "#0f172a",
     tauntRate: 0.45,
     readDepth: 4,
     readAccuracy: 0.75,

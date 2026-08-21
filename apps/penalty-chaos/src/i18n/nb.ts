@@ -18,6 +18,9 @@ export const nb: Messages = {
     duel: "To spillere, én telefon",
     footnote: "Ingen reklame. Ingen innlogging. Funker på bussen uten dekning.",
     language: "Språk",
+    sound: "Lyd",
+    on: "På",
+    off: "Av",
   },
 
   setup: {

@@ -7,6 +7,7 @@ import type { RoundSetup, ShotResult, Zone, ZoneCol } from "../game/types";
 import { palette } from "../theme";
 import { Ball, Mascot, PitchInvader } from "./art/Characters";
 import { KeeperFigure, type Direction } from "./art/KeeperFigure";
+import { looksFor } from "./art/keeperLooks";
 import { CrowdBank, MudPatch, NightSky, SunGlare, WindSock } from "./art/Scenery";
 
 export type ScenePhase = "aiming" | "flying" | "settled";
@@ -149,6 +150,7 @@ export function GoalScene({
 
   const ball = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
   const ballScale = useRef(new Animated.Value(1)).current;
+  const ballSpin = useRef(new Animated.Value(0)).current;
   const keeperMove = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
   const mascotWiggle = useRef(new Animated.Value(0)).current;
 
@@ -174,6 +176,14 @@ export function GoalScene({
 
   useEffect(() => {
     if (phase !== "aiming") return;
+
+    // Snap back to the middle of the goal before leaning anywhere. Without this
+    // the keeper starts each shot wherever his last dive left him and slides
+    // across, which the player reads as a tell — except it is residue from the
+    // previous shot, so it is *false* information. That breaks the rule the
+    // whole design rests on: the telegraph must be honest.
+    keeperMove.setValue({ x: 0, y: 0 });
+
     const lean = keeperTell ? geo.zoneCentre(keeperTell) : restingKeeper;
     const strength = 0.3;
     Animated.timing(keeperMove, {
@@ -191,7 +201,8 @@ export function GoalScene({
     if (phase !== "aiming") return;
     ball.setValue({ x: 0, y: 0 });
     ballScale.setValue(1);
-  }, [phase, setup, ball, ballScale]);
+    ballSpin.setValue(0);
+  }, [phase, setup, ball, ballScale, ballSpin]);
 
   // The badger never stops dancing. It is the only thing in the scene that
   // animates on its own, because that is the entire joke.
@@ -236,6 +247,13 @@ export function GoalScene({
         easing: Easing.out(Easing.quad),
         useNativeDriver: true,
       }),
+      // Spin sells the strike far better than panel detail does at this size.
+      Animated.timing(ballSpin, {
+        toValue: 1,
+        duration: FLIGHT_MS,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
       Animated.timing(keeperMove, {
         toValue: { x: dive.x - restingKeeper.x, y: dive.y - restingKeeper.y },
         duration: FLIGHT_MS * 0.8,
@@ -251,6 +269,7 @@ export function GoalScene({
     geo,
     ball,
     ballScale,
+    ballSpin,
     keeperMove,
     restingKeeper.x,
     restingKeeper.y,
@@ -329,9 +348,7 @@ export function GoalScene({
         <KeeperFigure
           width={keeperWidth}
           height={geo.keeperHeight}
-          shirt={keeper.shirt}
-          shirtTrim={keeper.shirtTrim}
-          monogram={keeper.monogram}
+          looks={looksFor(keeper.id)}
           pose={pose}
           direction={direction}
         />
@@ -402,7 +419,16 @@ export function GoalScene({
           {
             left: geo.spotX - BALL_SIZE / 2,
             top: geo.spotY - BALL_SIZE / 2,
-            transform: [...ball.getTranslateTransform(), { scale: ballScale }],
+            transform: [
+              ...ball.getTranslateTransform(),
+              { scale: ballScale },
+              {
+                rotate: ballSpin.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: ["0deg", "540deg"],
+                }),
+              },
+            ],
           },
         ]}
       >

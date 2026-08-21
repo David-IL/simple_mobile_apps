@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { Button } from "@repo/ui";
 import { KeeperFigure } from "../components/art/KeeperFigure";
+import { looksFor } from "../components/art/keeperLooks";
 import { KEEPERS, difficultyOf } from "../game/keepers";
 import type { MatchMode } from "../game/match";
 import type { KeeperArchetype } from "../game/types";
@@ -52,15 +53,7 @@ function KeeperCard({
       style={[styles.card, selected && styles.cardSelected]}
     >
       <View style={styles.portrait}>
-        <KeeperFigure
-          width={38}
-          height={58}
-          shirt={keeper.shirt}
-          shirtTrim={keeper.shirtTrim}
-          monogram={keeper.monogram}
-          pose="ready"
-          direction={0}
-        />
+        <KeeperFigure width={38} height={58} looks={looksFor(keeper.id)} pose="ready" direction={0} />
       </View>
       <View style={styles.cardBody}>
         <Text style={styles.cardName}>{label}</Text>

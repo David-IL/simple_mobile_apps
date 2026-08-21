@@ -43,8 +43,9 @@ export type KeeperId = (typeof KEEPER_IDS)[number];
 export type KeeperPose = "ready" | "lean" | "dive" | "beaten" | "celebrate";
 
 /**
- * A keeper is a parameter set. Its name, blurb and taunts are *not* here — they
- * are translated copy and live in src/i18n, keyed by this id.
+ * A keeper is a parameter set, and nothing else. Its name, blurb and taunts are
+ * translated copy in src/i18n; its shirt, build and squad number are art in
+ * src/components/art/keeperLooks.ts. Both are keyed by this id.
  */
 export type KeeperArchetype = {
   id: KeeperId;
@@ -66,11 +67,6 @@ export type KeeperArchetype = {
   bluffRate: number;
   /** Chance of saving a shot in a zone *adjacent* to the dive, 0..1. */
   reach: number;
-  /** Two-letter monogram for the shirt. Same in every language. */
-  monogram: string;
-  shirt: string;
-  /** Second shirt colour, for sleeves and trim. */
-  shirtTrim: string;
 };
 
 export const DISRUPTION_IDS = [

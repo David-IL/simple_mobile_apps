@@ -24,6 +24,9 @@ export type Messages = {
     duel: string;
     footnote: string;
     language: string;
+    sound: string;
+    on: string;
+    off: string;
   };
 
   setup: {

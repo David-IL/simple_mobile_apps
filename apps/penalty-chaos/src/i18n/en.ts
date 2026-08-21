@@ -12,6 +12,9 @@ export const en: Messages = {
     duel: "Two players, one phone",
     footnote: "No ads. No accounts. Works on a coach with no signal.",
     language: "Language",
+    sound: "Sound",
+    on: "On",
+    off: "Off",
   },
 
   setup: {

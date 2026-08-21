@@ -1,5 +1,7 @@
+import type { ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Button } from "@repo/ui";
+import { useSfx } from "../audio/SfxProvider";
 import { Ball } from "../components/art/Characters";
 import type { MatchMode } from "../game/match";
 import { LOCALES, useI18n } from "../i18n";
@@ -13,8 +15,39 @@ import { palette, spacing, text } from "../theme";
  */
 const LANGUAGE_NAMES = { nb: nb.languageName, en: en.languageName } as const;
 
+function Chip({
+  label,
+  selected,
+  onPress,
+}: {
+  label: string;
+  selected: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ selected }}
+      onPress={onPress}
+      style={[styles.chip, selected && styles.chipOn]}
+    >
+      <Text style={[styles.chipLabel, selected && styles.chipLabelOn]}>{label}</Text>
+    </Pressable>
+  );
+}
+
+function SettingRow({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <View style={styles.settingRow}>
+      <Text style={text.label}>{label}</Text>
+      <View style={styles.settingOptions}>{children}</View>
+    </View>
+  );
+}
+
 export function HomeScreen({ onPick }: { onPick: (mode: MatchMode) => void }) {
   const { t, locale, setLocale } = useI18n();
+  const { muted, setMuted } = useSfx();
 
   return (
     <View style={styles.screen}>
@@ -32,26 +65,21 @@ export function HomeScreen({ onPick }: { onPick: (mode: MatchMode) => void }) {
         <Button label={t.home.solo} onPress={() => onPick("solo")} />
         <Button label={t.home.duel} onPress={() => onPick("duel")} />
 
-        <View style={styles.languageRow}>
-          <Text style={text.label}>{t.home.language}</Text>
-          <View style={styles.languageOptions}>
-            {LOCALES.map((option) => (
-              <Pressable
-                key={option}
-                accessibilityRole="button"
-                accessibilityState={{ selected: option === locale }}
-                onPress={() => setLocale(option)}
-                style={[styles.languageChip, option === locale && styles.languageChipOn]}
-              >
-                <Text
-                  style={[styles.languageLabel, option === locale && styles.languageLabelOn]}
-                >
-                  {LANGUAGE_NAMES[option]}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-        </View>
+        <SettingRow label={t.home.language}>
+          {LOCALES.map((option) => (
+            <Chip
+              key={option}
+              label={LANGUAGE_NAMES[option]}
+              selected={option === locale}
+              onPress={() => setLocale(option)}
+            />
+          ))}
+        </SettingRow>
+
+        <SettingRow label={t.home.sound}>
+          <Chip label={t.home.on} selected={!muted} onPress={() => setMuted(false)} />
+          <Chip label={t.home.off} selected={muted} onPress={() => setMuted(true)} />
+        </SettingRow>
 
         <Text style={styles.footnote}>{t.home.footnote}</Text>
       </View>
@@ -76,22 +104,24 @@ const styles = StyleSheet.create({
     borderTopColor: palette.line,
     backgroundColor: palette.nightSoft,
   },
-  languageRow: {
+  settingRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     marginTop: spacing.xs,
   },
-  languageOptions: { flexDirection: "row", gap: spacing.xs },
-  languageChip: {
+  settingOptions: { flexDirection: "row", gap: spacing.xs },
+  chip: {
     paddingHorizontal: spacing.md,
     paddingVertical: 6,
     borderRadius: 999,
     borderWidth: 1,
     borderColor: palette.line,
+    minWidth: 62,
+    alignItems: "center",
   },
-  languageChipOn: { borderColor: palette.accent, backgroundColor: "#16233a" },
-  languageLabel: { color: palette.chalkDim, fontSize: 13, fontWeight: "600" },
-  languageLabelOn: { color: palette.accent },
+  chipOn: { borderColor: palette.accent, backgroundColor: "#16233a" },
+  chipLabel: { color: palette.chalkDim, fontSize: 13, fontWeight: "600" },
+  chipLabelOn: { color: palette.accent },
   footnote: { ...text.muted, textAlign: "center" },
 });

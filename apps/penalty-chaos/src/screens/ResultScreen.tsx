@@ -1,6 +1,7 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Button } from "@repo/ui";
 import { KeeperFigure } from "../components/art/KeeperFigure";
+import { looksFor } from "../components/art/keeperLooks";
 import { scoreOf, takenBy, winner, type MatchState, type Player } from "../game/match";
 import type { KeeperArchetype } from "../game/types";
 import { useI18n } from "../i18n";
@@ -78,9 +79,7 @@ export function ResultScreen({ state, keeper, onPlayAgain, onChangeKeeper }: Pro
             <KeeperFigure
               width={64}
               height={96}
-              shirt={keeper.shirt}
-              shirtTrim={keeper.shirtTrim}
-              monogram={keeper.monogram}
+              looks={looksFor(keeper.id)}
               pose={beaten ? "beaten" : "celebrate"}
               direction={0}
             />

@@ -31,11 +31,13 @@ Store does not help. See [ADR 3](../../docs/adr/0003-blueprint-generator-approac
 ## How it is put together
 
 ```
-src/game/       pure logic, no React — engine, keeper archetypes, disruptions, match rules
+src/game/       pure logic, no React, no copy, no colours — engine, keeper
+                archetypes, disruptions, match rules
 src/i18n/       en + nb message bundles, typed so a gap is a compile error
+src/audio/      sound roster + SfxProvider
 src/state/      AsyncStorage-backed keeper renaming
 src/components/ GoalScene (the pitch), Scoreboard, DisruptionBanner
-src/components/art/  SVG figures — keeper, invader, mascot, ball, scenery
+src/components/art/  SVG figures + keeperLooks (build, shirt, squad number)
 src/screens/    Home → Setup → Match → Result
 ```
 
@@ -67,6 +69,10 @@ Two seams worth not breaking:
 - **Art components are pure and static.** `KeeperFigure` takes a `pose` and draws it; movement
   belongs to the caller's `Animated` transforms. The mascot's wiggle is the one documented
   exception. See [ADR 9](../../docs/adr/0009-svg-for-character-art.md).
+- **`src/game/` holds no copy and no colours.** Names and taunts are in `src/i18n`; shirt,
+  build and squad number are in `src/components/art/keeperLooks.ts`. Both keyed by keeper id.
+  A keeper's *build* is meant to say what its parameters do — The Wall is the widest figure
+  because `reach` is his mechanic.
 
 ## Checklist
 
@@ -77,7 +83,9 @@ Two seams worth not breaking:
 - [x] Character art ([ADR 9](../../docs/adr/0009-svg-for-character-art.md))
 - [ ] Playtested in Norwegian by the actual 11-year-old
 - [ ] Real-device performance check on the SVG version
-- [ ] Sound — the research doc argues a crowd "ooooh" beats any animation for the laugh
+- [x] Sound *integration* — `expo-audio`, mute toggle, respects the ringer switch
+- [ ] Sound *assets* — all 8 files are synthesised placeholders; see
+      [assets/sfx/README.md](assets/sfx/README.md) for what each needs and the licence rules
 - [ ] App icon + splash (still the Expo default)
 - [ ] Play Store listing drafted — release restricted to Norway, see research doc §7
 - [ ] First EAS build (`eas build -p android --profile preview`)

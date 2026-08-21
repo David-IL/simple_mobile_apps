@@ -8,6 +8,7 @@ import { ResultScreen } from "./src/screens/ResultScreen";
 import { SetupScreen } from "./src/screens/SetupScreen";
 import { newMatch, type MatchMode, type MatchState } from "./src/game/match";
 import type { KeeperArchetype } from "./src/game/types";
+import { SfxProvider } from "./src/audio/SfxProvider";
 import { I18nProvider, useI18n } from "./src/i18n";
 import { displayName, useKeeperNames } from "./src/state/keeperNames";
 import { palette } from "./src/theme";
@@ -83,12 +84,14 @@ function Game() {
 export default function App() {
   return (
     <I18nProvider>
-      <SafeAreaProvider>
-        <SafeAreaView style={styles.root} edges={["top", "bottom"]}>
-          <StatusBar style="light" />
-          <Game />
-        </SafeAreaView>
-      </SafeAreaProvider>
+      <SfxProvider>
+        <SafeAreaProvider>
+          <SafeAreaView style={styles.root} edges={["top", "bottom"]}>
+            <StatusBar style="light" />
+            <Game />
+          </SafeAreaView>
+        </SafeAreaProvider>
+      </SfxProvider>
     </I18nProvider>
   );
 }

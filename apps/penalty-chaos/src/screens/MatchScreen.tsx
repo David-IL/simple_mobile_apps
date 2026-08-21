@@ -1,5 +1,6 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { LayoutChangeEvent, PanResponder, Pressable, StyleSheet, Text, View } from "react-native";
+import { useSfx } from "../audio/SfxProvider";
 import { DisruptionBanner } from "../components/DisruptionBanner";
 import { GoalScene, type ScenePhase } from "../components/GoalScene";
 import { Scoreboard } from "../components/Scoreboard";
@@ -39,8 +40,17 @@ function makeRound(keeper: KeeperArchetype, state: MatchState): Round {
   };
 }
 
+/** Which effect fires once the ball has landed. */
+const OUTCOME_SFX = {
+  goal: "goal",
+  saved: "save",
+  missed: "miss",
+  blocked: "blocked",
+} as const;
+
 export function MatchScreen({ keeper, keeperName, initialState, onFinish, onQuit }: Props) {
   const { t } = useI18n();
+  const { play } = useSfx();
   const [state, setState] = useState(initialState);
   const [round, setRound] = useState<Round>(() => makeRound(keeper, initialState));
   const [phase, setPhase] = useState<ScenePhase>("aiming");
@@ -63,8 +73,9 @@ export function MatchScreen({ keeper, keeperName, initialState, onFinish, onQuit
       setResult(resolveShot({ aim, power, keeper, setup: roundRef.current.setup, rng }));
       setDrag(null);
       setPhase("flying");
+      play("kick");
     },
-    [keeper],
+    [keeper, play],
   );
 
   // shoot() closes over props, so the once-created responder reaches it via a ref.
@@ -113,20 +124,37 @@ export function MatchScreen({ keeper, keeperName, initialState, onFinish, onQuit
     }),
   ).current;
 
-  const onFlightEnd = useCallback(() => setPhase("settled"), []);
+  // onFlightEnd is handed to an animation callback inside GoalScene, so it has
+  // to stay referentially stable or the flight animation restarts mid-air. It
+  // therefore reads the result through a ref rather than closing over it.
+  const resultRef = useRef(result);
+  resultRef.current = result;
+
+  const onFlightEnd = useCallback(() => {
+    setPhase("settled");
+    const landed = resultRef.current;
+    if (landed) play(OUTCOME_SFX[landed.kind]);
+  }, [play]);
+
+  // Round-opening flourishes: the keeper starting up, and the badger arriving.
+  useEffect(() => {
+    if (round.setup.disruption?.id === "mascot") play("mascot");
+    else if (round.tauntRoll !== null) play("taunt");
+  }, [round, play]);
 
   const advance = useCallback(() => {
     if (!result) return;
     const next = recordShot(state, result.kind, result.zone);
     setState(next);
     if (isOver(next)) {
+      play("whistle");
       onFinish(next);
       return;
     }
     setRound(makeRound(keeper, next));
     setResult(null);
     setPhase("aiming");
-  }, [result, state, keeper, onFinish]);
+  }, [result, state, keeper, onFinish, play]);
 
   const onSceneLayout = useCallback((event: LayoutChangeEvent) => {
     const { width, height } = event.nativeEvent.layout;

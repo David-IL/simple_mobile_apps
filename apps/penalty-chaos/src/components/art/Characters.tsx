@@ -1,4 +1,4 @@
-import Svg, { Circle, Ellipse, G, Path, Rect } from "react-native-svg";
+import Svg, { Circle, Ellipse, Path, Rect } from "react-native-svg";
 
 /**
  * The two comic characters that wander into shot. Flat vector, no animation
@@ -133,19 +133,24 @@ export function Mascot({ width, height }: Size) {
   );
 }
 
-/** A football, rather than a white dot. */
+/**
+ * A football. Panel detail mostly disappears once it is 13px and shrinking, so
+ * the readable part is the silhouette and the spin the caller applies — the
+ * seams are there for the home screen, where it is 52px and static.
+ */
 export function Ball({ width, height }: Size) {
   return (
     <Svg width={width} height={height} viewBox="0 0 24 24">
-      <Circle cx={12} cy={12} r={11} fill="#ffffff" stroke="#334155" strokeWidth={1.5} />
-      <G fill="#1e293b">
-        <Path d="M12 6.2 L 15.6 8.8 L 14.2 13 L 9.8 13 L 8.4 8.8 Z" />
-        <Path d="M12 1.4 L 13.6 3.4 L 10.4 3.4 Z" opacity={0.85} />
-        <Path d="M20.6 9.4 L 21.4 12 L 18.6 11.2 Z" opacity={0.85} />
-        <Path d="M3.4 9.4 L 5.4 11.2 L 2.6 12 Z" opacity={0.85} />
-        <Path d="M7.4 17.6 L 9.2 15.6 L 10 18.6 Z" opacity={0.85} />
-        <Path d="M16.6 17.6 L 14 18.6 L 14.8 15.6 Z" opacity={0.85} />
-      </G>
+      <Circle cx={12} cy={12} r={11} fill="#ffffff" stroke="#94a3b8" strokeWidth={0.8} />
+      {/* Centre pentagon plus the five that ring it — enough to read as a ball. */}
+      <Path d="M12 6.6 L 16.1 9.6 L 14.5 14.4 L 9.5 14.4 L 7.9 9.6 Z" fill="#111827" />
+      <Path d="M12 1.2 L 15.4 3.1 L 16.1 8.4 L 12 5.9 L 7.9 8.4 L 8.6 3.1 Z" fill="#111827" opacity={0.9} />
+      <Path d="M22.4 9.2 L 22.6 13.4 L 18.6 16 L 15.3 14 L 16.9 9.2 Z" fill="#111827" opacity={0.9} />
+      <Path d="M1.6 9.2 L 7.1 9.2 L 8.7 14 L 5.4 16 L 1.4 13.4 Z" fill="#111827" opacity={0.9} />
+      <Path d="M6.2 20.9 L 5.1 17 L 9 15 L 11.4 18.4 L 9.3 22.2 Z" fill="#111827" opacity={0.9} />
+      <Path d="M17.8 20.9 L 14.7 22.2 L 12.6 18.4 L 15 15 L 18.9 17 Z" fill="#111827" opacity={0.9} />
+      {/* A touch of shading so it does not read as a flat disc. */}
+      <Ellipse cx={8.4} cy={7.6} rx={4.6} ry={3.4} fill="#ffffff" opacity={0.5} />
     </Svg>
   );
 }
