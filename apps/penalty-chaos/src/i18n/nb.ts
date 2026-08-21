@@ -38,8 +38,7 @@ export const nb: Messages = {
 
   match: {
     toTake: (name) => `${name} skal ta den`,
-    hintNormal: "Dra oppover hvor som helst og slipp. Lenger = mer kraft, mindre presisjon.",
-    hintBlind: "Dra opp og slipp — ingen siktelinje denne gangen.",
+    hintNormal: "Dra oppover fra ballen og slipp for å skyte.",
     tapToContinue: "Trykk for å fortsette",
     giveUp: "Gi opp",
     outOf: (total) => `av ${total}`,

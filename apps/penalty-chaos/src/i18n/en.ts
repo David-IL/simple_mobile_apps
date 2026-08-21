@@ -32,8 +32,7 @@ export const en: Messages = {
 
   match: {
     toTake: (name) => `${name} to take it`,
-    hintNormal: "Drag up from anywhere and release. Further = more power, less accuracy.",
-    hintBlind: "Drag up and release — no aim line this time.",
+    hintNormal: "Drag up from the ball and release to shoot.",
     tapToContinue: "Tap to continue",
     giveUp: "Give up",
     outOf: (total) => `of ${total}`,

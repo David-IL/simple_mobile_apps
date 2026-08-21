@@ -25,6 +25,7 @@ import type {
   ShotResultKind,
 } from "../game/types";
 import { useI18n } from "../i18n";
+import { useShotTutorial } from "../state/tutorial";
 import { outcomeColour, palette, spacing, text } from "../theme";
 
 type Props = {
@@ -87,6 +88,7 @@ const DISRUPTION_SFX: Partial<Record<DisruptionId, SfxId>> = {
 export function MatchScreen({ keeper, keeperName, initialState, onFinish, onQuit }: Props) {
   const { t } = useI18n();
   const { play } = useSfx();
+  const { showAimHint, recordShotTaken } = useShotTutorial();
   const [state, setState] = useState(initialState);
   const [round, setRound] = useState<Round>(() => makeRound(keeper, initialState));
   const [phase, setPhase] = useState<ScenePhase>("aiming");
@@ -110,8 +112,9 @@ export function MatchScreen({ keeper, keeperName, initialState, onFinish, onQuit
       setDrag(null);
       setPhase("flying");
       play("kick");
+      recordShotTaken();
     },
-    [keeper, play],
+    [keeper, play, recordShotTaken],
   );
 
   // shoot() closes over props, so the once-created responder reaches it via a ref.
@@ -205,8 +208,7 @@ export function MatchScreen({ keeper, keeperName, initialState, onFinish, onQuit
 
   const takerName =
     state.mode === "solo" ? t.match.soloTaker : state.names[currentPlayer(state)];
-  const blindAim = round.setup.effect.blindAim;
-  const showPreview = drag && !blindAim ? drag.aim : null;
+  const showPreview = drag && !round.setup.effect.blindAim ? drag.aim : null;
 
   const taunts = t.keepers[keeper.id].taunts;
   const taunt =
@@ -236,6 +238,8 @@ export function MatchScreen({ keeper, keeperName, initialState, onFinish, onQuit
             aimPreview={showPreview}
             result={result}
             taunt={taunt}
+            showAimHint={showAimHint}
+            aimHintLabel={t.match.hintNormal}
             onContact={onContact}
             onFlightEnd={onFlightEnd}
           />
@@ -276,7 +280,6 @@ export function MatchScreen({ keeper, keeperName, initialState, onFinish, onQuit
             */}
             <View style={styles.readout}>
               <ShotMap shots={shotsBy(state, currentPlayer(state))} />
-              <Text style={styles.hint}>{blindAim ? t.match.hintBlind : t.match.hintNormal}</Text>
             </View>
           </>
         ) : (
@@ -328,12 +331,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   powerFill: { height: "100%", borderRadius: 4 },
-  readout: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-    width: "100%",
-  },
+  readout: { alignItems: "center", width: "100%" },
   hint: { ...text.muted, flex: 1 },
   quit: { alignSelf: "center", padding: spacing.sm, marginBottom: spacing.xs },
   quitLabel: { color: palette.chalkDim, fontSize: 12, textDecorationLine: "underline" },

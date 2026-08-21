@@ -44,8 +44,8 @@ export type Messages = {
 
   match: {
     toTake: (name: string) => string;
+    /** Not shown on screen any more — the accessibility label for the gesture demo. */
     hintNormal: string;
-    hintBlind: string;
     tapToContinue: string;
     giveUp: string;
     outOf: (total: number) => string;

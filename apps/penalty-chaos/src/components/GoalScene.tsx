@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { Animated, Easing, Platform, StyleSheet, Text, View } from "react-native";
-import Svg, { Line } from "react-native-svg";
+import Svg, { Circle, Line } from "react-native-svg";
 import { splitZone } from "../game/engine";
 import { ZONE_COLS, type Aim, type KeeperArchetype, type KeeperPose } from "../game/types";
 import type { RoundSetup, ShotResult, Zone, ZoneCol } from "../game/types";
@@ -24,6 +24,10 @@ type Props = {
   result: ShotResult | null;
   /** The keeper's line this round, or null if he has nothing to say. */
   taunt: string | null;
+  /** Demonstrate the shooting gesture — only until the player has learned it. */
+  showAimHint: boolean;
+  /** Spoken description of that gesture, for anyone who cannot see it. */
+  aimHintLabel: string;
   /** Ball meets glove, post or uncle. Fires before any deflection. */
   onContact: () => void;
   onFlightEnd: () => void;
@@ -98,6 +102,28 @@ function useGeometry(width: number, height: number) {
   }, [width, height]);
 }
 
+/** A fingertip and the trail it leaves, for the shooting demonstration. */
+function AimHintFinger() {
+  return (
+    <Svg width={26} height={34} viewBox="0 0 26 34">
+      <Circle cx={13} cy={26} r={9} fill="#f8fafc" opacity={0.22} />
+      <Circle cx={13} cy={26} r={5} fill="#f8fafc" opacity={0.9} />
+      <Line
+        x1={13}
+        y1={20}
+        x2={13}
+        y2={4}
+        stroke="#f8fafc"
+        strokeWidth={2}
+        strokeLinecap="round"
+        opacity={0.75}
+      />
+      <Line x1={13} y1={3} x2={8} y2={10} stroke="#f8fafc" strokeWidth={2} strokeLinecap="round" opacity={0.75} />
+      <Line x1={13} y1={3} x2={18} y2={10} stroke="#f8fafc" strokeWidth={2} strokeLinecap="round" opacity={0.75} />
+    </Svg>
+  );
+}
+
 /** Net mesh plus slightly stronger zone dividers, so the six zones stay legible. */
 function GoalNet({ width, height }: { width: number; height: number }) {
   const columns = 12;
@@ -169,6 +195,8 @@ export function GoalScene({
   aimPreview,
   result,
   taunt,
+  showAimHint,
+  aimHintLabel,
   onContact,
   onFlightEnd,
 }: Props) {
@@ -181,6 +209,7 @@ export function GoalScene({
   const invaderPace = useRef(new Animated.Value(0)).current;
   const stewardRun = useRef(new Animated.Value(0)).current;
   const rainFall = useRef(new Animated.Value(0)).current;
+  const hintSweep = useRef(new Animated.Value(0)).current;
 
   const restingKeeper = geo.zoneCentre("centre-low");
   const { effect, disruption, keeperTell, keeperDive } = setup;
@@ -201,6 +230,10 @@ export function GoalScene({
     }
     return { pose: "dive", direction: diveDirection };
   })();
+
+  // Only while nobody is touching the screen: the moment a drag starts, the
+  // player is already doing the thing and the demonstration is in the way.
+  const demonstrating = showAimHint && phase === "aiming" && !aimPreview;
 
   /**
    * Everything returns to its starting mark the instant a new round exists.
@@ -298,6 +331,33 @@ export function GoalScene({
     run.start();
     return () => run.stop();
   }, [effect.blockedCol, phase, stewardRun]);
+
+  /**
+   * A finger dragging up off the ball, on repeat.
+   *
+   * This replaced a line of instructions under the pitch. Showing the gesture
+   * costs no reading, works in any language, and — unlike the text — stops
+   * existing once it is no longer needed.
+   */
+  useEffect(() => {
+    if (!demonstrating) {
+      hintSweep.setValue(0);
+      return;
+    }
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(hintSweep, {
+          toValue: 1,
+          duration: 1100,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.delay(500),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [demonstrating, hintSweep]);
 
   // One looping value drives the whole rain tile.
   useEffect(() => {
@@ -616,6 +676,35 @@ export function GoalScene({
           />
           <View style={[styles.aimDot, { left: preview.x - 11, top: preview.y - 11 }]} />
         </>
+      ) : null}
+
+      {demonstrating ? (
+        <Animated.View
+          style={[
+            styles.absolute,
+            {
+              left: geo.spotX - 13,
+              top: geo.spotY - 14,
+              opacity: hintSweep.interpolate({
+                inputRange: [0, 0.15, 0.75, 1],
+                outputRange: [0, 1, 1, 0],
+              }),
+              transform: [
+                {
+                  translateY: hintSweep.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, -geo.goalHeight * 0.62],
+                  }),
+                },
+              ],
+            },
+          ]}
+          pointerEvents="none"
+          accessibilityRole="image"
+          accessibilityLabel={aimHintLabel}
+        >
+          <AimHintFinger />
+        </Animated.View>
       ) : null}
 
       <View style={[styles.spot, { left: geo.spotX - 4, top: geo.spotY + 15 }]} />
