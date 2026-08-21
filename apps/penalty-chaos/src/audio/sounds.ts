@@ -34,7 +34,7 @@ export const SFX_SOURCES: Record<SfxId, number> = {
   save: require("../../assets/sfx/save.wav"),
   miss: require("../../assets/sfx/miss.mp3"),
   blocked: require("../../assets/sfx/blocked.wav"),
-  taunt: require("../../assets/sfx/taunt.wav"),
+  taunt: require("../../assets/sfx/taunt.mp3"),
   mascot: require("../../assets/sfx/mascot.mp3"),
   chant: require("../../assets/sfx/chant.wav"),
   whistle: require("../../assets/sfx/whistle.mp3"),

@@ -29,32 +29,60 @@ licence is a row that must not ship.
 
 ## The roster
 
-
-| --- | --- | --- | --- | --- |
 | File | Fires when | Status | Source | Licence |
 | --- | --- | --- | --- | --- |
-| `kick.mp3` | ball is struck | **real** — 0.8s | *fill in* | *fill in* |
-| `whistle.mp3` | shootout ends | **real** — 4.1s | *fill in* | *fill in* |
-| `menu-music.mp3` | any menu screen | **real** — 15s loop | *fill in* | *fill in* |
-| `stadium-crowd.mp3` | under a match, looping | **real** — 17.5s loop | *fill in* | *fill in* |
-| `goal.mp3` | goal | **real** — 5.1s | *fill in* | *fill in* |
-| `miss.mp3` | wide or over | **real** — 3.1s | *fill in* | *fill in* |
-| `mascot.mp3` | badger appears | **real** — 2.0s | *fill in* | *fill in* |
+| `kick.mp3` | ball is struck | **real** — 0.8s | Pixabay | Pixabay Content License |
+| `whistle.mp3` | shootout ends | **real** — 4.1s | Pixabay | Pixabay Content License |
+| `menu-music.mp3` | any menu screen | **real** — 15s loop | Pixabay | Pixabay Content License |
+| `stadium-crowd.mp3` | under a match, looping | **real** — 17.5s loop | Pixabay | Pixabay Content License |
+| `goal.mp3` | goal | **real** — 5.1s | Pixabay | Pixabay Content License |
+| `miss.mp3` | wide or over | **real** — 3.1s | Pixabay | Pixabay Content License |
+| `mascot.mp3` | badger appears | **real** — 2.0s | Pixabay | Pixabay Content License |
+| `taunt.mp3` | keeper taunts | **real** — 0.8s | Pixabay | Pixabay Content License |
 | `save.wav` | keeper saves | placeholder — gloves on ball + reaction | — | — |
 | `blocked.wav` | hits the pitch invader | placeholder — dull thud, ideally an "oof" | — | — |
-| `taunt.wav` | keeper taunts | placeholder — mumbled chatter, no real words | — | — |
 | `chant.wav` | away end starts singing | placeholder — terrace chant, no real club | — | — |
 
-**None of the real files has a source or licence recorded.** Fill those in before
-any release — a row with a blank licence is a row that must not ship.
+## The Pixabay licence, checked
 
-Three placeholders left. `taunt` is the one worth recording yourself: a wordless
-mumble from you or your son is free, unambiguously licensed, funnier than
-anything downloadable, and sidesteps ADR 8 entirely because it is your own voice
-with consent.
+All the real files come from [pixabay.com](https://pixabay.com/). Verified against
+the [licence summary](https://pixabay.com/service/license-summary/) on 2026-08-21:
 
-The research doc argues `miss.wav` and `goal.wav` carry more of the comedy than
-any animation does, so they are the two worth spending real effort on.
+- **Commercial use is permitted** and **attribution is not required** ("although
+  giving credit is always appreciated"). Modifying or adapting is allowed.
+- **Prohibited:** selling or distributing content "on a Standalone basis" where no
+  creative effort has been applied; use of recognisable trademarks or brands
+  commercially; use as part of a trade mark; misleading or illegal use.
+
+For this app that is clean. The sounds are embedded in a game, which is creative
+effort applied — not standalone redistribution. Nothing is being sold, and no
+brand is involved.
+
+Three things worth keeping straight:
+
+- **"Royalty-free" is not CC0.** This is Pixabay's own bespoke licence with its own
+  terms, not a public-domain dedication. If these files ever get reused outside
+  this app, re-read the licence rather than assuming they are free of conditions.
+- **Never ship the raw files as a downloadable pack.** That is exactly the
+  standalone-distribution clause. Inside the APK is fine; an assets download is not.
+- **Pixabay is user-uploaded**, and their own terms warn that "certain Content may
+  be subject to additional intellectual property rights". Low risk for generic
+  crowd and impact sounds, higher for anything that sounds like it came off a
+  broadcast or contains recognisable music. If a file sounds *too* good to be
+  someone's upload, it is worth a second look.
+
+Two placeholders left: `save` and `blocked`. Both are impacts rather than crowd
+or voice, which makes them the easiest kind to find CC0 — Kenney's impact packs
+cover this exact case.
+
+**If `taunt.mp3` contains a real recognisable voice, check it.** ADR 8 covers
+voices as much as faces, so a clip of an identifiable person saying something is
+the same class of problem as their picture. A wordless mumble, a synthesised
+voice, or your own recording is fine.
+
+The research doc argues the crowd reacting to a miss and to a goal carries more
+of the comedy than any animation does. Those two are now real, which means the
+central claim is finally testable on a phone.
 
 ## Format
 
