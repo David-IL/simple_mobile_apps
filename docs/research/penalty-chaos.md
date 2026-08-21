@@ -134,19 +134,32 @@ will actually get played.
 - Take a penalty: pick direction + power. One gesture (drag-and-release aim), not a menu.
 - A keeper that reacts, taunts, and **reads your pattern** — shoot the same corner twice and it
   dives early. This is the mechanic the Dibu game validated; treat it as the core, not a garnish.
+- **A roster of 6–8 keeper archetypes.** A keeper *is* a parameter set — taunt frequency, how
+  many shots back it pattern-matches, dive bias, how much it telegraphs — so the roster doubles
+  as the difficulty curve and costs almost nothing beyond art. Invented characters with invented
+  names: The Chatterbox, The Wall, The Line-Dancer, The Statue, The Mind-Reader.
+  **No real footballers** — see §7 and [ADR 8](../adr/0008-no-real-person-likenesses-or-club-ip.md).
+- **Rename any keeper, on-device.** Not just a custom slot — every archetype is renameable, so
+  the local club's keeper can be dropped onto whichever personality fits him. This is where the
+  §3 "specific beats generic" finding cashes out, and it keeps the naming a private user act
+  rather than something shipped.
 - A disruption roster of ~6 events, **telegraphed before the run-up** (see §6b). Wind sock
   swings, a supporter climbs the hoarding, the keeper starts jumping on the line, mascot wanders
-  on. Player sees it, then chooses the shot.
+  on. Player sees it, then chooses the shot. **Secondary to the keeper** — build the keeper
+  first and confirm it's fun without any of these.
 - Best-of-5 shootout, two-player pass-the-phone on one device, plus solo vs. the keeper.
 - Scoreline on screen and a result card at the end worth showing someone.
 
 **Nice to have (v2):**
-- Locally-specific gags: name the keeper after someone at the club, in-jokes from the team.
-  Per §3, *specific* comedy is what works; generic chaos is what doesn't.
 - Sound. A crowd "ooooh" on a miss probably carries more of the comedy than any animation.
-- A shareable "you lost to a chicken" result image.
+- A shareable result image — **but it must render the archetype's shipped name, never the
+  user's custom one** (see §7). Ranks below sound for that reason.
+- A custom-keeper slot with a fixed original avatar, for a keeper that isn't any of the
+  archetypes.
 
 **Explicit non-goals:**
+- **Real footballers, real clubs, real kits, real competitions.** Ruled out repo-wide by
+  [ADR 8](../adr/0008-no-real-person-likenesses-or-club-ip.md); reasoning in §7.
 - Online multiplayer. Ticks a backend box, kills the offline-only property, and the whole point
   is two kids on one sofa.
 - Careers, leagues, tournaments, unlockable kits, currency, energy timers.
@@ -176,6 +189,10 @@ will actually get played.
 - **Core mechanic:** drag-and-release to aim and power a penalty, against a keeper that taunts
   and learns your pattern, with a comedic disruption shown *before* you shoot that changes what
   the good shot is.
+- **The keeper roster is free, mechanically.** Each archetype is the same code with a different
+  parameter set (taunt rate, pattern-match depth, dive bias, telegraph amount) plus its own
+  sprite sheet. No new rendering work per keeper — the cost is art, not engineering, which is
+  the right place for the cost to land given what's being learned here.
 - **Is it RN-shaped?** Yes, squarely. Drag-and-release aiming and tween-driven motion are both
   named in [ADR 7](../adr/0007-game-rendering-approach.md) as things RN does well. The ball is
   one animated view on a bezier path; the keeper is a sprite with a handful of tweened poses.
@@ -208,11 +225,44 @@ will actually get played.
 
 ## 7. Play Store feasibility
 
-- **Policy risk:** low. No user-generated content, no data collection, no health/finance claims,
-  no runtime permissions needed. One thing to be deliberate about: the gags must stay
-  child-appropriate — a "supporter storming the field" is fine, a *streaker* is not, and that
-  distinction has to survive contact with an 11-year-old's suggestions.
-- **Privacy policy:** not required — collects nothing, no analytics, no ads.
+- **Policy risk:** low *as scoped*. No user-generated content leaving the device, no data
+  collection, no health/finance claims, no runtime permissions needed. One thing to be
+  deliberate about: the gags must stay child-appropriate — a "supporter storming the field" is
+  fine, a *streaker* is not, and that distinction has to survive contact with an 11-year-old's
+  suggestions.
+- **Real-person likenesses: ruled out.** The original idea was 5–10 caricatured international
+  keepers. Rejected — full reasoning in
+  [docs/reference/likeness-and-ip.md](../reference/likeness-and-ip.md), decision recorded as
+  [ADR 8](../adr/0008-no-real-person-likenesses-or-club-ip.md). The short version:
+  - The exposure is **personality rights, not copyright**, and the parody/caricature exception
+    lives in copyright — it doesn't reach identity claims.
+  - **Caricature makes it worse, not safer.** Recognisability is the operative test everywhere
+    checked, and a caricature nobody recognises has failed at its job.
+  - *Hart v. EA*, *Keller v. EA* and *No Doubt v. Activision* all went against the game
+    publisher **despite** stylised non-photographic avatars. The test is "recognisably them,
+    doing what they're famous for" — a named keeper saving penalties is that, exactly.
+  - Play's IP policy has no likeness clause and enforcement is complaint-driven, so the
+    probability against a 12-user app is low. But the stake is a **developer account
+    termination**, which cascades to related accounts and would take every future app in this
+    repo with it — and the risk only shows up in the scenario we want, which is the app
+    spreading.
+  - The design argument points the same way: the Dibu game worked on *one* keeper the audience
+    felt they knew. A roster of eight internationals is that effect divided by eight, and the
+    keeper that gets a laugh in the changing room is the local one. The risky feature is also
+    the weaker feature.
+- **Also out:** club crests, national-team kits, real competition names. Those are trademarks —
+  a separate claim, and the easiest kind for a rights-holder to spot on a store listing.
+- **Store listing must be clean.** Screenshots are what get scanned and complained about.
+  Nothing on the listing may resemble a real person, crest, kit, or competition.
+- **The rename feature is safe, but constrains the share card.** A name typed on a phone and
+  stored on that phone isn't published. A share image with that name burned into it is —
+  and if a kid names a keeper after a real person at the club, that's a named minor in a
+  shared image. Share cards render the shipped archetype name only.
+- **Distribution:** restrict the Play release to Norway. The audience is local (§6), global
+  distribution means the strictest jurisdiction shipped to governs, and limiting it is simply
+  honest about who this is for.
+- **Privacy policy:** not required — collects nothing, no analytics, no ads. The custom keeper
+  name never leaves the device.
 - **Monetization: none.** Not paid, no IAP, no ads. Per
   [ADR 6](../adr/0006-monetization-is-a-learning-goal.md), ads are a compliance exercise for when
   he wants to learn that, and this app is not that exercise. Keeping it ad-free is also the only
@@ -264,5 +314,9 @@ remaining four evenings don't get spent. Ship or stop at six either way.
   garnish on top of a mechanic that has to be fun without them. If evening two's build isn't fun
   with just the keeper, adding gags won't save it.
 
-  **Third: make the comedy local.** Specific beats generic — that's why the Dibu game worked and
-  why a generic chaos roster is the weaker version. Name the keeper after someone at the club.
+  **Third: make the comedy local — but through renaming, not through real people.** Specific
+  beats generic; that's why the Dibu game worked. The way to get it is a roster of invented
+  archetypes that the player renames on their own device, so the local club's keeper can be
+  dropped onto whichever personality fits him. Shipping real footballers to get the same effect
+  trades the repo's Play developer account for a feature that is weaker anyway — see
+  [ADR 8](../adr/0008-no-real-person-likenesses-or-club-ip.md).
