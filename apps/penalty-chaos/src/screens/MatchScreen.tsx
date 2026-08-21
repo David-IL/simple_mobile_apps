@@ -14,6 +14,7 @@ import type {
   KeeperArchetype,
   RoundSetup,
   ShotResult,
+  ShotResultKind,
 } from "../game/types";
 import { useI18n } from "../i18n";
 import { outcomeColour, palette, spacing, text } from "../theme";
@@ -47,13 +48,24 @@ function makeRound(keeper: KeeperArchetype, state: MatchState): Round {
   };
 }
 
-/** Which effect fires once the ball has landed. */
-const OUTCOME_SFX = {
-  goal: "goal",
-  saved: "save",
-  missed: "miss",
-  blocked: "blocked",
-} as const;
+/**
+ * What each outcome sounds like, as layers rather than one clip.
+ *
+ * `miss` is really the crowd's reaction — an "ooooh" of disappointment — so it
+ * belongs on every outcome that is not a goal, not just on a shot that went
+ * wide. A save is two events: the ball hitting the gloves, and the crowd
+ * groaning about it. Playing only the glove thud made a save sound like it
+ * happened in an empty ground.
+ *
+ * Each id has its own player, so these genuinely overlap rather than cutting
+ * each other off.
+ */
+const OUTCOME_SFX: Record<ShotResultKind, readonly SfxId[]> = {
+  goal: ["goal"],
+  saved: ["save", "miss"],
+  missed: ["miss"],
+  blocked: ["blocked", "miss"],
+};
 
 /**
  * Disruptions that announce themselves. Only the ones whose joke is audible —
@@ -150,7 +162,7 @@ export function MatchScreen({ keeper, keeperName, initialState, onFinish, onQuit
   const onFlightEnd = useCallback(() => {
     setPhase("settled");
     const landed = resultRef.current;
-    if (landed) play(OUTCOME_SFX[landed.kind]);
+    if (landed) for (const id of OUTCOME_SFX[landed.kind]) play(id);
   }, [play]);
 
   // Round-opening flourishes. A disruption that has its own sound takes

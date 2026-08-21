@@ -35,7 +35,7 @@ licence is a row that must not ship.
 | `menu-music.mp3` | any menu screen | **real** — 15s loop | Pixabay | Pixabay Content License |
 | `stadium-crowd.mp3` | under a match, looping | **real** — 17.5s loop | Pixabay | Pixabay Content License |
 | `goal.mp3` | goal | **real** — 5.1s | Pixabay | Pixabay Content License |
-| `miss.mp3` | wide or over | **real** — 3.1s | Pixabay | Pixabay Content License |
+| `miss.mp3` | **any non-goal** — wide, saved or blocked | **real** — 3.1s | Pixabay | Pixabay Content License |
 | `mascot.mp3` | badger appears | **real** — 2.0s | Pixabay | Pixabay Content License |
 | `taunt.mp3` | keeper taunts | **real** — 0.8s | Pixabay | Pixabay Content License |
 | `save.mp3` | keeper saves | **real** — 0.6s | Pixabay | Pixabay Content License |
@@ -111,8 +111,11 @@ someone's recording and someone's branding.
 because real recordings are not normalised to each other the way the synthesised
 placeholders were. Two need watching:
 
-- **`miss`** is a crowd groan with a slow onset, playing *over* the stadium
-  ambience rather than over silence. It is at 1.0 for that reason.
+- **`miss`** is misleadingly named: it is the crowd's "ooooh", so it layers onto
+  *every* outcome that is not a goal, not just a shot that went wide. A save
+  plays `save` (gloves) and `miss` (the groan) together, because a save is two
+  events. It also has a slow onset and plays over the stadium ambience rather
+  than over silence, so it sits at 1.0.
 - **`taunt`** is short and speech-like; too quiet and it reads as noise, too loud
   and it stops being atmosphere.
 
