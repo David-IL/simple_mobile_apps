@@ -1,8 +1,7 @@
 # Sound effects
 
-Some of these are real; the rest are synthesised placeholders — short tones and
-noise bursts generated from a script, enough to prove the integration works and
-no more. The Status column below says which is which.
+All eleven files are real audio from Pixabay. The synthesised placeholders that
+were here to prove the integration worked have all been replaced and deleted.
 
 **Formats can be mixed freely.** Android's ExoPlayer plays WAV and mp3, Metro
 bundles both, and expo-audio does not care. But `require()` paths are static, so
@@ -39,9 +38,11 @@ licence is a row that must not ship.
 | `miss.mp3` | wide or over | **real** — 3.1s | Pixabay | Pixabay Content License |
 | `mascot.mp3` | badger appears | **real** — 2.0s | Pixabay | Pixabay Content License |
 | `taunt.mp3` | keeper taunts | **real** — 0.8s | Pixabay | Pixabay Content License |
-| `save.wav` | keeper saves | placeholder — gloves on ball + reaction | — | — |
-| `blocked.wav` | hits the pitch invader | placeholder — dull thud, ideally an "oof" | — | — |
-| `chant.wav` | away end starts singing | placeholder — terrace chant, no real club | — | — |
+| `save.mp3` | keeper saves | **real** — 0.6s | Pixabay | Pixabay Content License |
+| `blocked.mp3` | hits the pitch invader | **real** — 0.6s | Pixabay | Pixabay Content License |
+| `chant.mp3` | away end starts singing | **real** — 5.1s | Pixabay | Pixabay Content License |
+
+No placeholders left. Every synthesised file has been replaced and deleted.
 
 ## The Pixabay licence, checked
 
@@ -71,11 +72,7 @@ Three things worth keeping straight:
   broadcast or contains recognisable music. If a file sounds *too* good to be
   someone's upload, it is worth a second look.
 
-Two placeholders left: `save` and `blocked`. Both are impacts rather than crowd
-or voice, which makes them the easiest kind to find CC0 — Kenney's impact packs
-cover this exact case.
-
-**If `taunt.mp3` contains a real recognisable voice, check it.** ADR 8 covers
+**If `taunt.mp3` or `chant.mp3` contains a real recognisable voice, check it.** ADR 8 covers
 voices as much as faces, so a clip of an identifiable person saying something is
 the same class of problem as their picture. A wordless mumble, a synthesised
 voice, or your own recording is fine.
@@ -86,10 +83,9 @@ central claim is finally testable on a phone.
 
 ## Format
 
-WAV or mp3, both work. The placeholders are WAV only because that is what can be
-generated without a third-party encoder.
+WAV and mp3 both work; everything here is mp3 now.
 
-The real files came in at 256 kbps, 44.1/48 kHz stereo. That is CD-quality for a
+The files came in at 256 kbps, 44.1/48 kHz stereo. That is CD-quality for a
 phone speaker playing a 0.8-second thud — **re-encoding effects to mono 128 kbps
 would roughly quarter them** with no audible loss on a phone. Not urgent, but the
 two loops are ~1 MB of the bundle between them and that is the easy win when APK
@@ -109,11 +105,16 @@ A chant must not be a real club's. Terrace songs are mostly traditional tunes an
 fine, but a recording of a specific crowd singing a specific club's song is both
 someone's recording and someone's branding.
 
-## Regenerating the placeholders
+## Levels
 
-The generator lives outside the repo (it was scratch work). If you need it again
-it is a small pure-stdlib Python script using `wave` and `math` — but the point
-is to delete these files, not to regenerate them.
+`SFX_VOLUME` in [`src/audio/sounds.ts`](../../src/audio/sounds.ts) is per-sound
+because real recordings are not normalised to each other the way the synthesised
+placeholders were. Two need watching:
+
+- **`miss`** is a crowd groan with a slow onset, playing *over* the stadium
+  ambience rather than over silence. It is at 1.0 for that reason.
+- **`taunt`** is short and speech-like; too quiet and it reads as noise, too loud
+  and it stops being atmosphere.
 
 ## Behaviour worth knowing
 

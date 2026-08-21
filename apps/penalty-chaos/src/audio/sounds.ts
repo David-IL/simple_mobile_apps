@@ -31,12 +31,12 @@ export type SfxId = (typeof SFX_IDS)[number];
 export const SFX_SOURCES: Record<SfxId, number> = {
   kick: require("../../assets/sfx/kick.mp3"),
   goal: require("../../assets/sfx/goal.mp3"),
-  save: require("../../assets/sfx/save.wav"),
+  save: require("../../assets/sfx/save.mp3"),
   miss: require("../../assets/sfx/miss.mp3"),
-  blocked: require("../../assets/sfx/blocked.wav"),
+  blocked: require("../../assets/sfx/blocked.mp3"),
   taunt: require("../../assets/sfx/taunt.mp3"),
   mascot: require("../../assets/sfx/mascot.mp3"),
-  chant: require("../../assets/sfx/chant.wav"),
+  chant: require("../../assets/sfx/chant.mp3"),
   whistle: require("../../assets/sfx/whistle.mp3"),
 };
 /* eslint-enable @typescript-eslint/no-require-imports */
@@ -70,11 +70,14 @@ export const AMBIENCE_VOLUME = 0.22;
 export const SFX_VOLUME: Record<SfxId, number> = {
   kick: 0.9,
   goal: 1,
-  save: 0.85,
-  miss: 0.7,
+  save: 0.95,
+  // A crowd groan has a slow onset and is competing with the ambience bed
+  // underneath it. At the old 0.7 it was easy to miss entirely.
+  miss: 1,
   blocked: 0.9,
-  taunt: 0.55,
-  mascot: 0.6,
-  chant: 0.7,
-  whistle: 0.7,
+  // Short and speech-like: quiet enough to be atmosphere, loud enough to hear.
+  taunt: 0.85,
+  mascot: 0.75,
+  chant: 0.85,
+  whistle: 0.8,
 };
