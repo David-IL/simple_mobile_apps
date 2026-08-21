@@ -75,7 +75,11 @@ function Game() {
           keeperName={displayName(screen.keeper.id, names, t.keepers[screen.keeper.id].name)}
           initialState={screen.state}
           onFinish={(final) => setScreen({ kind: "result", keeper: screen.keeper, state: final })}
-          onQuit={() => setScreen({ kind: "home" })}
+          // Abandoning a shootout almost always means "again, but different"
+          // rather than "I am done with this app", so this returns to setup
+          // rather than all the way to the menu. Setup still has a Back button
+          // for actually leaving.
+          onQuit={() => setScreen({ kind: "setup", mode: screen.state.mode })}
         />
       ) : null}
 

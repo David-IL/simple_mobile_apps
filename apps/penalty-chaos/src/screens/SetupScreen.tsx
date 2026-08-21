@@ -75,6 +75,7 @@ export function SetupScreen({ mode, names, onRename, onStart, onBack }: Props) {
   // Persisted, not local state: leaving this screen and coming back — which is
   // what "Different keeper" and "Give up" both do — used to wipe the names.
   const { names: players, setPlayerName, maxLength } = usePlayerNames();
+  const [renameFocused, setRenameFocused] = useState(false);
   const difficultyOfKeeper = useDifficultyScale();
 
   const selected = KEEPERS.find((keeper) => keeper.id === selectedId) ?? KEEPERS[0];
@@ -147,15 +148,45 @@ export function SetupScreen({ mode, names, onRename, onStart, onBack }: Props) {
 
         <View style={styles.panel}>
           <Text style={text.label}>{t.setup.renameLabel}</Text>
-          <TextInput
-            style={styles.input}
-            value={names[selected.id] ?? ""}
-            onChangeText={(value) => onRename(selected.id, value)}
-            placeholder={shippedName}
-            placeholderTextColor={palette.chalkDim}
-            maxLength={18}
-            autoCorrect={false}
-          />
+          {/*
+            The placeholder disappears the moment the field is tapped.
+
+            Watching an 11-year-old use this: the greyed-out keeper name reads as
+            text that is already there, and the instinct is to backspace it away
+            — which does nothing, because a placeholder is not content. Clearing
+            it on focus means tapping the field gives you exactly what it looks
+            like: somewhere empty to type.
+
+            The alternative was prefilling the real name as a value so backspace
+            genuinely works. Rejected: it erases the difference between "no
+            custom name" and "custom name that happens to match", and it stops
+            the field following a language switch.
+          */}
+          <View style={styles.renameRow}>
+            <TextInput
+              style={[styles.input, styles.renameInput]}
+              value={names[selected.id] ?? ""}
+              onChangeText={(value) => onRename(selected.id, value)}
+              onFocus={() => setRenameFocused(true)}
+              onBlur={() => setRenameFocused(false)}
+              placeholder={renameFocused ? "" : shippedName}
+              placeholderTextColor={palette.chalkDim}
+              maxLength={18}
+              autoCorrect={false}
+            />
+            {/* Renaming needs an obvious way back, or a mistake is permanent. */}
+            {names[selected.id] ? (
+              <Pressable
+                onPress={() => onRename(selected.id, "")}
+                accessibilityRole="button"
+                accessibilityLabel={t.setup.clearName}
+                style={styles.clearName}
+                hitSlop={8}
+              >
+                <Text style={styles.clearNameLabel}>×</Text>
+              </Pressable>
+            ) : null}
+          </View>
           <Text style={text.muted}>{t.setup.renameNote(shippedName)}</Text>
         </View>
 
@@ -212,6 +243,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: palette.line,
   },
+  renameRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  renameInput: { flex: 1 },
+  clearName: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: palette.line,
+  },
+  clearNameLabel: { color: palette.chalkDim, fontSize: 20, lineHeight: 22 },
   input: {
     backgroundColor: palette.night,
     borderRadius: 8,
