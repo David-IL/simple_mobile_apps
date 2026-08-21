@@ -8,6 +8,7 @@ import type { MatchMode } from "../game/match";
 import type { KeeperArchetype } from "../game/types";
 import { useI18n } from "../i18n";
 import { displayName, sanitiseName, type KeeperNames } from "../state/keeperNames";
+import { usePlayerNames } from "../state/playerNames";
 import { palette, spacing, text } from "../theme";
 
 type Props = {
@@ -71,8 +72,9 @@ function KeeperCard({
 export function SetupScreen({ mode, names, onRename, onStart, onBack }: Props) {
   const { t } = useI18n();
   const [selectedId, setSelectedId] = useState(KEEPERS[0]?.id ?? "sunday");
-  const [playerOne, setPlayerOne] = useState("");
-  const [playerTwo, setPlayerTwo] = useState("");
+  // Persisted, not local state: leaving this screen and coming back — which is
+  // what "Different keeper" and "Give up" both do — used to wipe the names.
+  const { names: players, setPlayerName, maxLength } = usePlayerNames();
   const difficultyOfKeeper = useDifficultyScale();
 
   const selected = KEEPERS.find((keeper) => keeper.id === selectedId) ?? KEEPERS[0];
@@ -86,8 +88,8 @@ export function SetupScreen({ mode, names, onRename, onStart, onBack }: Props) {
       return;
     }
     onStart(selected, [
-      sanitiseName(playerOne) || t.setup.playerOne,
-      sanitiseName(playerTwo) || t.setup.playerTwo,
+      sanitiseName(players[0]) || t.setup.playerOne,
+      sanitiseName(players[1]) || t.setup.playerTwo,
     ]);
   };
 
@@ -107,20 +109,20 @@ export function SetupScreen({ mode, names, onRename, onStart, onBack }: Props) {
             <View style={styles.panel}>
               <TextInput
                 style={styles.input}
-                value={playerOne}
-                onChangeText={setPlayerOne}
+                value={players[0]}
+                onChangeText={(value) => setPlayerName(0, value)}
                 placeholder={t.setup.playerOne}
                 placeholderTextColor={palette.chalkDim}
-                maxLength={14}
+                maxLength={maxLength}
                 autoCorrect={false}
               />
               <TextInput
                 style={styles.input}
-                value={playerTwo}
-                onChangeText={setPlayerTwo}
+                value={players[1]}
+                onChangeText={(value) => setPlayerName(1, value)}
                 placeholder={t.setup.playerTwo}
                 placeholderTextColor={palette.chalkDim}
-                maxLength={14}
+                maxLength={maxLength}
                 autoCorrect={false}
               />
             </View>

@@ -30,6 +30,22 @@ export function displayName(
   return custom && custom.length > 0 ? custom : shippedName;
 }
 
+/**
+ * What to keep while someone is still typing.
+ *
+ * Deliberately does **not** trim. An earlier version ran the full sanitise on
+ * every keystroke, which meant the trailing space was stripped the instant it
+ * was typed and the field silently refused to accept a space at all — you could
+ * not enter a two-word name. Trimming belongs at the point the name is used,
+ * not while it is being written.
+ */
+export function limitName(raw: string, max = MAX_NAME_LENGTH): string {
+  // Line breaks and tabs only arrive by paste, and a single-line field cannot
+  // show them anyway. Spaces are left alone — that is the whole point.
+  return raw.replace(/[\r\n\t]+/g, " ").slice(0, max);
+}
+
+/** What to keep once the name is actually being used. */
 export function sanitiseName(raw: string): string {
   return raw.replace(/\s+/g, " ").trim().slice(0, MAX_NAME_LENGTH);
 }
@@ -72,7 +88,7 @@ export function useKeeperNames() {
 
   const rename = useCallback((keeperId: string, raw: string) => {
     setNames((previous) => {
-      const clean = sanitiseName(raw);
+      const clean = limitName(raw);
       const next = { ...previous };
       if (clean.length === 0) delete next[keeperId];
       else next[keeperId] = clean;
