@@ -1,8 +1,14 @@
 # Sound effects
 
-**Everything in this folder is a synthesised placeholder.** They are short tones
-and noise bursts generated from a script — enough to prove the audio integration
-works end to end, not enough to be funny. Each one is meant to be replaced.
+Some of these are real; the rest are synthesised placeholders — short tones and
+noise bursts generated from a script, enough to prove the integration works and
+no more. The Status column below says which is which.
+
+**Formats can be mixed freely.** Android's ExoPlayer plays WAV and mp3, Metro
+bundles both, and expo-audio does not care. But `require()` paths are static, so
+**dropping in `kick.mp3` next to `kick.wav` changes nothing until you edit the
+extension in [`src/audio/sounds.ts`](../../src/audio/sounds.ts)** — and delete the
+placeholder, or it stays in the repo doing nothing.
 
 ## The rule for replacing them
 
@@ -23,28 +29,38 @@ licence is a row that must not ship.
 
 ## The roster
 
-| File | Fires when | What it should be | Source | Licence |
+
 | --- | --- | --- | --- | --- |
-| `kick.wav` | ball is struck | boot on ball, dry and short | *placeholder* | — |
-| `goal.wav` | goal | net ripple + crowd cheer | *placeholder* | — |
-| `save.wav` | keeper saves | gloves on ball + crowd reaction | *placeholder* | — |
-| `miss.wav` | wide or over | crowd "ooooh" / groan | *placeholder* | — |
-| `blocked.wav` | hits the pitch invader | dull thud, ideally an "oof" | *placeholder* | — |
-| `taunt.wav` | keeper taunts | mumbled chatter, no real words | *placeholder* | — |
-| `mascot.wav` | badger appears | something silly and short | *placeholder* | — |
-| `chant.wav` | away end starts singing | a short terrace chant, no real club | *placeholder* | — |
-| `whistle.wav` | shootout ends | referee's whistle | *placeholder* | — |
-| `menu-music.wav` | any menu screen | a seamless loop, quiet, football-ish | *placeholder* | — |
+| File | Fires when | Status | Source | Licence |
+| --- | --- | --- | --- | --- |
+| `kick.mp3` | ball is struck | **real** — 0.8s | *fill in* | *fill in* |
+| `whistle.mp3` | shootout ends | **real** — 4.1s | *fill in* | *fill in* |
+| `menu-music.mp3` | any menu screen | **real** — 15s loop | *fill in* | *fill in* |
+| `stadium-crowd.mp3` | under a match, looping | **real** — 17.5s loop | *fill in* | *fill in* |
+| `goal.wav` | goal | placeholder — needs net ripple + cheer | — | — |
+| `save.wav` | keeper saves | placeholder — gloves on ball + reaction | — | — |
+| `miss.wav` | wide or over | placeholder — crowd "ooooh" | — | — |
+| `blocked.wav` | hits the pitch invader | placeholder — dull thud, ideally an "oof" | — | — |
+| `taunt.wav` | keeper taunts | placeholder — mumbled chatter, no real words | — | — |
+| `mascot.wav` | badger appears | placeholder — something silly and short | — | — |
+| `chant.wav` | away end starts singing | placeholder — terrace chant, no real club | — | — |
+
+**The four real files have no source or licence recorded.** Fill those in before
+any release — a row with a blank licence is a row that must not ship.
 
 The research doc argues `miss.wav` and `goal.wav` carry more of the comedy than
 any animation does, so they are the two worth spending real effort on.
 
 ## Format
 
-WAV, mono, 22050 Hz. WAV because Android's ExoPlayer handles it and we can
-generate it without a third-party encoder. **m4a/AAC is fine too and smaller** —
-if the replacements come as m4a, change the extensions in
-[`src/audio/sounds.ts`](../../src/audio/sounds.ts) and nothing else needs to move.
+WAV or mp3, both work. The placeholders are WAV only because that is what can be
+generated without a third-party encoder.
+
+The real files came in at 256 kbps, 44.1/48 kHz stereo. That is CD-quality for a
+phone speaker playing a 0.8-second thud — **re-encoding effects to mono 128 kbps
+would roughly quarter them** with no audible loss on a phone. Not urgent, but the
+two loops are ~1 MB of the bundle between them and that is the easy win when APK
+size starts to matter.
 
 Keep effects under about half a second. `taunt`, `mascot` and `chant` fire at the
 start of a round and will overlap the player thinking; anything long gets annoying

@@ -26,14 +26,17 @@ type Screen =
 function Game() {
   const { t } = useI18n();
   const { names, rename } = useKeeperNames();
-  const { setMusicActive } = useSfx();
+  const { setMusicActive, setAmbienceActive } = useSfx();
   const [screen, setScreen] = useState<Screen>({ kind: "home" });
 
-  // Music plays in the menus and stops the moment a shootout starts. The result
-  // screen counts as a menu — it is where you sit and decide to go again.
+  // Music plays in the menus and stops the moment a shootout starts; stadium
+  // ambience does the exact opposite. The result screen counts as a menu — it is
+  // where you sit and decide to go again.
   useEffect(() => {
-    setMusicActive(screen.kind !== "match");
-  }, [screen.kind, setMusicActive]);
+    const inMatch = screen.kind === "match";
+    setMusicActive(!inMatch);
+    setAmbienceActive(inMatch);
+  }, [screen.kind, setMusicActive, setAmbienceActive]);
 
   const startMatch = useCallback(
     (mode: MatchMode, keeper: KeeperArchetype, players: [string, string]) => {

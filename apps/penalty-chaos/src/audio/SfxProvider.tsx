@@ -9,7 +9,15 @@ import {
 } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { setAudioModeAsync, useAudioPlayer, type AudioPlayer } from "expo-audio";
-import { MUSIC_SOURCE, MUSIC_VOLUME, SFX_SOURCES, SFX_VOLUME, type SfxId } from "./sounds";
+import {
+  AMBIENCE_SOURCE,
+  AMBIENCE_VOLUME,
+  MUSIC_SOURCE,
+  MUSIC_VOLUME,
+  SFX_SOURCES,
+  SFX_VOLUME,
+  type SfxId,
+} from "./sounds";
 
 /**
  * Sound effects.
@@ -38,6 +46,8 @@ type SfxValue = {
    * this module has no idea what screens exist.
    */
   setMusicActive: (active: boolean) => void;
+  /** Stadium ambience. The inverse of the music: on in a match, off in menus. */
+  setAmbienceActive: (active: boolean) => void;
 };
 
 const SfxContext = createContext<SfxValue | null>(null);
@@ -53,9 +63,11 @@ export function SfxProvider({ children }: { children: ReactNode }) {
   const chant = useAudioPlayer(SFX_SOURCES.chant);
   const whistle = useAudioPlayer(SFX_SOURCES.whistle);
   const music = useAudioPlayer(MUSIC_SOURCE);
+  const ambience = useAudioPlayer(AMBIENCE_SOURCE);
 
   const [muted, setMutedState] = useState(false);
   const [musicActive, setMusicActive] = useState(false);
+  const [ambienceActive, setAmbienceActive] = useState(false);
 
   const players = useMemo<Record<SfxId, AudioPlayer>>(
     () => ({ kick, goal, save, miss, blocked, taunt, mascot, chant, whistle }),
@@ -131,31 +143,30 @@ export function SfxProvider({ children }: { children: ReactNode }) {
     [players, muted],
   );
 
-  // One long file on repeat, gated by both the screen and the mute toggle.
+  // Two long files on repeat, each gated by a screen and by the mute toggle.
   // `loop` has to be set on the player itself; there is no per-play option.
   useEffect(() => {
     music.loop = true;
     music.volume = MUSIC_VOLUME;
-  }, [music]);
+    ambience.loop = true;
+    ambience.volume = AMBIENCE_VOLUME;
+  }, [music, ambience]);
 
   useEffect(() => {
-    if (musicActive && !muted) {
+    const toggle = (player: AudioPlayer, active: boolean, label: string) => {
       try {
-        music.play();
+        if (active && !muted) player.play();
+        else player.pause();
       } catch (error) {
-        if (__DEV__) console.warn("[music] play failed", error);
+        if (__DEV__) console.warn(`[${label}] toggle failed`, error);
       }
-    } else {
-      try {
-        music.pause();
-      } catch {
-        // Pausing a player that never started is not worth reporting.
-      }
-    }
-  }, [music, musicActive, muted]);
+    };
+    toggle(music, musicActive, "music");
+    toggle(ambience, ambienceActive, "ambience");
+  }, [music, ambience, musicActive, ambienceActive, muted]);
 
   const value = useMemo<SfxValue>(
-    () => ({ play, muted, setMuted, setMusicActive }),
+    () => ({ play, muted, setMuted, setMusicActive, setAmbienceActive }),
     [play, muted, setMuted],
   );
 
