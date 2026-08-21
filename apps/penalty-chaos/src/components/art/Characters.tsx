@@ -21,7 +21,7 @@ type Size = { width: number; height: number };
  */
 export function PitchInvader({ width, height }: Size) {
   return (
-    <Svg width={width} height={height} viewBox="0 0 54 84">
+    <Svg width={width} height={height} viewBox="0 0 74 84">
       {/* Scarf, trailing behind him */}
       <Path
         d="M22 30 C 10 26, 6 34, 0 30"
@@ -73,10 +73,19 @@ export function PitchInvader({ width, height }: Size) {
       />
       <Circle cx={44} cy={20} r={4} fill="#d9a074" />
       <Circle cx={13} cy={54} r={4} fill="#d9a074" />
-      {/* The sign, straight off the banner art. */}
-      <G transform="rotate(-12 46 14)">
-        <Rect x={30} y={2} width={34} height={19} rx={3} fill="#dc2626" stroke="#7f1d1d" strokeWidth={1.5} />
-        <SvgText x={47} y={16} fontSize={11} fontWeight="bold" fill="#fde68a" textAnchor="middle">
+      {/* The sign, straight off the banner art. Sits inside the widened box. */}
+      <G transform="rotate(-12 51 14)">
+        <Rect
+          x={34}
+          y={4}
+          width={34}
+          height={19}
+          rx={3}
+          fill="#dc2626"
+          stroke="#7f1d1d"
+          strokeWidth={1.5}
+        />
+        <SvgText x={51} y={18} fontSize={11} fontWeight="bold" fill="#fde68a" textAnchor="middle">
           KAOS!
         </SvgText>
       </G>
@@ -128,7 +137,8 @@ export function Ball({ width, height }: Size) {
  */
 export function Steward({ width, height }: Size) {
   return (
-    <Svg width={width} height={height} viewBox="0 0 54 84">
+    <Svg width={width} height={height} viewBox="0 0 74 84">
+      <G transform="translate(10 0)">
       {/* Legs mid-stride */}
       <Rect x={21} y={52} width={7} height={26} rx={3.5} fill="#1f2937" transform="rotate(22 24 54)" />
       <Rect x={29} y={52} width={7} height={26} rx={3.5} fill="#1f2937" transform="rotate(-26 32 54)" />
@@ -147,6 +157,7 @@ export function Steward({ width, height }: Size) {
       <Circle cx={24.5} cy={17} r={1.5} fill="#1f2937" />
       <Circle cx={31.5} cy={17} r={1.5} fill="#1f2937" />
       <Rect x={24} y={21.5} width={8} height={1.8} rx={0.9} fill="#7f1d1d" />
+      </G>
     </Svg>
   );
 }

@@ -285,10 +285,13 @@ export function GoalScene({
       stewardRun.setValue(0);
       return;
     }
+    // Two beats rather than one sweep: the steward arrives, *then* both leave.
+    // At 900ms it read as a single blur rather than a catch, which threw away
+    // the only bit of a pitch invasion anyone actually enjoys.
     const run = Animated.timing(stewardRun, {
       toValue: 1,
-      duration: 900,
-      delay: 260,
+      duration: 2200,
+      delay: 420,
       easing: Easing.inOut(Easing.quad),
       useNativeDriver: true,
     });
@@ -497,7 +500,7 @@ export function GoalScene({
             style={[
               styles.absolute,
               {
-                left: geo.colCentre(effect.blockedCol) - geo.keeperHeight * 0.33,
+                left: geo.colCentre(effect.blockedCol) - geo.keeperHeight * 0.44,
                 top: geo.goalBottom - geo.keeperHeight * 1.02,
                 transform: [
                   {
@@ -507,8 +510,8 @@ export function GoalScene({
                         outputRange: [-geo.goalWidth * 0.05, geo.goalWidth * 0.05],
                       }),
                       stewardRun.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [0, geo.goalWidth * 0.75],
+                        inputRange: [0, 0.45, 1],
+                        outputRange: [0, 0, geo.goalWidth * 0.8],
                       }),
                     ),
                   },
@@ -516,31 +519,31 @@ export function GoalScene({
               },
             ]}
           >
-            <PitchInvader width={geo.keeperHeight * 0.66} height={geo.keeperHeight} />
+            <PitchInvader width={geo.keeperHeight * 0.88} height={geo.keeperHeight} />
           </Animated.View>
 
           <Animated.View
             style={[
               styles.absolute,
               {
-                left: geo.colCentre(effect.blockedCol) - geo.keeperHeight * 0.33,
+                left: geo.colCentre(effect.blockedCol) - geo.keeperHeight * 0.44,
                 top: geo.goalBottom - geo.keeperHeight * 1.02,
                 opacity: stewardRun.interpolate({
-                  inputRange: [0, 0.12, 1],
+                  inputRange: [0, 0.06, 1],
                   outputRange: [0, 1, 1],
                 }),
                 transform: [
                   {
                     translateX: stewardRun.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [-geo.goalWidth * 0.7, geo.goalWidth * 0.62],
+                      inputRange: [0, 0.45, 1],
+                      outputRange: [-geo.goalWidth * 0.75, -geo.goalWidth * 0.02, geo.goalWidth * 0.78],
                     }),
                   },
                 ],
               },
             ]}
           >
-            <Steward width={geo.keeperHeight * 0.66} height={geo.keeperHeight} />
+            <Steward width={geo.keeperHeight * 0.88} height={geo.keeperHeight} />
           </Animated.View>
         </>
       ) : null}
