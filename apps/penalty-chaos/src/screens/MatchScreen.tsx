@@ -5,9 +5,17 @@ import type { SfxId } from "../audio/sounds";
 import { DisruptionBanner } from "../components/DisruptionBanner";
 import { GoalScene, type ScenePhase } from "../components/GoalScene";
 import { Scoreboard } from "../components/Scoreboard";
+import { ShotMap } from "../components/ShotMap";
 import { effectFor, rollDisruption } from "../game/disruptions";
 import { aimFromDrag, resolveShot, setupRound, splitZone } from "../game/engine";
-import { currentPlayer, isOver, recordShot, zoneHistory, type MatchState } from "../game/match";
+import {
+  currentPlayer,
+  isOver,
+  recordShot,
+  shotsBy,
+  zoneHistory,
+  type MatchState,
+} from "../game/match";
 import type {
   Aim,
   DisruptionId,
@@ -176,7 +184,7 @@ export function MatchScreen({ keeper, keeperName, initialState, onFinish, onQuit
 
   const advance = useCallback(() => {
     if (!result) return;
-    const next = recordShot(state, result.kind, result.zone);
+    const next = recordShot(state, result.kind, result.zone, result.landing);
     setState(next);
     if (isOver(next)) {
       play("whistle");
@@ -225,6 +233,7 @@ export function MatchScreen({ keeper, keeperName, initialState, onFinish, onQuit
             phase={phase}
             aimPreview={showPreview}
             result={result}
+            taunt={taunt}
             onFlightEnd={onFlightEnd}
           />
         ) : null}
@@ -255,8 +264,15 @@ export function MatchScreen({ keeper, keeperName, initialState, onFinish, onQuit
                 ]}
               />
             </View>
-            <Text style={styles.hint}>{blindAim ? t.match.hintBlind : t.match.hintNormal}</Text>
-            {taunt ? <Text style={styles.taunt}>“{taunt}”</Text> : null}
+            {/*
+              The shot map sits where the taunt used to. It is the player's own
+              pattern shown back to them — which is the same data the keeper is
+              reading, so it is the counterplay to being read, not a spoiler.
+            */}
+            <View style={styles.readout}>
+              <ShotMap shots={shotsBy(state, currentPlayer(state))} />
+              <Text style={styles.hint}>{blindAim ? t.match.hintBlind : t.match.hintNormal}</Text>
+            </View>
           </>
         ) : (
           <Text style={styles.hint}> </Text>
@@ -307,8 +323,13 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   powerFill: { height: "100%", borderRadius: 4 },
-  hint: { ...text.muted, textAlign: "center" },
-  taunt: { color: palette.chalk, fontSize: 14, fontStyle: "italic", textAlign: "center" },
+  readout: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    width: "100%",
+  },
+  hint: { ...text.muted, flex: 1 },
   quit: { alignSelf: "center", padding: spacing.sm, marginBottom: spacing.xs },
   quitLabel: { color: palette.chalkDim, fontSize: 12, textDecorationLine: "underline" },
 });

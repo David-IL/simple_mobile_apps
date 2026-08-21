@@ -1,4 +1,4 @@
-import type { ShotResultKind, Zone } from "./types";
+import type { Aim, ShotResultKind, Zone } from "./types";
 
 export type Player = 0 | 1;
 export type MatchMode = "solo" | "duel";
@@ -10,6 +10,13 @@ export type ShotRecord = {
   kind: ShotResultKind;
   /** Null when the ball missed the goal entirely. */
   zone: Zone | null;
+  /**
+   * Exact landing point, kept alongside `zone` for the shot map. The keeper
+   * still reads *zones* — six buckets is what makes a pattern learnable — but
+   * showing the player their own six buckets back would hide the scatter, which
+   * is half of what they need to understand about power.
+   */
+  landing: Aim;
 };
 
 export type MatchState = {
@@ -80,11 +87,17 @@ export function recordShot(
   state: MatchState,
   kind: ShotResultKind,
   zone: Zone | null,
+  landing: Aim,
 ): MatchState {
   return {
     ...state,
-    shots: [...state.shots, { player: currentPlayer(state), kind, zone }],
+    shots: [...state.shots, { player: currentPlayer(state), kind, zone, landing }],
   };
+}
+
+/** This player's shots, oldest first — the shot map's input. */
+export function shotsBy(state: MatchState, player: Player): ShotRecord[] {
+  return state.shots.filter((shot) => shot.player === player);
 }
 
 /**

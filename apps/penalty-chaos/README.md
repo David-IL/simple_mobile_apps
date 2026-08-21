@@ -36,7 +36,7 @@ src/game/       pure logic, no React, no copy, no colours — engine, keeper
 src/i18n/       en + nb message bundles, typed so a gap is a compile error
 src/audio/      sound roster + SfxProvider
 src/state/      AsyncStorage-backed keeper renaming
-src/components/ GoalScene (the pitch), Scoreboard, DisruptionBanner
+src/components/ GoalScene (the pitch), Scoreboard, DisruptionBanner, ShotMap
 src/components/art/  SVG figures + keeperLooks (build, shirt, squad number)
 src/screens/    Home → Setup → Match → Result
 ```
@@ -61,6 +61,14 @@ is what makes the fairness properties assertable rather than vibes.
 4. **No real people.** Every keeper is invented. Players may rename them, but that name lives
    on the device and never appears on a result card. See
    [ADR 8](../../docs/adr/0008-no-real-person-likenesses-or-club-ip.md).
+
+One more, added after the taunt moved into a speech bubble:
+
+5. **Nothing but the keeper's lean may signal where he is going.** The taunt
+   bubble is anchored to his *resting* position, not his animated one — a bubble
+   that tracked him would be a second, larger, easier-to-read tell, and rule 2
+   would stop meaning anything. Same reason the bubble lives above the crossbar
+   rather than over the goal: the goal mouth is the play surface.
 
 Two seams worth not breaking:
 

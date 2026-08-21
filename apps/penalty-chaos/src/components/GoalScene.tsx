@@ -22,12 +22,25 @@ type Props = {
   /** Live drag preview. Null while not dragging, or when the sun is in your eyes. */
   aimPreview: Aim | null;
   result: ShotResult | null;
+  /** The keeper's line this round, or null if he has nothing to say. */
+  taunt: string | null;
   onFlightEnd: () => void;
 };
 
 const GOAL_WIDTH_RATIO = 0.88;
-const GOAL_HEIGHT_RATIO = 0.5;
+const GOAL_HEIGHT_RATIO = 0.47;
+/**
+ * Headroom above the crossbar, as a fraction of scene height. The keeper's name
+ * and his taunt bubble both live up here, in the crowd and sky that were being
+ * drawn behind them anyway.
+ *
+ * It is reserved permanently rather than made room for when a taunt appears:
+ * a goal that shifts position the moment the keeper says something would be
+ * far worse than a slightly smaller goal.
+ */
+const HEADROOM_RATIO = 0.23;
 const BALL_SIZE = 24;
+const BUBBLE_WIDTH = 176;
 const FLIGHT_MS = 520;
 
 function directionOf(col: ZoneCol): Direction {
@@ -41,7 +54,7 @@ function useGeometry(width: number, height: number) {
     const goalWidth = width * GOAL_WIDTH_RATIO;
     const goalHeight = height * GOAL_HEIGHT_RATIO;
     const goalLeft = (width - goalWidth) / 2;
-    const goalTop = height * 0.14;
+    const goalTop = height * HEADROOM_RATIO;
     return {
       goalWidth,
       goalHeight,
@@ -144,6 +157,7 @@ export function GoalScene({
   phase,
   aimPreview,
   result,
+  taunt,
   onFlightEnd,
 }: Props) {
   const geo = useGeometry(width, height);
@@ -445,9 +459,33 @@ export function GoalScene({
         <Ball width={BALL_SIZE} height={BALL_SIZE} />
       </Animated.View>
 
-      <Text style={[styles.keeperName, { top: geo.goalTop - 22, width }]} numberOfLines={1}>
+      <Text style={[styles.keeperName, { top: geo.goalTop - 26, width }]} numberOfLines={1}>
         {keeperName}
       </Text>
+
+      {/*
+        Anchored to the keeper's *resting* position, never his lean.
+        Deliberate: rule 2 makes the lean the only honest signal, and a bubble
+        that tracked him would be a second, larger, easier-to-read tell. Hidden
+        once the shot is away, so it never competes with the ball.
+      */}
+      {taunt && phase === "aiming" ? (
+        <View
+          style={[
+            styles.bubble,
+            {
+              left: Math.max(8, Math.min(width - 8 - BUBBLE_WIDTH, restingKeeper.x - BUBBLE_WIDTH / 2)),
+              bottom: height - geo.goalTop + 12,
+            },
+          ]}
+          pointerEvents="none"
+        >
+          <Text style={styles.bubbleText} numberOfLines={3}>
+            {taunt}
+          </Text>
+          <View style={styles.bubbleTail} />
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -468,9 +506,34 @@ const styles = StyleSheet.create({
     position: "absolute",
     textAlign: "center",
     color: palette.chalk,
-    fontSize: 12,
+    fontSize: 17,
     fontWeight: "800",
-    letterSpacing: 1.4,
+    letterSpacing: 1.1,
+  },
+  bubble: {
+    position: "absolute",
+    width: BUBBLE_WIDTH,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 12,
+    backgroundColor: "rgba(248,250,252,0.94)",
+  },
+  bubbleText: {
+    color: "#0f172a",
+    fontSize: 12,
+    lineHeight: 15,
+    fontStyle: "italic",
+    textAlign: "center",
+  },
+  bubbleTail: {
+    position: "absolute",
+    bottom: -5,
+    alignSelf: "center",
+    width: 12,
+    height: 12,
+    backgroundColor: "rgba(248,250,252,0.94)",
+    transform: [{ rotate: "45deg" }],
+    borderRadius: 2,
   },
   spot: {
     position: "absolute",

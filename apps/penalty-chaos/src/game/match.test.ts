@@ -10,14 +10,16 @@ import {
   zoneHistory,
   type MatchState,
 } from "./match";
-import type { ShotResultKind, Zone } from "./types";
+import type { Aim, ShotResultKind, Zone } from "./types";
 
 const players: [string, string] = ["A", "B"];
+/** The exact landing point does not affect any rule under test. */
+const LANDING: Aim = { x: 0, y: 0.3 };
 
 /** Play a run of shots, alternating exactly as the match rules say to. */
 function play(state: MatchState, kinds: ShotResultKind[], zone: Zone = "left-low"): MatchState {
   return kinds.reduce(
-    (current, kind) => recordShot(current, kind, kind === "missed" ? null : zone),
+    (current, kind) => recordShot(current, kind, kind === "missed" ? null : zone, LANDING),
     state,
   );
 }
@@ -40,9 +42,9 @@ describe("duel", () => {
   it("alternates takers", () => {
     let state = newMatch("duel", players);
     expect(currentPlayer(state)).toBe(0);
-    state = recordShot(state, "goal", "left-low");
+    state = recordShot(state, "goal", "left-low", LANDING);
     expect(currentPlayer(state)).toBe(1);
-    state = recordShot(state, "saved", "left-low");
+    state = recordShot(state, "saved", "left-low", LANDING);
     expect(currentPlayer(state)).toBe(0);
   });
 
@@ -99,11 +101,11 @@ describe("duel", () => {
     expect(isOver(state)).toBe(false);
 
     // A scores: still not over, B has not answered yet.
-    state = recordShot(state, "goal", "left-low");
+    state = recordShot(state, "goal", "left-low", LANDING);
     expect(isOver(state)).toBe(false);
 
     // B misses: now the pair is complete and A has won it.
-    state = recordShot(state, "saved", "left-low");
+    state = recordShot(state, "saved", "left-low", LANDING);
     expect(isOver(state)).toBe(true);
     expect(winner(state)).toBe(0);
   });
@@ -112,17 +114,17 @@ describe("duel", () => {
 describe("zoneHistory", () => {
   it("keeps only this player's shots, in order", () => {
     let state = newMatch("duel", players);
-    state = recordShot(state, "goal", "left-low");
-    state = recordShot(state, "goal", "right-high");
-    state = recordShot(state, "saved", "centre-low");
+    state = recordShot(state, "goal", "left-low", LANDING);
+    state = recordShot(state, "goal", "right-high", LANDING);
+    state = recordShot(state, "saved", "centre-low", LANDING);
     expect(zoneHistory(state, 0)).toEqual(["left-low", "centre-low"]);
     expect(zoneHistory(state, 1)).toEqual(["right-high"]);
   });
 
   it("drops misses — a shot into row Z says nothing about placement", () => {
     let state = newMatch("solo", players);
-    state = recordShot(state, "goal", "left-low");
-    state = recordShot(state, "missed", null);
+    state = recordShot(state, "goal", "left-low", LANDING);
+    state = recordShot(state, "missed", null, LANDING);
     expect(zoneHistory(state, 0)).toEqual(["left-low"]);
   });
 });
