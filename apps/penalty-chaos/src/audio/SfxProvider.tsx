@@ -9,7 +9,7 @@ import {
 } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { setAudioModeAsync, useAudioPlayer, type AudioPlayer } from "expo-audio";
-import { SFX_SOURCES, SFX_VOLUME, type SfxId } from "./sounds";
+import { MUSIC_SOURCE, MUSIC_VOLUME, SFX_SOURCES, SFX_VOLUME, type SfxId } from "./sounds";
 
 /**
  * Sound effects.
@@ -32,6 +32,12 @@ type SfxValue = {
   play: (id: SfxId) => void;
   muted: boolean;
   setMuted: (muted: boolean) => void;
+  /**
+   * Turn the menu loop on or off. Called with `true` on the menu screens and
+   * `false` in a match — the caller decides what counts as "in play", because
+   * this module has no idea what screens exist.
+   */
+  setMusicActive: (active: boolean) => void;
 };
 
 const SfxContext = createContext<SfxValue | null>(null);
@@ -44,21 +50,28 @@ export function SfxProvider({ children }: { children: ReactNode }) {
   const blocked = useAudioPlayer(SFX_SOURCES.blocked);
   const taunt = useAudioPlayer(SFX_SOURCES.taunt);
   const mascot = useAudioPlayer(SFX_SOURCES.mascot);
+  const chant = useAudioPlayer(SFX_SOURCES.chant);
   const whistle = useAudioPlayer(SFX_SOURCES.whistle);
+  const music = useAudioPlayer(MUSIC_SOURCE);
 
   const [muted, setMutedState] = useState(false);
+  const [musicActive, setMusicActive] = useState(false);
 
   const players = useMemo<Record<SfxId, AudioPlayer>>(
-    () => ({ kick, goal, save, miss, blocked, taunt, mascot, whistle }),
-    [kick, goal, save, miss, blocked, taunt, mascot, whistle],
+    () => ({ kick, goal, save, miss, blocked, taunt, mascot, chant, whistle }),
+    [kick, goal, save, miss, blocked, taunt, mascot, chant, whistle],
   );
 
   useEffect(() => {
-    // Respect the phone's ringer switch. A football crowd erupting from a
-    // silenced phone in a classroom is exactly the wrong first impression, and
-    // this app's whole audience is children with phones in their pockets.
-    void setAudioModeAsync({ playsInSilentMode: false }).catch(() => {
-      // Non-fatal: worst case the platform default applies.
+    // `playsInSilentMode: true` on purpose, after getting this wrong once.
+    //
+    // The first version set it to false so the app would respect the phone's
+    // ringer switch. That sounds polite and is actually a bug: a player who has
+    // explicitly set Sound → On in the app gets silence with no explanation,
+    // and no way to work out why from inside the game. The in-app toggle is the
+    // consent mechanism; the OS switch should not silently override it.
+    void setAudioModeAsync({ playsInSilentMode: true }).catch((error: unknown) => {
+      if (__DEV__) console.warn("[sfx] setAudioModeAsync failed", error);
     });
   }, []);
 
@@ -76,10 +89,13 @@ export function SfxProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  // Volume is applied at play time rather than only here. Setting it in an
+  // effect at mount can land before the player has finished loading, in which
+  // case the native side may never pick it up — which looks exactly like
+  // "sound is broken".
   useEffect(() => {
     for (const id of Object.keys(players) as SfxId[]) {
-      const player = players[id];
-      player.volume = muted ? 0 : SFX_VOLUME[id];
+      players[id].volume = muted ? 0 : SFX_VOLUME[id];
     }
   }, [players, muted]);
 
@@ -95,19 +111,53 @@ export function SfxProvider({ children }: { children: ReactNode }) {
       if (muted) return;
       const player = players[id];
       try {
+        // Re-apply volume here, not just in the mount effect — see above.
+        player.volume = SFX_VOLUME[id];
         // seekTo is async, but the docs' own quick-replay pattern does not await
         // it — waiting a frame for a 150ms effect would be worse than the seek
         // occasionally landing late.
         void player.seekTo(0);
         player.play();
-      } catch {
-        // A sound failing is never worth interrupting a game for.
+        if (__DEV__) {
+          console.log(`[sfx] ${id} loaded=${player.isLoaded} vol=${player.volume}`);
+        }
+      } catch (error) {
+        // A sound failing is never worth interrupting a game for, but it should
+        // not vanish either — silent catches are how "no sound" became hard to
+        // diagnose the first time.
+        if (__DEV__) console.warn(`[sfx] ${id} failed`, error);
       }
     },
     [players, muted],
   );
 
-  const value = useMemo<SfxValue>(() => ({ play, muted, setMuted }), [play, muted, setMuted]);
+  // One long file on repeat, gated by both the screen and the mute toggle.
+  // `loop` has to be set on the player itself; there is no per-play option.
+  useEffect(() => {
+    music.loop = true;
+    music.volume = MUSIC_VOLUME;
+  }, [music]);
+
+  useEffect(() => {
+    if (musicActive && !muted) {
+      try {
+        music.play();
+      } catch (error) {
+        if (__DEV__) console.warn("[music] play failed", error);
+      }
+    } else {
+      try {
+        music.pause();
+      } catch {
+        // Pausing a player that never started is not worth reporting.
+      }
+    }
+  }, [music, musicActive, muted]);
+
+  const value = useMemo<SfxValue>(
+    () => ({ play, muted, setMuted, setMusicActive }),
+    [play, muted, setMuted],
+  );
 
   return <SfxContext.Provider value={value}>{children}</SfxContext.Provider>;
 }

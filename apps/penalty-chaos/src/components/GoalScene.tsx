@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { Animated, Easing, StyleSheet, Text, View } from "react-native";
 import Svg, { Line } from "react-native-svg";
 import { splitZone } from "../game/engine";
@@ -174,15 +174,32 @@ export function GoalScene({
     return { pose: "dive", direction: diveDirection };
   })();
 
+  /**
+   * Everything returns to its starting mark the instant a new round exists.
+   *
+   * Three things make this fiddly, and the first attempt only handled one:
+   * - `useLayoutEffect`, not `useEffect`, so the reset lands before paint. A
+   *   plain effect leaves one frame showing the keeper still at his last dive.
+   * - Keyed on `setup` rather than `phase`, so it fires once per round no
+   *   matter how the phases happened to transition.
+   * - `stopAnimation()` first, or a dive tween still settling will keep writing
+   *   to the value after the reset and drag him back off-centre.
+   *
+   * It matters because a keeper who starts off-centre reads as a tell, and it
+   * is really just residue from the previous shot — false information, which
+   * breaks the rule the whole design rests on.
+   */
+  useLayoutEffect(() => {
+    keeperMove.stopAnimation(() => keeperMove.setValue({ x: 0, y: 0 }));
+    keeperMove.setValue({ x: 0, y: 0 });
+    ball.stopAnimation();
+    ball.setValue({ x: 0, y: 0 });
+    ballScale.setValue(1);
+    ballSpin.setValue(0);
+  }, [setup, keeperMove, ball, ballScale, ballSpin]);
+
   useEffect(() => {
     if (phase !== "aiming") return;
-
-    // Snap back to the middle of the goal before leaning anywhere. Without this
-    // the keeper starts each shot wherever his last dive left him and slides
-    // across, which the player reads as a tell — except it is residue from the
-    // previous shot, so it is *false* information. That breaks the rule the
-    // whole design rests on: the telegraph must be honest.
-    keeperMove.setValue({ x: 0, y: 0 });
 
     const lean = keeperTell ? geo.zoneCentre(keeperTell) : restingKeeper;
     const strength = 0.3;
@@ -196,13 +213,6 @@ export function GoalScene({
       useNativeDriver: true,
     }).start();
   }, [phase, keeperTell, geo, keeperMove, restingKeeper.x, restingKeeper.y]);
-
-  useEffect(() => {
-    if (phase !== "aiming") return;
-    ball.setValue({ x: 0, y: 0 });
-    ballScale.setValue(1);
-    ballSpin.setValue(0);
-  }, [phase, setup, ball, ballScale, ballSpin]);
 
   // The badger never stops dancing. It is the only thing in the scene that
   // animates on its own, because that is the entire joke.

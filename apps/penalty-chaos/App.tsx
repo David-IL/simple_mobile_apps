@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
@@ -8,7 +8,7 @@ import { ResultScreen } from "./src/screens/ResultScreen";
 import { SetupScreen } from "./src/screens/SetupScreen";
 import { newMatch, type MatchMode, type MatchState } from "./src/game/match";
 import type { KeeperArchetype } from "./src/game/types";
-import { SfxProvider } from "./src/audio/SfxProvider";
+import { SfxProvider, useSfx } from "./src/audio/SfxProvider";
 import { I18nProvider, useI18n } from "./src/i18n";
 import { displayName, useKeeperNames } from "./src/state/keeperNames";
 import { palette } from "./src/theme";
@@ -26,7 +26,14 @@ type Screen =
 function Game() {
   const { t } = useI18n();
   const { names, rename } = useKeeperNames();
+  const { setMusicActive } = useSfx();
   const [screen, setScreen] = useState<Screen>({ kind: "home" });
+
+  // Music plays in the menus and stops the moment a shootout starts. The result
+  // screen counts as a menu — it is where you sit and decide to go again.
+  useEffect(() => {
+    setMusicActive(screen.kind !== "match");
+  }, [screen.kind, setMusicActive]);
 
   const startMatch = useCallback(
     (mode: MatchMode, keeper: KeeperArchetype, players: [string, string]) => {

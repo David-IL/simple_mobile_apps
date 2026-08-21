@@ -19,6 +19,7 @@ export const SFX_IDS = [
   "blocked",
   "taunt",
   "mascot",
+  "chant",
   "whistle",
 ] as const;
 
@@ -33,9 +34,22 @@ export const SFX_SOURCES: Record<SfxId, number> = {
   blocked: require("../../assets/sfx/blocked.wav"),
   taunt: require("../../assets/sfx/taunt.wav"),
   mascot: require("../../assets/sfx/mascot.wav"),
+  chant: require("../../assets/sfx/chant.wav"),
   whistle: require("../../assets/sfx/whistle.wav"),
 };
 /* eslint-enable @typescript-eslint/no-require-imports */
+
+/* eslint-disable @typescript-eslint/no-require-imports */
+/**
+ * The menu loop. Separate from the effects roster because it is played
+ * differently: one long file, `loop = true`, started and stopped by which
+ * screen you are on rather than by a game event.
+ */
+export const MUSIC_SOURCE: number = require("../../assets/sfx/menu-music.wav");
+/* eslint-enable @typescript-eslint/no-require-imports */
+
+/** Music sits under the effects so a taunt still cuts through it. */
+export const MUSIC_VOLUME = 0.32;
 
 /** Per-sound levels, so one loud asset does not force a rebalance of the rest. */
 export const SFX_VOLUME: Record<SfxId, number> = {
@@ -46,5 +60,6 @@ export const SFX_VOLUME: Record<SfxId, number> = {
   blocked: 0.9,
   taunt: 0.55,
   mascot: 0.6,
+  chant: 0.7,
   whistle: 0.7,
 };

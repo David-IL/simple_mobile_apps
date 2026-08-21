@@ -95,6 +95,38 @@ export function SetupScreen({ mode, names, onRename, onStart, onBack }: Props) {
     <View style={styles.screen}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <Text style={text.label}>{mode === "duel" ? t.setup.modeDuel : t.setup.modeSolo}</Text>
+
+        {/*
+          Takers first in two-player mode: you sort out who is playing before you
+          argue about which keeper to face, and the names are the thing the
+          second player wants to change the moment the phone is handed over.
+        */}
+        {mode === "duel" ? (
+          <>
+            <Text style={text.title}>{t.setup.takers}</Text>
+            <View style={styles.panel}>
+              <TextInput
+                style={styles.input}
+                value={playerOne}
+                onChangeText={setPlayerOne}
+                placeholder={t.setup.playerOne}
+                placeholderTextColor={palette.chalkDim}
+                maxLength={14}
+                autoCorrect={false}
+              />
+              <TextInput
+                style={styles.input}
+                value={playerTwo}
+                onChangeText={setPlayerTwo}
+                placeholder={t.setup.playerTwo}
+                placeholderTextColor={palette.chalkDim}
+                maxLength={14}
+                autoCorrect={false}
+              />
+            </View>
+          </>
+        ) : null}
+
         <Text style={text.title}>{t.setup.pickKeeper}</Text>
 
         <View style={styles.list}>
@@ -125,29 +157,6 @@ export function SetupScreen({ mode, names, onRename, onStart, onBack }: Props) {
           <Text style={text.muted}>{t.setup.renameNote(shippedName)}</Text>
         </View>
 
-        {mode === "duel" ? (
-          <View style={styles.panel}>
-            <Text style={text.label}>{t.setup.takers}</Text>
-            <TextInput
-              style={styles.input}
-              value={playerOne}
-              onChangeText={setPlayerOne}
-              placeholder={t.setup.playerOne}
-              placeholderTextColor={palette.chalkDim}
-              maxLength={14}
-              autoCorrect={false}
-            />
-            <TextInput
-              style={styles.input}
-              value={playerTwo}
-              onChangeText={setPlayerTwo}
-              placeholder={t.setup.playerTwo}
-              placeholderTextColor={palette.chalkDim}
-              maxLength={14}
-              autoCorrect={false}
-            />
-          </View>
-        ) : null}
       </ScrollView>
 
       <View style={styles.footer}>

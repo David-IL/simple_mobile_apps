@@ -1,13 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { LayoutChangeEvent, PanResponder, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSfx } from "../audio/SfxProvider";
+import type { SfxId } from "../audio/sounds";
 import { DisruptionBanner } from "../components/DisruptionBanner";
 import { GoalScene, type ScenePhase } from "../components/GoalScene";
 import { Scoreboard } from "../components/Scoreboard";
 import { effectFor, rollDisruption } from "../game/disruptions";
 import { aimFromDrag, resolveShot, setupRound, splitZone } from "../game/engine";
 import { currentPlayer, isOver, recordShot, zoneHistory, type MatchState } from "../game/match";
-import type { Aim, KeeperArchetype, RoundSetup, ShotResult } from "../game/types";
+import type {
+  Aim,
+  DisruptionId,
+  KeeperArchetype,
+  RoundSetup,
+  ShotResult,
+} from "../game/types";
 import { useI18n } from "../i18n";
 import { outcomeColour, palette, spacing, text } from "../theme";
 
@@ -47,6 +54,16 @@ const OUTCOME_SFX = {
   missed: "miss",
   blocked: "blocked",
 } as const;
+
+/**
+ * Disruptions that announce themselves. Only the ones whose joke is audible —
+ * a crosswind and a low sun are things you see, not hear, and a sound for every
+ * gag would turn the start of every other round into a noise.
+ */
+const DISRUPTION_SFX: Partial<Record<DisruptionId, SfxId>> = {
+  mascot: "mascot",
+  "away-end": "chant",
+};
 
 export function MatchScreen({ keeper, keeperName, initialState, onFinish, onQuit }: Props) {
   const { t } = useI18n();
@@ -136,9 +153,12 @@ export function MatchScreen({ keeper, keeperName, initialState, onFinish, onQuit
     if (landed) play(OUTCOME_SFX[landed.kind]);
   }, [play]);
 
-  // Round-opening flourishes: the keeper starting up, and the badger arriving.
+  // Round-opening flourishes. A disruption that has its own sound takes
+  // precedence over the taunt, so the two never talk over each other.
   useEffect(() => {
-    if (round.setup.disruption?.id === "mascot") play("mascot");
+    const disruptionId = round.setup.disruption?.id;
+    const disruptionSfx = disruptionId ? DISRUPTION_SFX[disruptionId] : undefined;
+    if (disruptionSfx) play(disruptionSfx);
     else if (round.tauntRoll !== null) play("taunt");
   }, [round, play]);
 
