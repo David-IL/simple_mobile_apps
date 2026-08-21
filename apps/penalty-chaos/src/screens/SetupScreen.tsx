@@ -160,7 +160,12 @@ export function SetupScreen({ mode, names, onRename, onStart, onBack }: Props) {
       </ScrollView>
 
       <View style={styles.footer}>
-        <Button label={t.setup.start} onPress={start} />
+        <Button
+          label={t.setup.start}
+          onPress={start}
+          color={palette.brand}
+          labelColor={palette.brandInk}
+        />
         <Pressable onPress={onBack} style={styles.back} accessibilityRole="button">
           <Text style={styles.backLabel}>{t.setup.back}</Text>
         </Pressable>
@@ -183,14 +188,14 @@ const styles = StyleSheet.create({
     borderColor: palette.line,
     backgroundColor: palette.nightSoft,
   },
-  cardSelected: { borderColor: palette.accent, backgroundColor: "#16233a" },
+  cardSelected: { borderColor: palette.brand, backgroundColor: palette.brandWash },
   portrait: {
     width: 46,
     height: 60,
     alignItems: "center",
     justifyContent: "flex-end",
     borderRadius: 10,
-    backgroundColor: "rgba(15,23,42,0.6)",
+    backgroundColor: "rgba(12,9,17,0.6)",
   },
   cardBody: { flex: 1, gap: 2 },
   cardName: { color: palette.chalk, fontSize: 15, fontWeight: "700" },

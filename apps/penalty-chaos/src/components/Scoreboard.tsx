@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
   },
   side: { flex: 1, alignItems: "center", gap: 2 },
   name: { color: palette.chalkDim, fontSize: 12, fontWeight: "700" },
-  nameActive: { color: palette.accent },
+  nameActive: { color: palette.brand },
   score: { color: palette.chalk, fontSize: 28, fontWeight: "800" },
   dash: { color: palette.chalkDim, fontSize: 20, paddingHorizontal: spacing.sm },
   pips: { flexDirection: "row", gap: 4, marginTop: 2 },

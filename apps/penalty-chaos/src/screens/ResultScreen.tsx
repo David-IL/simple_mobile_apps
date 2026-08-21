@@ -124,7 +124,12 @@ export function ResultScreen({ state, keeper, onPlayAgain, onChangeKeeper }: Pro
       </ScrollView>
 
       <View style={styles.footer}>
-        <Button label={t.result.again} onPress={onPlayAgain} />
+        <Button
+          label={t.result.again}
+          onPress={onPlayAgain}
+          color={palette.brand}
+          labelColor={palette.brandInk}
+        />
         <Pressable onPress={onChangeKeeper} style={styles.link} accessibilityRole="button">
           <Text style={styles.linkLabel}>{t.result.differentKeeper}</Text>
         </Pressable>

@@ -97,8 +97,18 @@ export function HomeScreen({ onPick }: { onPick: (mode: MatchMode) => void }) {
       </View>
 
       <View style={styles.actions}>
-        <Button label={t.home.solo} onPress={() => onPick("solo")} />
-        <Button label={t.home.duel} onPress={() => onPick("duel")} />
+        <Button
+          label={t.home.solo}
+          onPress={() => onPick("solo")}
+          color={palette.brand}
+          labelColor={palette.brandInk}
+        />
+        <Button
+          label={t.home.duel}
+          onPress={() => onPick("duel")}
+          color={palette.brandDeep}
+          labelColor={palette.chalk}
+        />
 
         <SettingRow label={t.home.language}>
           {LOCALES.map((option) => (
@@ -158,8 +168,8 @@ const styles = StyleSheet.create({
     minWidth: 62,
     alignItems: "center",
   },
-  chipOn: { borderColor: palette.accent, backgroundColor: "#16233a" },
+  chipOn: { borderColor: palette.brand, backgroundColor: palette.brandWash },
   chipLabel: { color: palette.chalkDim, fontSize: 13, fontWeight: "600" },
-  chipLabelOn: { color: palette.accent },
+  chipLabelOn: { color: palette.brand },
   footnote: { ...text.muted, textAlign: "center" },
 });

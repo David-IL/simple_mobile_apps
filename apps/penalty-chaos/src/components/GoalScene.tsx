@@ -562,7 +562,7 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: 11,
     borderWidth: 2.5,
-    borderColor: palette.accent,
+    borderColor: palette.aim,
     backgroundColor: "rgba(56,189,248,0.22)",
   },
   aimTrack: {

@@ -259,7 +259,9 @@ export function MatchScreen({ keeper, keeperName, initialState, onFinish, onQuit
                   styles.powerFill,
                   {
                     width: `${Math.round((drag?.power ?? 0) * 100)}%`,
-                    backgroundColor: (drag?.power ?? 0) > 0.8 ? palette.save : palette.accent,
+                    // Red for the danger zone, not orange — orange is the
+                    // brand now, and a warning has to mean only one thing.
+                    backgroundColor: (drag?.power ?? 0) > 0.8 ? palette.miss : palette.aim,
                   },
                 ]}
               />
@@ -297,7 +299,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(11,18,32,0.82)",
+    backgroundColor: "rgba(20,16,28,0.86)",
     gap: spacing.sm,
     paddingHorizontal: spacing.xl,
   },

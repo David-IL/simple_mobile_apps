@@ -50,7 +50,7 @@ export function ShotMap({ shots, width = DEFAULT_WIDTH }: Props) {
           y={margin}
           width={frameWidth}
           height={frameHeight}
-          fill="rgba(15,23,42,0.55)"
+          fill="rgba(12,9,17,0.55)"
           stroke={palette.chalkDim}
           strokeWidth={1.5 * scale}
         />
