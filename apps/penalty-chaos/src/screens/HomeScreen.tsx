@@ -1,5 +1,12 @@
-import type { ReactNode } from "react";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { useCallback, useState, type ReactNode } from "react";
+import {
+  Image,
+  LayoutChangeEvent,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 import { Button } from "@repo/ui";
 import { useSfx } from "../audio/SfxProvider";
@@ -36,33 +43,36 @@ const BANNERS: Record<Locale, number> = {
 /* eslint-enable @typescript-eslint/no-require-imports */
 
 /**
- * Where the darkening starts, as a percentage of screen height.
- *
- * The controls sit directly on artwork, so they need something to sit *on*.
- * Starting below the wordmark keeps the title in clear air while giving the
- * buttons a readable ground — and it doubles as the soft transition that a hard
- * panel edge used to do badly.
+ * The artwork's own aspect ratio, read from the file rather than hardcoded, so
+ * a replacement of any shape drops straight in.
  */
-const SCRIM_START = 46;
+function aspectOf(source: number): number {
+  const meta = Image.resolveAssetSource(source) as { width?: number; height?: number } | null;
+  if (!meta?.width || !meta.height) return 1080 / 1935;
+  return meta.width / meta.height;
+}
 
-function Scrim() {
+/** How far the art dissolves into the page at its bottom edge, in points. */
+const FADE_HEIGHT = 150;
+
+function BottomFade() {
   return (
     <Svg
       width="100%"
-      height="100%"
+      height={FADE_HEIGHT}
       viewBox="0 0 100 100"
       preserveAspectRatio="none"
-      style={styles.fill}
+      style={styles.bottomFade}
       pointerEvents="none"
     >
       <Defs>
-        <LinearGradient id="scrim" x1="0" y1="0" x2="0" y2="1">
+        <LinearGradient id="artFade" x1="0" y1="0" x2="0" y2="1">
           <Stop offset="0" stopColor={palette.night} stopOpacity="0" />
-          <Stop offset="0.55" stopColor={palette.night} stopOpacity="0.72" />
-          <Stop offset="1" stopColor={palette.night} stopOpacity="0.97" />
+          <Stop offset="0.6" stopColor={palette.night} stopOpacity="0.7" />
+          <Stop offset="1" stopColor={palette.night} stopOpacity="1" />
         </LinearGradient>
       </Defs>
-      <Rect x="0" y={SCRIM_START} width="100" height={100 - SCRIM_START} fill="url(#scrim)" />
+      <Rect x="0" y="0" width="100" height="100" fill="url(#artFade)" />
     </Svg>
   );
 }
@@ -100,25 +110,40 @@ function SettingRow({ label, children }: { label: string; children: ReactNode })
 export function HomeScreen({ onPick }: { onPick: (mode: MatchMode) => void }) {
   const { t, locale, setLocale } = useI18n();
   const { muted, setMuted } = useSfx();
+  const [actionsHeight, setActionsHeight] = useState(0);
+
+  const onActionsLayout = useCallback((event: LayoutChangeEvent) => {
+    setActionsHeight(event.nativeEvent.layout.height);
+  }, []);
+
+  const banner = BANNERS[locale];
 
   return (
     <View style={styles.screen}>
       {/*
-        `cover` here, unlike the framed banner it replaces: the art is meant to
-        fill the screen, and the composition is centred, so the crop lands on sky
-        and crowd rather than on the wordmark.
+        The art is anchored to the *top of the controls*, not to the screen, and
+        overflows off the top of the screen instead of the bottom.
+
+        Letting it fill the whole screen put the three things that matter — the
+        taker, the keeper and the pitch invader — in the bottom third, which is
+        exactly where the buttons are. They live in the lower half of the
+        composition, so the only spare material is sky, and that is what gets
+        cropped. Measuring the controls rather than guessing an offset keeps this
+        right on any screen size and for any replacement artwork.
       */}
-      <Image
-        source={BANNERS[locale]}
-        style={styles.fill}
-        resizeMode="cover"
-        accessibilityRole="image"
-        accessibilityLabel={`${t.home.titleLine1} ${t.home.titleLine2}`}
-      />
-      <Scrim />
+      <View style={[styles.artLayer, { bottom: actionsHeight, aspectRatio: aspectOf(banner) }]}>
+        <Image
+          source={banner}
+          style={styles.art}
+          resizeMode="cover"
+          accessibilityRole="image"
+          accessibilityLabel={`${t.home.titleLine1} ${t.home.titleLine2}`}
+        />
+        <BottomFade />
+      </View>
 
       <View style={styles.content}>
-        <View style={styles.actions}>
+        <View style={styles.actions} onLayout={onActionsLayout}>
           <Button
             label={t.home.solo}
             onPress={() => onPick("solo")}
@@ -156,16 +181,11 @@ export function HomeScreen({ onPick }: { onPick: (mode: MatchMode) => void }) {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: palette.night },
-  fill: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    width: "100%",
-    height: "100%",
-  },
+  // overflow hidden so the art can run off the top of the screen and be clipped.
+  screen: { flex: 1, backgroundColor: palette.night, overflow: "hidden" },
+  artLayer: { position: "absolute", left: 0, right: 0, width: "100%" },
+  art: { width: "100%", height: "100%" },
+  bottomFade: { position: "absolute", left: 0, right: 0, bottom: 0 },
   // Controls hug the bottom; the artwork owns everything above them.
   content: { flex: 1, justifyContent: "flex-end" },
   actions: {
