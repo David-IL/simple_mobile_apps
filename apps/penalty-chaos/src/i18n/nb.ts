@@ -13,7 +13,7 @@ export const nb: Messages = {
     titleLine1: "Straffe",
     titleLine2: "Kaos",
     blurb:
-      "Fem straffer. Én keeper som snakker for mye og husker hvor du la den forrige. Innimellom løper onkelen til noen ut på banen.",
+      "Fem straffer. Én keeper som snakker for mye og husker hvor du la den forrige. Av og til stormer en tilfeldig onkel banen.",
     solo: "Alene mot keeper",
     duel: "To spillere, én telefon",
     footnote: "Ingen reklame. Ingen innlogging. Funker på bussen uten dekning.",
@@ -36,7 +36,7 @@ export const nb: Messages = {
 
   match: {
     toTake: (name) => `${name} skal ta den`,
-    hintNormal: "Dra oppover hvor som helst og slipp. Lengre = mer kraft, mindre presisjon.",
+    hintNormal: "Dra oppover hvor som helst og slipp. Lenger = mer kraft, mindre presisjon.",
     hintBlind: "Dra opp og slipp — ingen siktelinje denne gangen.",
     tapToContinue: "Trykk for å fortsette",
     giveUp: "Gi opp",
@@ -44,7 +44,7 @@ export const nb: Messages = {
     suddenDeath: "BRÅDØD",
     calmName: "Blikkstille",
     calmBrief: "Ingenting i veien. Ingen unnskyldninger.",
-    soloTaker: "Deg",
+    soloTaker: "Du",
   },
 
   verdict: { goal: "MÅL", saved: "REDDET", missed: "BOM", blocked: "BLOKKERT" },
@@ -93,7 +93,7 @@ export const nb: Messages = {
       name: "Skravlebøtta",
       blurb: "Holder aldri kjeft. Husker av og til å redde en.",
       taunts: [
-        "Fine sko. Fulgte skuddet med?",
+        "Fine sko. Fulgte det med et skudd?",
         "Venstre. Du går venstre. Du har et venstrefjes.",
         "Bestemora mi tar dem bedre.",
         "Jeg skal si deg hvor du går: ingen steder.",
@@ -120,7 +120,7 @@ export const nb: Messages = {
     },
     wall: {
       name: "Muren",
-      blurb: "Enorm. Får hånda på ting han ikke har noe i nærheten av å gjøre.",
+      blurb: "Enorm. Får hånda på ting han umulig burde nå.",
       taunts: ["Lykke til.", "Det finnes ingen luke.", "Du må opp i krysset."],
     },
     "mind-reader": {
@@ -137,11 +137,11 @@ export const nb: Messages = {
     },
     "pitch-invader": {
       name: "Banestormer",
-      brief: "Onkelen til noen har løpt ut på banen. Han sperrer den ene siden av målet.",
+      brief: "En tilfeldig onkel har løpt ut på banen. Han sperrer den ene siden av målet.",
     },
     "low-sun": {
       name: "Lavtstående sol",
-      brief: "Blender helt. Du mister siktelinja i det du begynner å dra.",
+      brief: "Blender helt. Du mister siktelinja idet du begynner å dra.",
     },
     "muddy-spot": {
       name: "Gjørmete straffemerke",
@@ -164,7 +164,7 @@ export const nb: Messages = {
     missWideRight: () => "Utenfor høyre stolpe.",
     blocked: ({ side }) => `Rett på fyren som står ${side}.`,
     saveGuessed: ({ keeper }) => `${keeper} gjettet riktig.`,
-    saveFingertips: ({ keeper }) => `Fingertuppene. ${keeper} rakk bort.`,
+    saveFingertips: ({ keeper }) => `Fingertuppene. ${keeper} fikk en hånd på den.`,
     goalCentreLow: () => "Frekt. Rett i midten.",
     goalCentreHigh: () => "Rett i midten, opp i taket.",
     goalCornerLow: () => "Lavt og hardt i hjørnet.",
