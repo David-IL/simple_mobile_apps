@@ -23,21 +23,24 @@ import { palette, spacing, text } from "../theme";
 const LANGUAGE_NAMES = { nb: nb.languageName, en: en.languageName } as const;
 
 /**
- * The title art, per language — a full-screen background rather than a banner.
+ * The title art, per language.
  *
- * TEMPORARY: `nb` points at the English artwork. Only the English vertical
- * version exists so far, and the old Norwegian art is landscape, which cannot be
- * used full-screen without cropping the wordmark away. So a Norwegian player
- * currently sees an English title. **This must not ship** — swap the line below
- * the moment `app-banner-vertical-no.jpg` exists.
+ * The wordmark is baked into these images, so the title does not come from
+ * src/i18n and a third language needs a third picture rather than a third
+ * string. Typing this as `Record<Locale, …>` is what keeps ADR 10's guarantee:
+ * add a locale and this fails to compile until the artwork exists.
  *
- * That the wordmark is baked into the image is exactly why this is awkward; see
- * assets/README.md. Typing the map as `Record<Locale, …>` still means adding a
- * third language fails the build rather than silently falling back.
+ * Note the limit of that guarantee, learned the hard way while only the English
+ * version existed — pointing two locales at the *same* real file compiles fine.
+ * The type stops a missing entry, not a wrong one.
+ *
+ * Both files must keep the same composition, because the layout crops from the
+ * top: the wordmark sits in the middle band and the players in the lower half,
+ * and only sky is spare.
  */
 /* eslint-disable @typescript-eslint/no-require-imports */
 const BANNERS: Record<Locale, number> = {
-  nb: require("../../assets/app-banner-vertical-en.jpg"),
+  nb: require("../../assets/app-banner-vertical-no.jpg"),
   en: require("../../assets/app-banner-vertical-en.jpg"),
 };
 /* eslint-enable @typescript-eslint/no-require-imports */
