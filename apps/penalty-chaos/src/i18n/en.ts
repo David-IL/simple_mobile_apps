@@ -6,8 +6,6 @@ export const en: Messages = {
   home: {
     titleLine1: "Penalty",
     titleLine2: "Chaos",
-    blurb:
-      "Five penalties. One keeper who talks too much and remembers where you put the last one. Occasionally, someone's uncle runs onto the pitch.",
     solo: "Solo shootout",
     duel: "Two players, one phone",
     footnote: "No ads. No accounts. Works on a coach with no signal.",

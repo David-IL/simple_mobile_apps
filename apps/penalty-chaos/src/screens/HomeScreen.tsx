@@ -93,7 +93,6 @@ export function HomeScreen({ onPick }: { onPick: (mode: MatchMode) => void }) {
             accessibilityLabel={`${t.home.titleLine1} ${t.home.titleLine2}`}
           />
         </View>
-        <Text style={[text.muted, styles.blurb]}>{t.home.blurb}</Text>
       </View>
 
       <View style={styles.actions}>
@@ -144,7 +143,6 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   banner: { width: "100%", height: "100%" },
-  blurb: { paddingHorizontal: spacing.lg },
   actions: {
     padding: spacing.xl,
     gap: spacing.md,

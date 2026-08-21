@@ -9,7 +9,8 @@ the run-up.
 Norwegian and English. Norwegian is the default on a Norwegian phone.
 
 Research doc: [docs/research/penalty-chaos.md](../../docs/research/penalty-chaos.md) ·
-Wireframes: [docs/design/penalty-chaos.excalidraw](../../docs/design/penalty-chaos.excalidraw)
+Wireframes: [docs/design/penalty-chaos.excalidraw](../../docs/design/penalty-chaos.excalidraw) ·
+Store listing draft: [store/listing.md](store/listing.md)
 
 ## Run
 
@@ -95,5 +96,7 @@ Two seams worth not breaking:
 - [ ] Sound *assets* — all 8 files are synthesised placeholders; see
       [assets/sfx/README.md](assets/sfx/README.md) for what each needs and the licence rules
 - [ ] App icon + splash (still the Expo default)
-- [ ] Play Store listing drafted — release restricted to Norway, see research doc §7
+- [x] Play Store listing drafted — [store/listing.md](store/listing.md); release
+      restricted to Norway per research doc §7, set in the Play Console
+- [ ] Screenshots and feature graphic for the listing
 - [ ] First EAS build (`eas build -p android --profile preview`)

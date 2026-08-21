@@ -12,8 +12,6 @@ export const nb: Messages = {
   home: {
     titleLine1: "Straffe",
     titleLine2: "Kaos",
-    blurb:
-      "Fem straffer. Én keeper som snakker for mye og husker hvor du la den forrige. Av og til stormer en tilfeldig onkel banen.",
     solo: "Alene mot keeper",
     duel: "To spillere, én telefon",
     footnote: "Ingen reklame. Ingen innlogging. Funker på bussen uten dekning.",

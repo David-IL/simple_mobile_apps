@@ -19,7 +19,6 @@ export type Messages = {
   home: {
     titleLine1: string;
     titleLine2: string;
-    blurb: string;
     solo: string;
     duel: string;
     footnote: string;
