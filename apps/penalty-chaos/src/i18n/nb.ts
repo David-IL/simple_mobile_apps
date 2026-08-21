@@ -41,6 +41,7 @@ export const nb: Messages = {
     hintNormal: "Dra oppover fra ballen og slipp for å skyte.",
     tapToContinue: "Trykk for å fortsette",
     giveUp: "Gi opp",
+    giveUpHint: "Hold inne for å avslutte omgangen",
     outOf: (total) => `av ${total}`,
     suddenDeath: "BRÅDØD",
     calmName: "Blikkstille",

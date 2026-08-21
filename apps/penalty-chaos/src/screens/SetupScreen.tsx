@@ -199,9 +199,19 @@ export function SetupScreen({ mode, names, onRename, onStart, onBack }: Props) {
           color={palette.brand}
           labelColor={palette.brandInk}
         />
-        <Pressable onPress={onBack} style={styles.back} accessibilityRole="button">
-          <Text style={styles.backLabel}>{t.setup.back}</Text>
-        </Pressable>
+        {/*
+          A full-width secondary button rather than a small underlined link.
+          Leaving setup costs nothing — no match is in progress and the names
+          are remembered — so there was never a reason to make it hard to hit.
+          It was small because it had been styled as an afterthought, and that
+          is not a safety measure, it is just hard to find.
+        */}
+        <Button
+          label={t.setup.back}
+          onPress={onBack}
+          color={palette.line}
+          labelColor={palette.chalk}
+        />
       </View>
     </View>
   );
@@ -273,6 +283,4 @@ const styles = StyleSheet.create({
     borderTopColor: palette.line,
     backgroundColor: palette.nightSoft,
   },
-  back: { alignSelf: "center", padding: spacing.sm },
-  backLabel: { color: palette.chalkDim, fontSize: 13, textDecorationLine: "underline" },
 });

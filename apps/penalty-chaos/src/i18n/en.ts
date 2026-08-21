@@ -35,6 +35,7 @@ export const en: Messages = {
     hintNormal: "Drag up from the ball and release to shoot.",
     tapToContinue: "Tap to continue",
     giveUp: "Give up",
+    giveUpHint: "Hold to abandon the shootout",
     outOf: (total) => `of ${total}`,
     suddenDeath: "SUDDEN DEATH",
     calmName: "Still night",

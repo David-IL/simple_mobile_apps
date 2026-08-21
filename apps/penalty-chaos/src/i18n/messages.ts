@@ -48,6 +48,7 @@ export type Messages = {
     hintNormal: string;
     tapToContinue: string;
     giveUp: string;
+    giveUpHint: string;
     outOf: (total: number) => string;
     suddenDeath: string;
     calmName: string;

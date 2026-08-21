@@ -4,6 +4,7 @@ import { useSfx } from "../audio/SfxProvider";
 import type { SfxId } from "../audio/sounds";
 import { DisruptionBanner } from "../components/DisruptionBanner";
 import { GoalScene, type ScenePhase } from "../components/GoalScene";
+import { HoldButton } from "../components/HoldButton";
 import { Scoreboard } from "../components/Scoreboard";
 import { ShotMap } from "../components/ShotMap";
 import { effectFor, rollDisruption } from "../game/disruptions";
@@ -287,9 +288,13 @@ export function MatchScreen({ keeper, keeperName, initialState, onFinish, onQuit
         )}
       </View>
 
-      <Pressable style={styles.quit} onPress={onQuit} accessibilityRole="button">
-        <Text style={styles.quitLabel}>{t.match.giveUp}</Text>
-      </Pressable>
+      <View style={styles.quit}>
+        <HoldButton
+          label={t.match.giveUp}
+          accessibilityHint={t.match.giveUpHint}
+          onHoldComplete={onQuit}
+        />
+      </View>
     </View>
   );
 }
@@ -333,6 +338,5 @@ const styles = StyleSheet.create({
   powerFill: { height: "100%", borderRadius: 4 },
   readout: { alignItems: "center", width: "100%" },
   hint: { ...text.muted, flex: 1 },
-  quit: { alignSelf: "center", padding: spacing.sm, marginBottom: spacing.xs },
-  quitLabel: { color: palette.chalkDim, fontSize: 12, textDecorationLine: "underline" },
+  quit: { paddingBottom: spacing.md, paddingTop: spacing.xs },
 });

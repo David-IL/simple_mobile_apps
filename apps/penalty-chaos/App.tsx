@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { BackHandler, StyleSheet, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { HomeScreen } from "./src/screens/HomeScreen";
@@ -28,6 +28,35 @@ function Game() {
   const { names, rename } = useKeeperNames();
   const { setMusicActive, setAmbienceActive } = useSfx();
   const [screen, setScreen] = useState<Screen>({ kind: "home" });
+
+  /**
+   * Android's back gesture, which is where a player's instinct goes first and
+   * which did nothing here until now.
+   *
+   * Deliberately inert during a match. Everywhere else back means "up one
+   * step", but in a shootout it would mean abandoning a game two people are
+   * halfway through — and a reflexive back-swipe is exactly the accident the
+   * hold-to-quit button exists to prevent. Leaving the screen mid-match is a
+   * deliberate act, so it needs the deliberate control.
+   */
+  useEffect(() => {
+    const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
+      switch (screen.kind) {
+        case "setup":
+          setScreen({ kind: "home" });
+          return true;
+        case "result":
+          setScreen({ kind: "home" });
+          return true;
+        case "match":
+          return true;
+        default:
+          // Home: let the system do its usual thing and leave the app.
+          return false;
+      }
+    });
+    return () => subscription.remove();
+  }, [screen]);
 
   // Music plays in the menus and stops the moment a shootout starts; stadium
   // ambience does the exact opposite. The result screen counts as a menu — it is
