@@ -54,7 +54,7 @@ function KeeperCard({
       style={[styles.card, selected && styles.cardSelected]}
     >
       <View style={styles.portrait}>
-        <KeeperFigure width={38} height={58} looks={looksFor(keeper.id)} pose="ready" direction={0} />
+        <KeeperFigure height={50} looks={looksFor(keeper.id)} pose="ready" direction={0} />
       </View>
       <View style={styles.cardBody}>
         <Text style={styles.cardName}>{label}</Text>
@@ -223,8 +223,9 @@ const styles = StyleSheet.create({
   },
   cardSelected: { borderColor: palette.brand, backgroundColor: palette.brandWash },
   portrait: {
-    width: 46,
-    height: 60,
+    // Wide enough for the keeper's canvas, which is sized for a dive.
+    width: 58,
+    height: 56,
     alignItems: "center",
     justifyContent: "flex-end",
     borderRadius: 10,

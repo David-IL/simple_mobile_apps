@@ -142,7 +142,7 @@ export const nb: Messages = {
       brief: "Treffer du ham, ryker skuddet.",
     },
     "low-sun": {
-      name: "Lavtstående sol",
+      name: "Lav sol",
       brief: "Blender helt. Du mister siktelinja idet du begynner å dra.",
     },
     "muddy-spot": {

@@ -15,13 +15,39 @@ import type { Beard, Brow, Hair, KeeperLooks, Mouth } from "./keeperLooks";
 export type Direction = -1 | 0 | 1;
 
 type Props = {
-  width: number;
+  /**
+   * Height in points. Width is derived, not passed — the canvas has to be a
+   * fixed shape and letting a caller choose it is how the figure ends up
+   * squashed or clipped.
+   */
   height: number;
   looks: KeeperLooks;
   pose: KeeperPose;
   /** Which way the pose leans or dives. 0 stays central. */
   direction: Direction;
 };
+
+/**
+ * The canvas, sized for the pose that needs the most room rather than for the
+ * figure standing still.
+ *
+ * A diving keeper rotates 62° about his hips, which throws his head out to
+ * x≈79 and his trailing glove to x≈-19 — both well outside the 0–60 box this
+ * used to have, so on every dive to a side the head and one hand were silently
+ * cut off at the edge of the SVG. It looked like the goal was drawn over him.
+ *
+ * `-22 0 104 96` spans -22..82, whose midpoint is 30 — the figure's own centre
+ * line. That means a caller can still position it by centring the box, and the
+ * extra width is pure headroom that costs nothing but layout space.
+ */
+const VIEW_BOX = "-22 0 104 96";
+const VIEW_BOX_WIDTH = 104;
+const VIEW_BOX_HEIGHT = 96;
+
+/** Box width for a given height. Exported so callers can reserve the space. */
+export function keeperBoxWidth(height: number): number {
+  return (height * VIEW_BOX_WIDTH) / VIEW_BOX_HEIGHT;
+}
 
 const SKIN = "#d9a074";
 const SKIN_SHADE = "#c08a5e";
@@ -122,7 +148,7 @@ function MouthPiece({ mouth }: { mouth: Mouth }) {
   }
 }
 
-export function KeeperFigure({ width, height, looks, pose, direction }: Props) {
+export function KeeperFigure({ height, looks, pose, direction }: Props) {
   const [leftArm, rightArm] = armAngles(pose, direction);
   const rotation = bodyRotation(pose, direction);
   const crouch = pose === "beaten" ? 5 : 0;
@@ -158,7 +184,7 @@ export function KeeperFigure({ width, height, looks, pose, direction }: Props) {
   );
 
   return (
-    <Svg width={width} height={height} viewBox="0 0 60 96">
+    <Svg width={keeperBoxWidth(height)} height={height} viewBox={VIEW_BOX}>
       {/* Stature scales from the feet so everyone stands on the same line. */}
       <G transform={`translate(30 93) scale(1 ${stature}) translate(-30 -93)`}>
         <G transform={`rotate(${rotation} 30 60) translate(0 ${crouch})`}>

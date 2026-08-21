@@ -106,8 +106,7 @@ export function ResultScreen({ state, keeper, onPlayAgain, onChangeKeeper }: Pro
           */}
           <View style={styles.portrait}>
             <KeeperFigure
-              width={64}
-              height={96}
+              height={86}
               looks={looksFor(keeper.id)}
               pose={beaten ? "beaten" : "celebrate"}
               direction={0}
@@ -152,8 +151,8 @@ const styles = StyleSheet.create({
   header: { flexDirection: "row", alignItems: "center", gap: spacing.md },
   copy: { flex: 1, gap: spacing.xs },
   portrait: {
-    width: 76,
-    height: 104,
+    width: 96,
+    height: 94,
     alignItems: "center",
     justifyContent: "flex-end",
     borderRadius: 12,

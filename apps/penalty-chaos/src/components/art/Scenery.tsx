@@ -61,19 +61,29 @@ export function MudPatch({ width, height }: Size) {
   );
 }
 
-/** Low sun burning across the goal mouth. */
+/**
+ * Low evening sun, sitting over a corner of the stand.
+ *
+ * It used to hang in the middle of the goal, directly in front of the keeper,
+ * which reads as a rendering mistake rather than weather. Up in a corner it
+ * reads as an evening kick-off. The effect is unchanged either way — what the
+ * sun takes away is the aim line, not the view.
+ */
 export function SunGlare({ width, height }: Size) {
   return (
     <Svg width={width} height={height} viewBox="0 0 200 100">
       <Defs>
-        <RadialGradient id="glare" cx="50%" cy="70%" r="70%">
-          <Stop offset="0%" stopColor="#fef9c3" stopOpacity={0.92} />
-          <Stop offset="45%" stopColor="#fde047" stopOpacity={0.42} />
+        <RadialGradient id="glare" cx="82%" cy="24%" r="78%">
+          <Stop offset="0%" stopColor="#fef9c3" stopOpacity={0.95} />
+          <Stop offset="38%" stopColor="#fde047" stopOpacity={0.4} />
           <Stop offset="100%" stopColor="#facc15" stopOpacity={0} />
         </RadialGradient>
       </Defs>
       <Rect x={0} y={0} width={200} height={100} fill="url(#glare)" />
-      <Circle cx={100} cy={70} r={17} fill="#fffbeb" opacity={0.95} />
+      <Circle cx={164} cy={24} r={15} fill="#fffbeb" opacity={0.96} />
+      {/* A couple of flare streaks, so it reads as glare rather than a lamp. */}
+      <Line x1={128} y1={24} x2={200} y2={24} stroke="#fffbeb" strokeWidth={1.6} opacity={0.35} />
+      <Line x1={164} y1={0} x2={164} y2={58} stroke="#fffbeb" strokeWidth={1.6} opacity={0.28} />
     </Svg>
   );
 }

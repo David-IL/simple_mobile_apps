@@ -6,7 +6,7 @@ import { ZONE_COLS, type Aim, type KeeperArchetype, type KeeperPose } from "../g
 import type { RoundSetup, ShotResult, Zone, ZoneCol } from "../game/types";
 import { palette } from "../theme";
 import { Ball, PitchInvader, Steward } from "./art/Characters";
-import { KeeperFigure, type Direction } from "./art/KeeperFigure";
+import { KeeperFigure, keeperBoxWidth, type Direction } from "./art/KeeperFigure";
 import { looksFor } from "./art/keeperLooks";
 import { CrowdBank, MudPatch, NightSky, Rain, SunGlare, WindSock } from "./art/Scenery";
 
@@ -431,7 +431,7 @@ export function GoalScene({
   // Wide enough for the longest Norwegian taunt on two lines, never wider than
   // the scene.
   const bubbleWidth = Math.min(width - 32, 272);
-  const keeperWidth = geo.keeperHeight * 0.62;
+  const keeperWidth = keeperBoxWidth(geo.keeperHeight);
 
   return (
     <View style={[styles.scene, { width, height }]}>
@@ -486,7 +486,6 @@ export function GoalScene({
         ]}
       >
         <KeeperFigure
-          width={keeperWidth}
           height={geo.keeperHeight}
           looks={looksFor(keeper.id)}
           pose={pose}
@@ -588,11 +587,15 @@ export function GoalScene({
         <View
           style={[
             styles.absolute,
-            { left: 0, top: geo.goalTop - 10, width, height: geo.goalHeight + 40 },
+            // Anchored above the goal rather than across it. A sun hanging in
+            // front of the keeper reads as a bug; a sun low over the corner of
+            // the stand reads as an evening kick-off. The effect is unchanged —
+            // it is the aim line that disappears, not the view.
+            { left: 0, top: geo.goalTop - geo.goalHeight * 0.34, width, height: geo.goalHeight },
           ]}
           pointerEvents="none"
         >
-          <SunGlare width={width} height={geo.goalHeight + 40} />
+          <SunGlare width={width} height={geo.goalHeight} />
         </View>
       ) : null}
 
