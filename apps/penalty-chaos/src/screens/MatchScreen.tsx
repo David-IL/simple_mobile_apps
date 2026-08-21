@@ -167,11 +167,14 @@ export function MatchScreen({ keeper, keeperName, initialState, onFinish, onQuit
   const resultRef = useRef(result);
   resultRef.current = result;
 
-  const onFlightEnd = useCallback(() => {
-    setPhase("settled");
+  // Split in two: the glove noise belongs at the moment the ball is stopped,
+  // not after it has finished bouncing away from the save.
+  const onContact = useCallback(() => {
     const landed = resultRef.current;
     if (landed) for (const id of OUTCOME_SFX[landed.kind]) play(id);
   }, [play]);
+
+  const onFlightEnd = useCallback(() => setPhase("settled"), []);
 
   // Round-opening flourishes. A disruption that has its own sound takes
   // precedence over the taunt, so the two never talk over each other.
@@ -234,6 +237,7 @@ export function MatchScreen({ keeper, keeperName, initialState, onFinish, onQuit
             aimPreview={showPreview}
             result={result}
             taunt={taunt}
+            onContact={onContact}
             onFlightEnd={onFlightEnd}
           />
         ) : null}

@@ -24,6 +24,8 @@ type Props = {
   result: ShotResult | null;
   /** The keeper's line this round, or null if he has nothing to say. */
   taunt: string | null;
+  /** Ball meets glove, post or uncle. Fires before any deflection. */
+  onContact: () => void;
   onFlightEnd: () => void;
 };
 
@@ -164,6 +166,7 @@ export function GoalScene({
   aimPreview,
   result,
   taunt,
+  onContact,
   onFlightEnd,
 }: Props) {
   const geo = useGeometry(width, height);
@@ -261,12 +264,40 @@ export function GoalScene({
   useEffect(() => {
     if (phase !== "flying" || !result) return;
 
-    const target = geo.toPixels(result.landing);
+    const landing = geo.toPixels(result.landing);
     const dive = geo.zoneCentre(result.keeperDive);
 
-    Animated.parallel([
+    /**
+     * Where the keeper actually finishes.
+     *
+     * Reported from a real playtest: a fingertip save looked broken, because
+     * the ball landed in one zone while the keeper was drawn in the zone he
+     * dived to — visibly nowhere near it — and the game still said SAVED.
+     *
+     * The engine was right; the picture was lying. `reach` means exactly "got a
+     * hand to a shot in the next zone along", so on that outcome the keeper has
+     * to be seen *stretching* out of his dive toward the ball. Anything else
+     * reads as the game cheating, which is the single loudest complaint in this
+     * whole genre.
+     */
+    const keeperEnd =
+      result.headline === "saveFingertips"
+        ? {
+            x: dive.x + (landing.x - dive.x) * 0.82,
+            y: dive.y + (landing.y - dive.y) * 0.62,
+          }
+        : dive;
+
+    // The pitch invader stops the ball with his body, at his height, not
+    // wherever it was aimed.
+    const contact =
+      result.kind === "blocked" && effect.blockedCol
+        ? { x: geo.colCentre(effect.blockedCol), y: geo.goalBottom - geo.keeperHeight * 0.34 }
+        : landing;
+
+    const flight = Animated.parallel([
       Animated.timing(ball, {
-        toValue: { x: target.x - geo.spotX, y: target.y - geo.spotY },
+        toValue: { x: contact.x - geo.spotX, y: contact.y - geo.spotY },
         duration: FLIGHT_MS,
         easing: Easing.out(Easing.quad),
         useNativeDriver: true,
@@ -285,13 +316,47 @@ export function GoalScene({
         useNativeDriver: true,
       }),
       Animated.timing(keeperMove, {
-        toValue: { x: dive.x - restingKeeper.x, y: dive.y - restingKeeper.y },
+        toValue: { x: keeperEnd.x - restingKeeper.x, y: keeperEnd.y - restingKeeper.y },
         duration: FLIGHT_MS * 0.8,
         easing: Easing.out(Easing.back(1.4)),
         useNativeDriver: true,
       }),
-    ]).start(({ finished }) => {
-      if (finished) onFlightEnd();
+    ]);
+
+    // A stopped ball has to go somewhere. Without this it simply halts in the
+    // net, which reads as a goal that was scored and then denied.
+    const stopped = result.kind === "saved" || result.kind === "blocked";
+    const outward = contact.x >= width / 2 ? 1 : -1;
+    const deflection = Animated.parallel([
+      Animated.timing(ball, {
+        toValue: {
+          x: contact.x + outward * geo.goalWidth * 0.34 - geo.spotX,
+          y: contact.y - geo.goalHeight * 0.22 - geo.spotY,
+        },
+        duration: 260,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+      Animated.timing(ballSpin, {
+        toValue: 1.6,
+        duration: 260,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+    ]);
+
+    flight.start(({ finished }) => {
+      if (!finished) return;
+      // Sound and the verdict fire on contact, not after the ball has finished
+      // bouncing away — a glove noise arriving late feels wrong.
+      onContact();
+      if (!stopped) {
+        onFlightEnd();
+        return;
+      }
+      deflection.start(({ finished: settled }) => {
+        if (settled) onFlightEnd();
+      });
     });
   }, [
     phase,
@@ -303,6 +368,9 @@ export function GoalScene({
     keeperMove,
     restingKeeper.x,
     restingKeeper.y,
+    effect.blockedCol,
+    width,
+    onContact,
     onFlightEnd,
   ]);
 

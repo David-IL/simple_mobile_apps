@@ -10,7 +10,8 @@ Norwegian and English. Norwegian is the default on a Norwegian phone.
 
 Research doc: [docs/research/penalty-chaos.md](../../docs/research/penalty-chaos.md) ·
 Wireframes: [docs/design/penalty-chaos.excalidraw](../../docs/design/penalty-chaos.excalidraw) ·
-Store listing draft: [store/listing.md](store/listing.md)
+Store listing draft: [store/listing.md](store/listing.md) ·
+Playtests: [testing/](testing/)
 
 ## Run
 
@@ -90,7 +91,9 @@ Two seams worth not breaking:
 - [x] Local persistence chosen (AsyncStorage — keeper names and language only)
 - [x] Norwegian + English ([ADR 10](../../docs/adr/0010-localisation-typed-bundles.md))
 - [x] Character art ([ADR 9](../../docs/adr/0009-svg-for-character-art.md))
-- [ ] Playtested in Norwegian by the actual 11-year-old
+- [x] Playtested in Norwegian — [first session](testing/2026-08-21-first-playtest.md),
+      two children, ~20 min, both said no to "are you done?"
+- [ ] Played again unprompted a week later — the actual §6 success bar
 - [ ] Real-device performance check on the SVG version
 - [x] Sound *integration* — `expo-audio`, mute toggle, respects the ringer switch
 - [ ] Sound *assets* — all 8 files are synthesised placeholders; see
