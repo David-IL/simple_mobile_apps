@@ -73,14 +73,27 @@ export function HomeScreen({ onPick }: { onPick: (mode: MatchMode) => void }) {
   return (
     <View style={styles.screen}>
       <View style={styles.hero}>
-        <Image
-          source={BANNERS[locale]}
-          style={styles.banner}
-          resizeMode="cover"
-          accessibilityRole="image"
-          accessibilityLabel={`${t.home.titleLine1} ${t.home.titleLine2}`}
-        />
-        <Text style={text.muted}>{t.home.blurb}</Text>
+        {/*
+          The frame owns the layout and the image just fills it. Giving the
+          Image itself a width plus an aspectRatio left it free to resolve its
+          own intrinsic size and overflow the screen, which showed as the art
+          being cropped at the right-hand edge.
+
+          `contain` rather than `cover` on purpose: the frame's aspect ratio
+          already matches the artwork, so the two are equivalent when correct —
+          but if that ever drifts, `contain` letterboxes and `cover` silently
+          eats the wordmark.
+        */}
+        <View style={styles.bannerFrame}>
+          <Image
+            source={BANNERS[locale]}
+            style={styles.banner}
+            resizeMode="contain"
+            accessibilityRole="image"
+            accessibilityLabel={`${t.home.titleLine1} ${t.home.titleLine2}`}
+          />
+        </View>
+        <Text style={[text.muted, styles.blurb]}>{t.home.blurb}</Text>
       </View>
 
       <View style={styles.actions}>
@@ -111,16 +124,17 @@ export function HomeScreen({ onPick }: { onPick: (mode: MatchMode) => void }) {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: palette.night, justifyContent: "space-between" },
-  hero: { flex: 1, justifyContent: "center", padding: spacing.lg, gap: spacing.lg },
-  banner: {
+  // No horizontal padding: the banner runs edge to edge, and the blurb pads
+  // itself instead.
+  hero: { flex: 1, justifyContent: "center", paddingVertical: spacing.lg, gap: spacing.lg },
+  bannerFrame: {
+    alignSelf: "stretch",
     width: "100%",
     aspectRatio: BANNER_ASPECT,
-    borderRadius: 16,
-    // The art is full-bleed sky and grass, so on a dark screen it needs to read
-    // as a deliberate card rather than a photo someone forgot to cut out.
-    borderWidth: 1,
-    borderColor: palette.line,
+    overflow: "hidden",
   },
+  banner: { width: "100%", height: "100%" },
+  blurb: { paddingHorizontal: spacing.lg },
   actions: {
     padding: spacing.xl,
     gap: spacing.md,
