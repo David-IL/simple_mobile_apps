@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
-import { Animated, Easing, StyleSheet, Text, View } from "react-native";
+import { Animated, Easing, Platform, StyleSheet, Text, View } from "react-native";
 import Svg, { Line } from "react-native-svg";
 import { splitZone } from "../game/engine";
 import { ZONE_COLS, type Aim, type KeeperArchetype, type KeeperPose } from "../game/types";
@@ -28,7 +28,7 @@ type Props = {
 };
 
 const GOAL_WIDTH_RATIO = 0.88;
-const GOAL_HEIGHT_RATIO = 0.47;
+const GOAL_HEIGHT_RATIO = 0.45;
 /**
  * Headroom above the crossbar, as a fraction of scene height. The keeper's name
  * and his taunt bubble both live up here, in the crowd and sky that were being
@@ -38,9 +38,15 @@ const GOAL_HEIGHT_RATIO = 0.47;
  * a goal that shifts position the moment the keeper says something would be
  * far worse than a slightly smaller goal.
  */
-const HEADROOM_RATIO = 0.23;
+const HEADROOM_RATIO = 0.26;
 const BALL_SIZE = 24;
-const BUBBLE_WIDTH = 176;
+/**
+ * Android ships a "casual" family (a Comic-Sans-ish face) that is free, needs no
+ * asset and no licence check. It simply falls back to the default elsewhere,
+ * which is fine for an Android-first repo. The cross-platform version of this is
+ * expo-font plus an OFL face — worth doing if the look matters on iOS.
+ */
+const TAUNT_FONT = Platform.select({ android: "casual", default: undefined });
 const FLIGHT_MS = 520;
 
 function directionOf(col: ZoneCol): Direction {
@@ -301,6 +307,9 @@ export function GoalScene({
   ]);
 
   const preview = aimPreview ? geo.toPixels(aimPreview) : null;
+  // Wide enough for the longest Norwegian taunt on two lines, never wider than
+  // the scene.
+  const bubbleWidth = Math.min(width - 32, 272);
   const keeperWidth = geo.keeperHeight * 0.62;
 
   return (
@@ -459,7 +468,7 @@ export function GoalScene({
         <Ball width={BALL_SIZE} height={BALL_SIZE} />
       </Animated.View>
 
-      <Text style={[styles.keeperName, { top: geo.goalTop - 26, width }]} numberOfLines={1}>
+      <Text style={[styles.keeperName, { top: geo.goalTop - 24, width }]} numberOfLines={1}>
         {keeperName}
       </Text>
 
@@ -474,13 +483,18 @@ export function GoalScene({
           style={[
             styles.bubble,
             {
-              left: Math.max(8, Math.min(width - 8 - BUBBLE_WIDTH, restingKeeper.x - BUBBLE_WIDTH / 2)),
-              bottom: height - geo.goalTop + 12,
+              width: bubbleWidth,
+              left: Math.max(
+                8,
+                Math.min(width - 8 - bubbleWidth, restingKeeper.x - bubbleWidth / 2),
+              ),
+              // Clears the keeper's name, which sits just above the crossbar.
+              bottom: height - geo.goalTop + 30,
             },
           ]}
           pointerEvents="none"
         >
-          <Text style={styles.bubbleText} numberOfLines={3}>
+          <Text style={styles.bubbleText} numberOfLines={2}>
             {taunt}
           </Text>
           <View style={styles.bubbleTail} />
@@ -512,17 +526,17 @@ const styles = StyleSheet.create({
   },
   bubble: {
     position: "absolute",
-    width: BUBBLE_WIDTH,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-    borderRadius: 12,
-    backgroundColor: "rgba(248,250,252,0.94)",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 14,
+    backgroundColor: "rgba(248,250,252,0.96)",
   },
   bubbleText: {
     color: "#0f172a",
-    fontSize: 12,
-    lineHeight: 15,
-    fontStyle: "italic",
+    fontSize: 15,
+    lineHeight: 19,
+    fontWeight: "600",
+    fontFamily: TAUNT_FONT,
     textAlign: "center",
   },
   bubbleTail: {

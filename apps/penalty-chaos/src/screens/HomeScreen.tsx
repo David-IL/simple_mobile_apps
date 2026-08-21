@@ -1,10 +1,9 @@
 import type { ReactNode } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { Button } from "@repo/ui";
 import { useSfx } from "../audio/SfxProvider";
-import { Ball } from "../components/art/Characters";
 import type { MatchMode } from "../game/match";
-import { LOCALES, useI18n } from "../i18n";
+import { LOCALES, useI18n, type Locale } from "../i18n";
 import { en } from "../i18n/en";
 import { nb } from "../i18n/nb";
 import { palette, spacing, text } from "../theme";
@@ -14,6 +13,28 @@ import { palette, spacing, text } from "../theme";
  * someone who cannot read the current one. That is the whole point of it.
  */
 const LANGUAGE_NAMES = { nb: nb.languageName, en: en.languageName } as const;
+
+/**
+ * The title art, per language.
+ *
+ * The wordmark is baked into these images, which is a real trade-off: the title
+ * no longer comes from src/i18n, so a third language means a third picture
+ * rather than a third string. Typing this as `Record<Locale, …>` is what keeps
+ * ADR 10's guarantee intact — add a locale and this fails to compile until the
+ * artwork exists, rather than silently showing Norwegian to a Swede.
+ *
+ * The screen reader still gets translated text via accessibilityLabel below,
+ * because a picture of a word is not a word.
+ */
+/* eslint-disable @typescript-eslint/no-require-imports */
+const BANNERS: Record<Locale, number> = {
+  nb: require("../../assets/app-banner-no.jpg"),
+  en: require("../../assets/app-banner-en.jpg"),
+};
+/* eslint-enable @typescript-eslint/no-require-imports */
+
+/** The artwork's own aspect ratio, so nothing is ever cropped. */
+const BANNER_ASPECT = 1280 / 698;
 
 function Chip({
   label,
@@ -52,12 +73,13 @@ export function HomeScreen({ onPick }: { onPick: (mode: MatchMode) => void }) {
   return (
     <View style={styles.screen}>
       <View style={styles.hero}>
-        <Ball width={52} height={52} />
-        <Text style={styles.title}>
-          {t.home.titleLine1}
-          {"\n"}
-          {t.home.titleLine2}
-        </Text>
+        <Image
+          source={BANNERS[locale]}
+          style={styles.banner}
+          resizeMode="cover"
+          accessibilityRole="image"
+          accessibilityLabel={`${t.home.titleLine1} ${t.home.titleLine2}`}
+        />
         <Text style={text.muted}>{t.home.blurb}</Text>
       </View>
 
@@ -89,13 +111,15 @@ export function HomeScreen({ onPick }: { onPick: (mode: MatchMode) => void }) {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: palette.night, justifyContent: "space-between" },
-  hero: { flex: 1, justifyContent: "center", padding: spacing.xl, gap: spacing.md },
-  title: {
-    color: palette.chalk,
-    fontSize: 52,
-    fontWeight: "900",
-    letterSpacing: -2,
-    lineHeight: 52,
+  hero: { flex: 1, justifyContent: "center", padding: spacing.lg, gap: spacing.lg },
+  banner: {
+    width: "100%",
+    aspectRatio: BANNER_ASPECT,
+    borderRadius: 16,
+    // The art is full-bleed sky and grass, so on a dark screen it needs to read
+    // as a deliberate card rather than a photo someone forgot to cut out.
+    borderWidth: 1,
+    borderColor: palette.line,
   },
   actions: {
     padding: spacing.xl,
