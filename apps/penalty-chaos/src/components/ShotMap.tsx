@@ -1,10 +1,10 @@
-import { StyleSheet, View } from "react-native";
+import { View } from "react-native";
 import Svg, { Circle, Line, Rect } from "react-native-svg";
 import type { ShotRecord } from "../game/match";
 import { outcomeColour, palette } from "../theme";
 
 /**
- * A thumbnail of the goal with this player's shots on it.
+ * A thumbnail of the goal with a player's shots on it.
  *
  * Plots the *landing point*, not the zone. Six coloured buckets would tell you
  * where you aimed; the scattered dots tell you what your power did to it, which
@@ -12,61 +12,67 @@ import { outcomeColour, palette } from "../theme";
  *
  * It is also the keeper's reading material made visible. If three dots cluster
  * in one corner, that is exactly what `readablePattern()` is about to punish.
+ *
+ * Everything is derived from `width` so the same component works as a glance in
+ * the corner of the pitch and as the centrepiece of the full-time screen.
  */
 
-const WIDTH = 78;
-const HEIGHT = 50;
+const DEFAULT_WIDTH = 78;
+const ASPECT = 50 / 78;
 /** Room around the frame so a shot that went wide still has somewhere to sit. */
-const MARGIN = 7;
+const MARGIN_RATIO = 7 / 78;
 
-type Props = { shots: readonly ShotRecord[] };
+type Props = { shots: readonly ShotRecord[]; width?: number };
 
-function toPixels(aim: { x: number; y: number }) {
-  // Clamp a little beyond the posts so wild misses stay on the thumbnail
-  // instead of vanishing — a miss you cannot see teaches nothing.
-  const x = Math.max(-1.35, Math.min(1.35, aim.x));
-  const y = Math.max(-0.25, Math.min(1.3, aim.y));
-  return {
-    cx: MARGIN + ((x + 1) / 2) * (WIDTH - MARGIN * 2),
-    cy: MARGIN + (1 - y) * (HEIGHT - MARGIN * 2),
+export function ShotMap({ shots, width = DEFAULT_WIDTH }: Props) {
+  const height = width * ASPECT;
+  const margin = width * MARGIN_RATIO;
+  const frameWidth = width - margin * 2;
+  const frameHeight = height - margin * 2;
+  const scale = width / DEFAULT_WIDTH;
+
+  const toPixels = (aim: { x: number; y: number }) => {
+    // Clamp a little beyond the posts so wild misses stay on the map instead of
+    // vanishing — a miss you cannot see teaches nothing.
+    const x = Math.max(-1.35, Math.min(1.35, aim.x));
+    const y = Math.max(-0.25, Math.min(1.3, aim.y));
+    return {
+      cx: margin + ((x + 1) / 2) * frameWidth,
+      cy: margin + (1 - y) * frameHeight,
+    };
   };
-}
-
-export function ShotMap({ shots }: Props) {
-  const frameWidth = WIDTH - MARGIN * 2;
-  const frameHeight = HEIGHT - MARGIN * 2;
 
   return (
-    <View style={styles.wrap}>
-      <Svg width={WIDTH} height={HEIGHT}>
+    <View style={{ width, height }}>
+      <Svg width={width} height={height}>
         <Rect
-          x={MARGIN}
-          y={MARGIN}
+          x={margin}
+          y={margin}
           width={frameWidth}
           height={frameHeight}
           fill="rgba(15,23,42,0.55)"
           stroke={palette.chalkDim}
-          strokeWidth={1.5}
+          strokeWidth={1.5 * scale}
         />
         {[1, 2].map((index) => (
           <Line
             key={index}
-            x1={MARGIN + (frameWidth * index) / 3}
-            y1={MARGIN}
-            x2={MARGIN + (frameWidth * index) / 3}
-            y2={MARGIN + frameHeight}
+            x1={margin + (frameWidth * index) / 3}
+            y1={margin}
+            x2={margin + (frameWidth * index) / 3}
+            y2={margin + frameHeight}
             stroke={palette.chalkDim}
-            strokeWidth={0.5}
+            strokeWidth={0.5 * scale}
             opacity={0.4}
           />
         ))}
         <Line
-          x1={MARGIN}
-          y1={MARGIN + frameHeight / 2}
-          x2={MARGIN + frameWidth}
-          y2={MARGIN + frameHeight / 2}
+          x1={margin}
+          y1={margin + frameHeight / 2}
+          x2={margin + frameWidth}
+          y2={margin + frameHeight / 2}
           stroke={palette.chalkDim}
-          strokeWidth={0.5}
+          strokeWidth={0.5 * scale}
           opacity={0.4}
         />
         {shots.map((shot, index) => {
@@ -79,10 +85,10 @@ export function ShotMap({ shots }: Props) {
               key={index}
               cx={cx}
               cy={cy}
-              r={latest ? 4 : 3}
+              r={(latest ? 4 : 3) * scale}
               fill={outcomeColour[shot.kind]}
               stroke={latest ? palette.chalk : "transparent"}
-              strokeWidth={latest ? 1.2 : 0}
+              strokeWidth={latest ? 1.2 * scale : 0}
               opacity={latest ? 1 : 0.65}
             />
           );
@@ -91,7 +97,3 @@ export function ShotMap({ shots }: Props) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  wrap: { width: WIDTH, height: HEIGHT },
-});

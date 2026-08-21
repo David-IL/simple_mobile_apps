@@ -1,8 +1,16 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Button } from "@repo/ui";
+import { ShotMap } from "../components/ShotMap";
 import { KeeperFigure } from "../components/art/KeeperFigure";
 import { looksFor } from "../components/art/keeperLooks";
-import { scoreOf, takenBy, winner, type MatchState, type Player } from "../game/match";
+import {
+  scoreOf,
+  shotsBy,
+  takenBy,
+  winner,
+  type MatchState,
+  type Player,
+} from "../game/match";
 import type { KeeperArchetype } from "../game/types";
 import { useI18n } from "../i18n";
 import { outcomeColour, palette, spacing, text } from "../theme";
@@ -46,6 +54,27 @@ export function ResultScreen({ state, keeper, onPlayAgain, onChangeKeeper }: Pro
   return (
     <View style={styles.screen}>
       <ScrollView contentContainerStyle={styles.scroll}>
+        {/*
+          The same component as the in-play corner map, just bigger. At full
+          time it is the most interesting thing on the screen: five dots is a
+          picture of how you take penalties, and against a reading keeper it is
+          also the evidence for why you were read.
+        */}
+        <View style={styles.maps}>
+          {solo ? (
+            <ShotMap shots={shotsBy(state, 0)} width={216} />
+          ) : (
+            ([0, 1] as const).map((player) => (
+              <View key={player} style={styles.mapColumn}>
+                <Text style={text.label} numberOfLines={1}>
+                  {state.names[player]}
+                </Text>
+                <ShotMap shots={shotsBy(state, player)} width={150} />
+              </View>
+            ))
+          )}
+        </View>
+
         <View style={styles.header}>
           <View style={styles.copy}>
             <Text style={text.label}>{t.result.fullTime}</Text>
@@ -107,6 +136,14 @@ export function ResultScreen({ state, keeper, onPlayAgain, onChangeKeeper }: Pro
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: palette.night },
   scroll: { padding: spacing.xl, gap: spacing.sm, flexGrow: 1, justifyContent: "center" },
+  maps: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "center",
+    gap: spacing.lg,
+    marginBottom: spacing.xl,
+  },
+  mapColumn: { alignItems: "center", gap: spacing.xs },
   header: { flexDirection: "row", alignItems: "center", gap: spacing.md },
   copy: { flex: 1, gap: spacing.xs },
   portrait: {
