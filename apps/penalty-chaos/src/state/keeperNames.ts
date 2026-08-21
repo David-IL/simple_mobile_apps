@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import type { KeeperArchetype } from "../game/types";
+import type { KeeperId } from "../game/types";
 
 /**
  * Player-chosen keeper names, stored on the device and nowhere else.
@@ -16,9 +16,18 @@ const MAX_NAME_LENGTH = 18;
 
 export type KeeperNames = Readonly<Record<string, string>>;
 
-export function displayName(keeper: KeeperArchetype, names: KeeperNames): string {
-  const custom = names[keeper.id]?.trim();
-  return custom && custom.length > 0 ? custom : keeper.name;
+/**
+ * The custom name if there is one, otherwise the shipped name for the current
+ * language. The caller passes the shipped name because it is translated copy
+ * and this module has no business reaching into the locale bundles.
+ */
+export function displayName(
+  keeperId: KeeperId,
+  names: KeeperNames,
+  shippedName: string,
+): string {
+  const custom = names[keeperId]?.trim();
+  return custom && custom.length > 0 ? custom : shippedName;
 }
 
 export function sanitiseName(raw: string): string {

@@ -8,6 +8,7 @@ import { ResultScreen } from "./src/screens/ResultScreen";
 import { SetupScreen } from "./src/screens/SetupScreen";
 import { newMatch, type MatchMode, type MatchState } from "./src/game/match";
 import type { KeeperArchetype } from "./src/game/types";
+import { I18nProvider, useI18n } from "./src/i18n";
 import { displayName, useKeeperNames } from "./src/state/keeperNames";
 import { palette } from "./src/theme";
 
@@ -21,7 +22,8 @@ type Screen =
   | { kind: "match"; keeper: KeeperArchetype; state: MatchState }
   | { kind: "result"; keeper: KeeperArchetype; state: MatchState };
 
-export default function App() {
+function Game() {
+  const { t } = useI18n();
   const { names, rename } = useKeeperNames();
   const [screen, setScreen] = useState<Screen>({ kind: "home" });
 
@@ -36,56 +38,58 @@ export default function App() {
     setScreen((current) => {
       if (current.kind !== "result") return current;
       const { mode, names: players } = current.state;
-      return {
-        kind: "match",
-        keeper: current.keeper,
-        state: newMatch(mode, players),
-      };
+      return { kind: "match", keeper: current.keeper, state: newMatch(mode, players) };
     });
   }, []);
 
   return (
-    <SafeAreaProvider>
-      <SafeAreaView style={styles.root} edges={["top", "bottom"]}>
-        <StatusBar style="light" />
-        <View style={styles.root}>
-          {screen.kind === "home" ? (
-            <HomeScreen onPick={(mode) => setScreen({ kind: "setup", mode })} />
-          ) : null}
+    <View style={styles.root}>
+      {screen.kind === "home" ? (
+        <HomeScreen onPick={(mode) => setScreen({ kind: "setup", mode })} />
+      ) : null}
 
-          {screen.kind === "setup" ? (
-            <SetupScreen
-              mode={screen.mode}
-              names={names}
-              onRename={rename}
-              onStart={(keeper, players) => startMatch(screen.mode, keeper, players)}
-              onBack={() => setScreen({ kind: "home" })}
-            />
-          ) : null}
+      {screen.kind === "setup" ? (
+        <SetupScreen
+          mode={screen.mode}
+          names={names}
+          onRename={rename}
+          onStart={(keeper, players) => startMatch(screen.mode, keeper, players)}
+          onBack={() => setScreen({ kind: "home" })}
+        />
+      ) : null}
 
-          {screen.kind === "match" ? (
-            <MatchScreen
-              keeper={screen.keeper}
-              keeperName={displayName(screen.keeper, names)}
-              initialState={screen.state}
-              onFinish={(final) =>
-                setScreen({ kind: "result", keeper: screen.keeper, state: final })
-              }
-              onQuit={() => setScreen({ kind: "home" })}
-            />
-          ) : null}
+      {screen.kind === "match" ? (
+        <MatchScreen
+          keeper={screen.keeper}
+          keeperName={displayName(screen.keeper.id, names, t.keepers[screen.keeper.id].name)}
+          initialState={screen.state}
+          onFinish={(final) => setScreen({ kind: "result", keeper: screen.keeper, state: final })}
+          onQuit={() => setScreen({ kind: "home" })}
+        />
+      ) : null}
 
-          {screen.kind === "result" ? (
-            <ResultScreen
-              state={screen.state}
-              keeper={screen.keeper}
-              onPlayAgain={playAgain}
-              onChangeKeeper={() => setScreen({ kind: "setup", mode: screen.state.mode })}
-            />
-          ) : null}
-        </View>
-      </SafeAreaView>
-    </SafeAreaProvider>
+      {screen.kind === "result" ? (
+        <ResultScreen
+          state={screen.state}
+          keeper={screen.keeper}
+          onPlayAgain={playAgain}
+          onChangeKeeper={() => setScreen({ kind: "setup", mode: screen.state.mode })}
+        />
+      ) : null}
+    </View>
+  );
+}
+
+export default function App() {
+  return (
+    <I18nProvider>
+      <SafeAreaProvider>
+        <SafeAreaView style={styles.root} edges={["top", "bottom"]}>
+          <StatusBar style="light" />
+          <Game />
+        </SafeAreaView>
+      </SafeAreaProvider>
+    </I18nProvider>
   );
 }
 

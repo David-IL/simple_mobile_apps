@@ -1,13 +1,24 @@
 import { StyleSheet, Text, View } from "react-native";
-import { blockedColLabel } from "../game/disruptions";
-import type { RoundSetup } from "../game/types";
+import type { DisruptionId, RoundSetup } from "../game/types";
+import { useI18n } from "../i18n";
 import { palette, spacing, text } from "../theme";
+
+/** Presentational only — the domain layer has no opinion about emoji. */
+const ICONS: Record<DisruptionId, string> = {
+  crosswind: "🚩",
+  "pitch-invader": "🏃",
+  "low-sun": "🌇",
+  "muddy-spot": "🌧️",
+  mascot: "🦡",
+  "away-end": "📣",
+};
 
 /**
  * Always visible, always *before* the run-up. The player has to be able to read
  * this and plan around it — that is what separates a joke from a cheat.
  */
 export function DisruptionBanner({ setup }: { setup: RoundSetup }) {
+  const { t } = useI18n();
   const { disruption, effect } = setup;
 
   if (!disruption) {
@@ -15,25 +26,26 @@ export function DisruptionBanner({ setup }: { setup: RoundSetup }) {
       <View style={[styles.wrap, styles.calm]}>
         <Text style={styles.icon}>🌤️</Text>
         <View style={styles.copy}>
-          <Text style={text.label}>Still night</Text>
-          <Text style={styles.brief}>Nothing in your way. No excuses.</Text>
+          <Text style={text.label}>{t.match.calmName}</Text>
+          <Text style={styles.brief}>{t.match.calmBrief}</Text>
         </View>
       </View>
     );
   }
 
+  const copy = t.disruptions[disruption.id];
   const detail =
     disruption.id === "crosswind"
-      ? `${disruption.brief} Blowing ${effect.windX < 0 ? "left" : "right"}.`
+      ? `${copy.brief} ${t.banner.windDirection(effect.windX < 0 ? "left" : "right")}`
       : disruption.id === "pitch-invader" && effect.blockedCol
-        ? `${disruption.brief} He's in ${blockedColLabel(effect.blockedCol)}.`
-        : disruption.brief;
+        ? `${copy.brief} ${t.banner.invaderAt(t.sides[effect.blockedCol])}`
+        : copy.brief;
 
   return (
     <View style={[styles.wrap, styles.active]}>
-      <Text style={styles.icon}>{disruption.icon}</Text>
+      <Text style={styles.icon}>{ICONS[disruption.id]}</Text>
       <View style={styles.copy}>
-        <Text style={[text.label, styles.activeLabel]}>{disruption.name}</Text>
+        <Text style={[text.label, styles.activeLabel]}>{copy.name}</Text>
         <Text style={styles.brief}>{detail}</Text>
       </View>
     </View>

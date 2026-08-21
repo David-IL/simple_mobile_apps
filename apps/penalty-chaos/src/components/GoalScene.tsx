@@ -1,9 +1,13 @@
 import { useEffect, useMemo, useRef } from "react";
 import { Animated, Easing, StyleSheet, Text, View } from "react-native";
+import Svg, { Line } from "react-native-svg";
 import { splitZone } from "../game/engine";
-import { ZONE_COLS, ZONE_ROWS } from "../game/types";
-import type { Aim, KeeperArchetype, RoundSetup, ShotResult, Zone } from "../game/types";
+import { ZONE_COLS, type Aim, type KeeperArchetype, type KeeperPose } from "../game/types";
+import type { RoundSetup, ShotResult, Zone, ZoneCol } from "../game/types";
 import { palette } from "../theme";
+import { Ball, Mascot, PitchInvader } from "./art/Characters";
+import { KeeperFigure, type Direction } from "./art/KeeperFigure";
+import { CrowdBank, MudPatch, NightSky, SunGlare, WindSock } from "./art/Scenery";
 
 export type ScenePhase = "aiming" | "flying" | "settled";
 
@@ -20,20 +24,23 @@ type Props = {
   onFlightEnd: () => void;
 };
 
-const GOAL_WIDTH_RATIO = 0.86;
-const GOAL_HEIGHT_RATIO = 0.56;
-const BALL_SIZE = 22;
-const KEEPER_WIDTH = 44;
-const KEEPER_HEIGHT = 58;
+const GOAL_WIDTH_RATIO = 0.88;
+const GOAL_HEIGHT_RATIO = 0.5;
+const BALL_SIZE = 24;
 const FLIGHT_MS = 520;
 
-/** Geometry shared by everything drawn in the scene. */
+function directionOf(col: ZoneCol): Direction {
+  if (col === "left") return -1;
+  if (col === "right") return 1;
+  return 0;
+}
+
 function useGeometry(width: number, height: number) {
   return useMemo(() => {
     const goalWidth = width * GOAL_WIDTH_RATIO;
     const goalHeight = height * GOAL_HEIGHT_RATIO;
     const goalLeft = (width - goalWidth) / 2;
-    const goalTop = height * 0.06;
+    const goalTop = height * 0.14;
     return {
       goalWidth,
       goalHeight,
@@ -41,7 +48,8 @@ function useGeometry(width: number, height: number) {
       goalTop,
       goalBottom: goalTop + goalHeight,
       spotX: width / 2,
-      spotY: height - 34,
+      spotY: height - 30,
+      keeperHeight: goalHeight * 0.72,
       /** Aim coords (x: -1..1, y: 0..1) to scene pixels. */
       toPixels(aim: Aim) {
         return {
@@ -54,11 +62,76 @@ function useGeometry(width: number, height: number) {
         const { col, row } = splitZone(zone);
         const colIndex = ZONE_COLS.indexOf(col);
         const x = goalLeft + goalWidth * ((colIndex + 0.5) / ZONE_COLS.length);
-        const y = row === "high" ? goalTop + goalHeight * 0.3 : goalTop + goalHeight * 0.74;
+        const y = row === "high" ? goalTop + goalHeight * 0.34 : goalTop + goalHeight * 0.72;
         return { x, y };
+      },
+      colCentre(col: ZoneCol) {
+        const colIndex = ZONE_COLS.indexOf(col);
+        return goalLeft + goalWidth * ((colIndex + 0.5) / ZONE_COLS.length);
       },
     };
   }, [width, height]);
+}
+
+/** Net mesh plus slightly stronger zone dividers, so the six zones stay legible. */
+function GoalNet({ width, height }: { width: number; height: number }) {
+  const columns = 12;
+  const rows = 8;
+  return (
+    <Svg width={width} height={height}>
+      {Array.from({ length: columns - 1 }, (_, index) => {
+        const x = (width * (index + 1)) / columns;
+        return (
+          <Line
+            key={`v${index}`}
+            x1={x}
+            y1={0}
+            x2={x}
+            y2={height}
+            stroke="#f8fafc"
+            strokeWidth={0.5}
+            opacity={0.18}
+          />
+        );
+      })}
+      {Array.from({ length: rows - 1 }, (_, index) => {
+        const y = (height * (index + 1)) / rows;
+        return (
+          <Line
+            key={`h${index}`}
+            x1={0}
+            y1={y}
+            x2={width}
+            y2={y}
+            stroke="#f8fafc"
+            strokeWidth={0.5}
+            opacity={0.18}
+          />
+        );
+      })}
+      {[1, 2].map((index) => (
+        <Line
+          key={`zx${index}`}
+          x1={(width * index) / 3}
+          y1={0}
+          x2={(width * index) / 3}
+          y2={height}
+          stroke="#f8fafc"
+          strokeWidth={1}
+          opacity={0.3}
+        />
+      ))}
+      <Line
+        x1={0}
+        y1={height / 2}
+        x2={width}
+        y2={height / 2}
+        stroke="#f8fafc"
+        strokeWidth={1}
+        opacity={0.3}
+      />
+    </Svg>
+  );
 }
 
 export function GoalScene({
@@ -77,16 +150,32 @@ export function GoalScene({
   const ball = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
   const ballScale = useRef(new Animated.Value(1)).current;
   const keeperMove = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
+  const mascotWiggle = useRef(new Animated.Value(0)).current;
 
   const restingKeeper = geo.zoneCentre("centre-low");
+  const { effect, disruption, keeperTell, keeperDive } = setup;
 
-  // The tell: the keeper leans toward a zone *before* the player shoots. This is
-  // the counterweight to pattern-reading — see docs/research/penalty-chaos.md §6b.
+  // Pose is derived, never stored: the keeper leans at the tell while you aim,
+  // dives when you shoot, then gloats or slumps once the ball has landed.
+  const { pose, direction }: { pose: KeeperPose; direction: Direction } = (() => {
+    if (phase === "aiming") {
+      if (!keeperTell) return { pose: "ready", direction: 0 };
+      return { pose: "lean", direction: directionOf(splitZone(keeperTell).col) };
+    }
+    const diveDirection = directionOf(splitZone(keeperDive).col);
+    if (phase === "settled" && result) {
+      if (result.kind === "saved" || result.kind === "blocked") {
+        return { pose: "celebrate", direction: diveDirection };
+      }
+      if (result.kind === "goal") return { pose: "beaten", direction: diveDirection };
+    }
+    return { pose: "dive", direction: diveDirection };
+  })();
+
   useEffect(() => {
     if (phase !== "aiming") return;
-    const tell = setup.keeperTell;
-    const lean = tell ? geo.zoneCentre(tell) : restingKeeper;
-    const strength = 0.28;
+    const lean = keeperTell ? geo.zoneCentre(keeperTell) : restingKeeper;
+    const strength = 0.3;
     Animated.timing(keeperMove, {
       toValue: {
         x: (lean.x - restingKeeper.x) * strength,
@@ -96,14 +185,37 @@ export function GoalScene({
       easing: Easing.out(Easing.quad),
       useNativeDriver: true,
     }).start();
-  }, [phase, setup, geo, keeperMove, restingKeeper.x, restingKeeper.y]);
+  }, [phase, keeperTell, geo, keeperMove, restingKeeper.x, restingKeeper.y]);
 
-  // Reset the ball to the spot whenever a new round starts.
   useEffect(() => {
     if (phase !== "aiming") return;
     ball.setValue({ x: 0, y: 0 });
     ballScale.setValue(1);
   }, [phase, setup, ball, ballScale]);
+
+  // The badger never stops dancing. It is the only thing in the scene that
+  // animates on its own, because that is the entire joke.
+  useEffect(() => {
+    if (disruption?.id !== "mascot") return;
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(mascotWiggle, {
+          toValue: 1,
+          duration: 340,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(mascotWiggle, {
+          toValue: -1,
+          duration: 340,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [disruption, mascotWiggle]);
 
   useEffect(() => {
     if (phase !== "flying" || !result) return;
@@ -118,7 +230,6 @@ export function GoalScene({
         easing: Easing.out(Easing.quad),
         useNativeDriver: true,
       }),
-      // Shrinking sells distance without needing a perspective transform.
       Animated.timing(ballScale, {
         toValue: 0.55,
         duration: FLIGHT_MS,
@@ -147,18 +258,50 @@ export function GoalScene({
   ]);
 
   const preview = aimPreview ? geo.toPixels(aimPreview) : null;
-  const invaderCol = setup.effect.blockedCol;
+  const keeperWidth = geo.keeperHeight * 0.62;
 
   return (
     <View style={[styles.scene, { width, height }]}>
+      <NightSky width={width} height={geo.goalTop + 4} />
+
+      <View style={[styles.layer, { top: geo.goalTop - 30, height: geo.goalHeight + 30 }]}>
+        <CrowdBank
+          width={width}
+          height={geo.goalHeight + 30}
+          roaring={disruption?.id === "away-end"}
+        />
+      </View>
+
       <View
         style={[
           styles.grass,
-          { top: geo.goalBottom - 8, height: height - geo.goalBottom + 8, width },
+          { top: geo.goalBottom - 6, height: height - geo.goalBottom + 6, width },
         ]}
       />
 
-      {/* Goal mouth, drawn as its six zones so the keeper's read is legible. */}
+      {disruption?.id === "mascot" ? (
+        <Animated.View
+          style={[
+            styles.absolute,
+            {
+              left: geo.goalLeft + geo.goalWidth * 0.72,
+              top: geo.goalTop - geo.goalHeight * 0.34,
+              transform: [
+                {
+                  rotate: mascotWiggle.interpolate({
+                    inputRange: [-1, 1],
+                    outputRange: ["-9deg", "9deg"],
+                  }),
+                },
+              ],
+            },
+          ]}
+        >
+          <Mascot width={geo.goalHeight * 0.52} height={geo.goalHeight * 0.58} />
+        </Animated.View>
+      ) : null}
+
+      {/* Goal frame, with the net and zone dividers drawn inside it. */}
       <View
         style={[
           styles.goal,
@@ -170,41 +313,70 @@ export function GoalScene({
           },
         ]}
       >
-        {ZONE_ROWS.map((row) => (
-          <View key={row} style={styles.zoneRow}>
-            {ZONE_COLS.map((col) => (
-              <View key={col} style={styles.zoneCell} />
-            ))}
-          </View>
-        ))}
+        <GoalNet width={geo.goalWidth - 8} height={geo.goalHeight - 8} />
       </View>
 
-      {invaderCol ? (
+      <Animated.View
+        style={[
+          styles.absolute,
+          {
+            left: restingKeeper.x - keeperWidth / 2,
+            top: restingKeeper.y - geo.keeperHeight / 2,
+            transform: keeperMove.getTranslateTransform(),
+          },
+        ]}
+      >
+        <KeeperFigure
+          width={keeperWidth}
+          height={geo.keeperHeight}
+          shirt={keeper.shirt}
+          shirtTrim={keeper.shirtTrim}
+          monogram={keeper.monogram}
+          pose={pose}
+          direction={direction}
+        />
+      </Animated.View>
+
+      {effect.blockedCol ? (
         <View
           style={[
-            styles.invader,
+            styles.absolute,
             {
-              left:
-                geo.goalLeft +
-                geo.goalWidth * ((ZONE_COLS.indexOf(invaderCol) + 0.5) / ZONE_COLS.length) -
-                18,
-              top: geo.goalBottom - 46,
+              left: geo.colCentre(effect.blockedCol) - geo.keeperHeight * 0.24,
+              top: geo.goalBottom - geo.keeperHeight * 0.78,
             },
           ]}
         >
-          <Text style={styles.invaderIcon}>🏃</Text>
+          <PitchInvader width={geo.keeperHeight * 0.48} height={geo.keeperHeight * 0.75} />
         </View>
       ) : null}
 
-      {/* Aim line from the spot to the current target. */}
+      {disruption?.id === "muddy-spot" ? (
+        <View style={[styles.absolute, { left: geo.spotX - 45, top: geo.spotY - 4 }]}>
+          <MudPatch width={90} height={34} />
+        </View>
+      ) : null}
+
+      {disruption?.id === "crosswind" ? (
+        <View style={[styles.absolute, { left: width - 52, top: geo.goalTop - 34 }]}>
+          <WindSock width={44} height={60} strength={effect.windX} />
+        </View>
+      ) : null}
+
+      {disruption?.id === "low-sun" ? (
+        <View
+          style={[
+            styles.absolute,
+            { left: 0, top: geo.goalTop - 10, width, height: geo.goalHeight + 40 },
+          ]}
+          pointerEvents="none"
+        >
+          <SunGlare width={width} height={geo.goalHeight + 40} />
+        </View>
+      ) : null}
+
       {preview ? (
         <>
-          <View
-            style={[
-              styles.aimDot,
-              { left: preview.x - 9, top: preview.y - 9 },
-            ]}
-          />
           <View
             style={[
               styles.aimTrack,
@@ -213,44 +385,31 @@ export function GoalScene({
                 top: geo.spotY,
                 width: Math.hypot(preview.x - geo.spotX, preview.y - geo.spotY),
                 transform: [
-                  {
-                    rotate: `${Math.atan2(preview.y - geo.spotY, preview.x - geo.spotX)}rad`,
-                  },
+                  { rotate: `${Math.atan2(preview.y - geo.spotY, preview.x - geo.spotX)}rad` },
                 ],
               },
             ]}
           />
+          <View style={[styles.aimDot, { left: preview.x - 11, top: preview.y - 11 }]} />
         </>
       ) : null}
 
-      <Animated.View
-        style={[
-          styles.keeper,
-          {
-            left: restingKeeper.x - KEEPER_WIDTH / 2,
-            top: restingKeeper.y - KEEPER_HEIGHT / 2,
-            backgroundColor: keeper.shirt,
-            transform: keeperMove.getTranslateTransform(),
-          },
-        ]}
-      >
-        <Text style={styles.keeperMonogram}>{keeper.monogram}</Text>
-      </Animated.View>
+      <View style={[styles.spot, { left: geo.spotX - 4, top: geo.spotY + 15 }]} />
 
       <Animated.View
         style={[
-          styles.ball,
+          styles.absolute,
           {
             left: geo.spotX - BALL_SIZE / 2,
             top: geo.spotY - BALL_SIZE / 2,
             transform: [...ball.getTranslateTransform(), { scale: ballScale }],
           },
         ]}
-      />
+      >
+        <Ball width={BALL_SIZE} height={BALL_SIZE} />
+      </Animated.View>
 
-      <View style={[styles.spot, { left: geo.spotX - 3, top: geo.spotY + 16 }]} />
-
-      <Text style={[styles.keeperName, { top: geo.goalTop - 2, width }]} numberOfLines={1}>
+      <Text style={[styles.keeperName, { top: geo.goalTop - 22, width }]} numberOfLines={1}>
         {keeperName}
       </Text>
     </View>
@@ -258,76 +417,45 @@ export function GoalScene({
 }
 
 const styles = StyleSheet.create({
-  scene: { position: "relative", overflow: "hidden" },
+  scene: { position: "relative", overflow: "hidden", backgroundColor: palette.night },
+  absolute: { position: "absolute" },
+  layer: { position: "absolute", left: 0, right: 0 },
   grass: { position: "absolute", left: 0, backgroundColor: palette.grass },
   goal: {
     position: "absolute",
     borderWidth: 4,
     borderColor: palette.chalk,
     borderRadius: 2,
-    backgroundColor: "rgba(15,23,42,0.35)",
     overflow: "hidden",
   },
-  zoneRow: { flex: 1, flexDirection: "row" },
-  zoneCell: {
-    flex: 1,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(248,250,252,0.18)",
-  },
-  keeper: {
-    position: "absolute",
-    width: KEEPER_WIDTH,
-    height: KEEPER_HEIGHT,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    borderColor: "rgba(15,23,42,0.55)",
-  },
-  keeperMonogram: { color: palette.chalk, fontWeight: "800", fontSize: 15 },
   keeperName: {
     position: "absolute",
     textAlign: "center",
-    color: palette.chalkDim,
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 1,
-  },
-  ball: {
-    position: "absolute",
-    width: BALL_SIZE,
-    height: BALL_SIZE,
-    borderRadius: BALL_SIZE / 2,
-    backgroundColor: palette.ball,
-    borderWidth: 2,
-    borderColor: "#334155",
+    color: palette.chalk,
+    fontSize: 12,
+    fontWeight: "800",
+    letterSpacing: 1.4,
   },
   spot: {
     position: "absolute",
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: "rgba(248,250,252,0.6)",
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "rgba(248,250,252,0.75)",
   },
   aimDot: {
     position: "absolute",
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    borderWidth: 2,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2.5,
     borderColor: palette.accent,
-    backgroundColor: "rgba(56,189,248,0.25)",
+    backgroundColor: "rgba(56,189,248,0.22)",
   },
   aimTrack: {
     position: "absolute",
     height: 2,
-    backgroundColor: "rgba(56,189,248,0.45)",
+    backgroundColor: "rgba(56,189,248,0.5)",
     transformOrigin: "left center",
   },
-  invader: {
-    position: "absolute",
-    width: 36,
-    alignItems: "center",
-  },
-  invaderIcon: { fontSize: 30 },
 });

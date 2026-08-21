@@ -1,9 +1,10 @@
-import { blockedColLabel } from "./disruptions";
 import {
   ZONE_COLS,
+  ZONES,
   type Aim,
   type Disruption,
   type DisruptionEffect,
+  type HeadlineKey,
   type KeeperArchetype,
   type Power,
   type Rng,
@@ -12,7 +13,6 @@ import {
   type Zone,
   type ZoneCol,
   type ZoneRow,
-  ZONES,
 } from "./types";
 
 /** How far off-centre the aim can be pushed at full power. >1 is how you miss. */
@@ -99,24 +99,40 @@ function randomZone(diveBias: number, rng: Rng): Zone {
   return `${col}-${row}`;
 }
 
-/** Most frequent zone, ties broken by whichever was shot most recently. */
-export function favouriteZone(history: readonly Zone[]): Zone | null {
-  if (history.length === 0) return null;
+/**
+ * The zone this player has *actually favoured*, or null if there is no pattern
+ * worth reading.
+ *
+ * Two conditions, both deliberate. The zone must appear at least twice — a
+ * single shot is not a habit — and it must beat every other zone outright.
+ *
+ * The strictness matters. An earlier version broke ties toward the most recent
+ * shot, which meant that with no real pattern (say left, right, left, right)
+ * the keeper simply dived at wherever you last shot. That collapsed the whole
+ * roster to one exploit: never shoot where you just shot. Requiring a genuine
+ * repeat makes "mix it up" the real counterplay, and makes an unread keeper
+ * guess rather than shadow you.
+ */
+export function readablePattern(history: readonly Zone[]): Zone | null {
+  if (history.length < 2) return null;
 
   const counts = new Map<Zone, number>();
   for (const zone of history) counts.set(zone, (counts.get(zone) ?? 0) + 1);
 
   let best: Zone | null = null;
   let bestCount = 0;
-  for (let index = history.length - 1; index >= 0; index -= 1) {
-    const zone = history[index];
-    if (zone === undefined) continue;
-    const count = counts.get(zone) ?? 0;
+  let runnerUp = 0;
+  for (const [zone, count] of counts) {
     if (count > bestCount) {
+      runnerUp = bestCount;
       best = zone;
       bestCount = count;
+    } else if (count > runnerUp) {
+      runnerUp = count;
     }
   }
+
+  if (bestCount < 2 || bestCount === runnerUp) return null;
   return best;
 }
 
@@ -131,9 +147,9 @@ export function chooseDive(
   rng: Rng,
 ): Zone {
   const depth = Math.floor(keeper.readDepth * effect.readDepthMultiplier);
-  if (depth > 0 && history.length > 0) {
-    const favourite = favouriteZone(history.slice(-depth));
-    if (favourite && rng() < keeper.readAccuracy) return favourite;
+  if (depth > 0) {
+    const pattern = readablePattern(history.slice(-depth));
+    if (pattern && rng() < keeper.readAccuracy) return pattern;
   }
   return randomZone(keeper.diveBias, rng);
 }
@@ -176,18 +192,16 @@ function jitter(rng: Rng): number {
   return rng() + rng() - 1;
 }
 
-function missHeadline(landing: Aim): string {
-  if (landing.y > 1) return "Over the bar. Row Z.";
-  if (landing.y < 0) return "Into the ground. Somehow.";
-  return landing.x < 0 ? "Wide of the left post." : "Wide of the right post.";
+function missHeadline(landing: Aim): HeadlineKey {
+  if (landing.y > 1) return "missOver";
+  if (landing.y < 0) return "missGround";
+  return landing.x < 0 ? "missWideLeft" : "missWideRight";
 }
 
-function goalHeadline(zone: Zone): string {
+function goalHeadline(zone: Zone): HeadlineKey {
   const { col, row } = splitZone(zone);
-  if (col === "centre") {
-    return row === "high" ? "Straight down the middle, roof of the net." : "Cheeky. Right down the middle.";
-  }
-  return row === "high" ? "Top corner. Unstoppable." : "Low and hard into the corner.";
+  if (col === "centre") return row === "high" ? "goalCentreHigh" : "goalCentreLow";
+  return row === "high" ? "goalCornerHigh" : "goalCornerLow";
 }
 
 export function resolveShot(args: {
@@ -216,28 +230,16 @@ export function resolveShot(args: {
 
   const { col } = splitZone(zone);
   if (effect.blockedCol === col) {
-    return {
-      kind: "blocked",
-      landing,
-      zone,
-      keeperDive,
-      headline: `Straight at the bloke standing in ${blockedColLabel(col)}.`,
-    };
+    return { kind: "blocked", landing, zone, keeperDive, headline: "blocked" };
   }
 
   if (zone === keeperDive) {
-    return { kind: "saved", landing, zone, keeperDive, headline: `${keeper.name} guessed it.` };
+    return { kind: "saved", landing, zone, keeperDive, headline: "saveGuessed" };
   }
 
   const reach = clamp(keeper.reach + effect.reachBonus, 0, 1);
   if (areAdjacent(zone, keeperDive) && rng() < reach) {
-    return {
-      kind: "saved",
-      landing,
-      zone,
-      keeperDive,
-      headline: `Fingertips. ${keeper.name} got across.`,
-    };
+    return { kind: "saved", landing, zone, keeperDive, headline: "saveFingertips" };
   }
 
   return { kind: "goal", landing, zone, keeperDive, headline: goalHeadline(zone) };

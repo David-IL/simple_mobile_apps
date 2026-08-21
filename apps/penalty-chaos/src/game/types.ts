@@ -1,4 +1,7 @@
-/** Shared vocabulary for the penalty engine. No React in here — this is all pure. */
+/**
+ * Shared vocabulary for the penalty engine. No React and no display copy in
+ * here — this is all pure. Anything a player reads lives in src/i18n.
+ */
 
 export const ZONE_COLS = ["left", "centre", "right"] as const;
 export const ZONE_ROWS = ["low", "high"] as const;
@@ -23,13 +26,28 @@ export type Aim = { x: number; y: number };
 /** 0..1. Higher power reaches the corners but scatters more. */
 export type Power = number;
 
+export const KEEPER_IDS = [
+  "sunday",
+  "statue",
+  "chatterbox",
+  "line-dancer",
+  "showboat",
+  "veteran",
+  "wall",
+  "mind-reader",
+] as const;
+
+export type KeeperId = (typeof KEEPER_IDS)[number];
+
+/** How the figure is drawn this instant. Art concern, but the engine picks it. */
+export type KeeperPose = "ready" | "lean" | "dive" | "beaten" | "celebrate";
+
+/**
+ * A keeper is a parameter set. Its name, blurb and taunts are *not* here — they
+ * are translated copy and live in src/i18n, keyed by this id.
+ */
 export type KeeperArchetype = {
-  id: string;
-  /** The name that ships in the binary. Never a real person — see ADR 8. */
-  name: string;
-  blurb: string;
-  /** Shown between shots. Flavour only; never changes the outcome. */
-  taunts: readonly string[];
+  id: KeeperId;
   /** How often a taunt appears at all, 0..1. */
   tauntRate: number;
   /** How many of your recent shots it pattern-matches. 0 = pure guesswork. */
@@ -48,26 +66,26 @@ export type KeeperArchetype = {
   bluffRate: number;
   /** Chance of saving a shot in a zone *adjacent* to the dive, 0..1. */
   reach: number;
-  /** Two-letter monogram for the shirt. Keeps art needs to zero for v1. */
+  /** Two-letter monogram for the shirt. Same in every language. */
   monogram: string;
   shirt: string;
+  /** Second shirt colour, for sleeves and trim. */
+  shirtTrim: string;
 };
 
-export type DisruptionId =
-  | "crosswind"
-  | "pitch-invader"
-  | "low-sun"
-  | "muddy-spot"
-  | "mascot"
-  | "away-end";
+export const DISRUPTION_IDS = [
+  "crosswind",
+  "pitch-invader",
+  "low-sun",
+  "muddy-spot",
+  "mascot",
+  "away-end",
+] as const;
 
-export type Disruption = {
-  id: DisruptionId;
-  name: string;
-  /** Shown on the banner before the run-up. The player must be able to plan around it. */
-  brief: string;
-  icon: string;
-};
+export type DisruptionId = (typeof DISRUPTION_IDS)[number];
+
+/** Name and brief are translated copy — see src/i18n, keyed by id. */
+export type Disruption = { id: DisruptionId };
 
 /**
  * Everything the disruption changes, resolved once at round start so the UI and
@@ -102,6 +120,23 @@ export type RoundSetup = {
 
 export type ShotResultKind = "goal" | "saved" | "missed" | "blocked";
 
+/**
+ * Which line of commentary to show. A key, not a sentence — the engine has no
+ * business knowing what language anyone reads.
+ */
+export type HeadlineKey =
+  | "missOver"
+  | "missGround"
+  | "missWideLeft"
+  | "missWideRight"
+  | "blocked"
+  | "saveGuessed"
+  | "saveFingertips"
+  | "goalCentreLow"
+  | "goalCentreHigh"
+  | "goalCornerLow"
+  | "goalCornerHigh";
+
 export type ShotResult = {
   kind: ShotResultKind;
   /** Where the ball actually ended up, after scatter and wind. */
@@ -109,7 +144,7 @@ export type ShotResult = {
   /** Null when the ball never reached the goal mouth. */
   zone: Zone | null;
   keeperDive: Zone;
-  headline: string;
+  headline: HeadlineKey;
 };
 
 export type Rng = () => number;

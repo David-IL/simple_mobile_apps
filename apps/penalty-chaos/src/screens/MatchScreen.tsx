@@ -1,25 +1,13 @@
 import { useCallback, useRef, useState } from "react";
-import {
-  LayoutChangeEvent,
-  PanResponder,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { LayoutChangeEvent, PanResponder, Pressable, StyleSheet, Text, View } from "react-native";
 import { DisruptionBanner } from "../components/DisruptionBanner";
 import { GoalScene, type ScenePhase } from "../components/GoalScene";
 import { Scoreboard } from "../components/Scoreboard";
 import { effectFor, rollDisruption } from "../game/disruptions";
-import { aimFromDrag, resolveShot, setupRound } from "../game/engine";
-import {
-  currentPlayer,
-  isOver,
-  recordShot,
-  zoneHistory,
-  type MatchState,
-} from "../game/match";
+import { aimFromDrag, resolveShot, setupRound, splitZone } from "../game/engine";
+import { currentPlayer, isOver, recordShot, zoneHistory, type MatchState } from "../game/match";
 import type { Aim, KeeperArchetype, RoundSetup, ShotResult } from "../game/types";
+import { useI18n } from "../i18n";
 import { outcomeColour, palette, spacing, text } from "../theme";
 
 type Props = {
@@ -35,12 +23,11 @@ const MIN_POWER = 0.12;
 
 const rng = Math.random;
 
-type Round = { setup: RoundSetup; taunt: string | null };
-
-function pickTaunt(keeper: KeeperArchetype): string | null {
-  if (rng() >= keeper.tauntRate) return null;
-  return keeper.taunts[Math.floor(rng() * keeper.taunts.length)] ?? null;
-}
+/**
+ * `tauntRoll` is stored rather than the taunt itself so that switching language
+ * mid-match re-resolves the line instead of leaving English on screen.
+ */
+type Round = { setup: RoundSetup; tauntRoll: number | null };
 
 function makeRound(keeper: KeeperArchetype, state: MatchState): Round {
   const disruption = rollDisruption(rng);
@@ -48,18 +35,12 @@ function makeRound(keeper: KeeperArchetype, state: MatchState): Round {
   const history = zoneHistory(state, currentPlayer(state));
   return {
     setup: setupRound(keeper, history, disruption, effect, rng),
-    taunt: pickTaunt(keeper),
+    tauntRoll: rng() < keeper.tauntRate ? rng() : null,
   };
 }
 
-const outcomeVerdict = {
-  goal: "GOAL",
-  saved: "SAVED",
-  missed: "MISSED",
-  blocked: "BLOCKED",
-} as const;
-
 export function MatchScreen({ keeper, keeperName, initialState, onFinish, onQuit }: Props) {
+  const { t } = useI18n();
   const [state, setState] = useState(initialState);
   const [round, setRound] = useState<Round>(() => makeRound(keeper, initialState));
   const [phase, setPhase] = useState<ScenePhase>("aiming");
@@ -73,26 +54,18 @@ export function MatchScreen({ keeper, keeperName, initialState, onFinish, onQuit
   phaseRef.current = phase;
   const roundRef = useRef(round);
   roundRef.current = round;
-  const sceneRef = useRef(scene);
-  sceneRef.current = scene;
-  const stateRef = useRef(state);
-  stateRef.current = state;
 
   const maxDragRef = useRef(160);
   maxDragRef.current = Math.min(Math.max(scene.height * 0.42, 110), 190);
 
-  const shoot = useCallback((aim: Aim, power: number) => {
-    const shot = resolveShot({
-      aim,
-      power,
-      keeper,
-      setup: roundRef.current.setup,
-      rng,
-    });
-    setResult(shot);
-    setDrag(null);
-    setPhase("flying");
-  }, [keeper]);
+  const shoot = useCallback(
+    (aim: Aim, power: number) => {
+      setResult(resolveShot({ aim, power, keeper, setup: roundRef.current.setup, rng }));
+      setDrag(null);
+      setPhase("flying");
+    },
+    [keeper],
+  );
 
   // shoot() closes over props, so the once-created responder reaches it via a ref.
   const shootRef = useRef(shoot);
@@ -160,9 +133,21 @@ export function MatchScreen({ keeper, keeperName, initialState, onFinish, onQuit
     setScene({ width, height });
   }, []);
 
-  const takerName = state.names[currentPlayer(state)];
+  const takerName =
+    state.mode === "solo" ? t.match.soloTaker : state.names[currentPlayer(state)];
   const blindAim = round.setup.effect.blindAim;
   const showPreview = drag && !blindAim ? drag.aim : null;
+
+  const taunts = t.keepers[keeper.id].taunts;
+  const taunt =
+    round.tauntRoll === null ? null : (taunts[Math.floor(round.tauntRoll * taunts.length)] ?? null);
+
+  const headline = result
+    ? t.headlines[result.headline]({
+        keeper: keeperName,
+        side: result.zone ? t.sides[splitZone(result.zone).col] : t.sides.centre,
+      })
+    : "";
 
   return (
     <View style={styles.screen}>
@@ -187,10 +172,10 @@ export function MatchScreen({ keeper, keeperName, initialState, onFinish, onQuit
         {phase === "settled" && result ? (
           <Pressable style={styles.overlay} onPress={advance}>
             <Text style={[styles.verdict, { color: outcomeColour[result.kind] }]}>
-              {outcomeVerdict[result.kind]}
+              {t.verdict[result.kind]}
             </Text>
-            <Text style={styles.headline}>{result.headline}</Text>
-            <Text style={styles.tapHint}>Tap to continue</Text>
+            <Text style={styles.headline}>{headline}</Text>
+            <Text style={styles.tapHint}>{t.match.tapToContinue}</Text>
           </Pressable>
         ) : null}
       </View>
@@ -198,7 +183,7 @@ export function MatchScreen({ keeper, keeperName, initialState, onFinish, onQuit
       <View style={styles.controls}>
         {phase === "aiming" ? (
           <>
-            <Text style={text.label}>{takerName} to take it</Text>
+            <Text style={text.label}>{t.match.toTake(takerName)}</Text>
             <View style={styles.powerTrack}>
               <View
                 style={[
@@ -210,20 +195,16 @@ export function MatchScreen({ keeper, keeperName, initialState, onFinish, onQuit
                 ]}
               />
             </View>
-            <Text style={styles.hint}>
-              {blindAim
-                ? "Drag up and release — no aim line this time."
-                : "Drag up from anywhere and release. Further = more power, less accuracy."}
-            </Text>
-            {round.taunt ? <Text style={styles.taunt}>“{round.taunt}”</Text> : null}
+            <Text style={styles.hint}>{blindAim ? t.match.hintBlind : t.match.hintNormal}</Text>
+            {taunt ? <Text style={styles.taunt}>“{taunt}”</Text> : null}
           </>
         ) : (
-          <Text style={styles.hint}>{phase === "flying" ? "…" : " "}</Text>
+          <Text style={styles.hint}> </Text>
         )}
       </View>
 
       <Pressable style={styles.quit} onPress={onQuit} accessibilityRole="button">
-        <Text style={styles.quitLabel}>Give up</Text>
+        <Text style={styles.quitLabel}>{t.match.giveUp}</Text>
       </Pressable>
     </View>
   );
@@ -267,12 +248,7 @@ const styles = StyleSheet.create({
   },
   powerFill: { height: "100%", borderRadius: 4 },
   hint: { ...text.muted, textAlign: "center" },
-  taunt: {
-    color: palette.chalk,
-    fontSize: 14,
-    fontStyle: "italic",
-    textAlign: "center",
-  },
+  taunt: { color: palette.chalk, fontSize: 14, fontStyle: "italic", textAlign: "center" },
   quit: { alignSelf: "center", padding: spacing.sm, marginBottom: spacing.xs },
   quitLabel: { color: palette.chalkDim, fontSize: 12, textDecorationLine: "underline" },
 });

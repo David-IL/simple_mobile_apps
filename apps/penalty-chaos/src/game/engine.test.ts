@@ -5,12 +5,12 @@ import {
   areAdjacent,
   chooseDive,
   chooseTell,
-  favouriteZone,
+  readablePattern,
   resolveShot,
   zoneOf,
 } from "./engine";
 import { keeperById } from "./keepers";
-import type { Disruption, KeeperArchetype, Rng, RoundSetup, Zone } from "./types";
+import type { KeeperArchetype, Rng, RoundSetup, Zone } from "./types";
 
 /** Deterministic rng: replays the given values, then repeats the last one. */
 function scriptedRng(values: number[]): Rng {
@@ -22,11 +22,7 @@ function scriptedRng(values: number[]): Rng {
   };
 }
 
-const baseKeeper: KeeperArchetype = {
-  ...keeperById("veteran"),
-  taunts: [],
-  tauntRate: 0,
-};
+const baseKeeper: KeeperArchetype = { ...keeperById("veteran"), tauntRate: 0 };
 
 function setupWith(overrides: Partial<RoundSetup> = {}): RoundSetup {
   return {
@@ -88,17 +84,33 @@ describe("aimFromDrag", () => {
   });
 });
 
-describe("favouriteZone", () => {
-  it("finds the most repeated zone", () => {
-    expect(favouriteZone(["left-low", "right-high", "left-low"])).toBe("left-low");
+describe("readablePattern", () => {
+  it("reads a genuine repeat", () => {
+    expect(readablePattern(["left-low", "right-high", "left-low"])).toBe("left-low");
+    expect(readablePattern(["left-low", "left-low"])).toBe("left-low");
   });
 
-  it("breaks ties toward the most recent", () => {
-    expect(favouriteZone(["left-low", "right-high"])).toBe("right-high");
+  /**
+   * The regression that matters. This was found on a real phone: after three
+   * shots in one corner the keeper read it correctly, but on switching corners
+   * it was already waiting there on the second shot. The old tie-break picked
+   * the most recent zone, so with no real pattern the keeper simply shadowed
+   * your last shot — beatable by one trivial rule, "never shoot where you just
+   * shot", which collapsed the hardest keeper in the roster.
+   */
+  it("refuses to read a player who is not repeating", () => {
+    expect(readablePattern(["left-low", "right-high"])).toBeNull();
+    expect(readablePattern(["left-low", "right-high", "left-low", "right-high"])).toBeNull();
   });
 
-  it("has nothing to say about an empty history", () => {
-    expect(favouriteZone([])).toBeNull();
+  it("needs more than one sighting", () => {
+    expect(readablePattern([])).toBeNull();
+    expect(readablePattern(["centre-low"])).toBeNull();
+  });
+
+  it("needs an outright leader, not a joint one", () => {
+    expect(readablePattern(["left-low", "left-low", "right-high", "right-high"])).toBeNull();
+    expect(readablePattern(["left-low", "left-low", "right-high"])).toBe("left-low");
   });
 });
 
@@ -106,23 +118,57 @@ describe("chooseDive", () => {
   const reader: KeeperArchetype = { ...baseKeeper, readDepth: 3, readAccuracy: 1 };
 
   it("goes where you keep putting it — the core mechanic", () => {
-    const history: Zone[] = ["right-high", "right-high"];
-    expect(chooseDive(reader, history, NO_EFFECT, scriptedRng([0]))).toBe("right-high");
+    expect(chooseDive(reader, ["right-high", "right-high"], NO_EFFECT, scriptedRng([0]))).toBe(
+      "right-high",
+    );
+  });
+
+  /** The Mind-Reader's real configuration, which is where this was reported. */
+  const mindReader: KeeperArchetype = {
+    ...keeperById("mind-reader"),
+    readAccuracy: 1,
+    tauntRate: 0,
+  };
+
+  it("guesses against an alternating player instead of shadowing them", () => {
+    const alternating: Zone[] = ["left-low", "right-high", "left-low", "right-high"];
+    // A shadowing keeper would return "right-high" — the last shot. The random
+    // branch with rng()=0 lands on left-low, proving the read did not fire.
+    expect(chooseDive(mindReader, alternating, NO_EFFECT, scriptedRng([0]))).toBe("left-low");
+  });
+
+  it("does not jump straight onto a corner you have only just switched to", () => {
+    // Reported from a real device: three shots in one corner, then a switch, and
+    // the keeper was waiting in the new corner on the very next shot.
+    const settled: Zone[] = ["left-low", "left-low", "left-low"];
+    expect(chooseDive(mindReader, settled, NO_EFFECT, scriptedRng([0]))).toBe("left-low");
+
+    // First shot at the new corner: the old habit still dominates the window.
+    const justSwitched: Zone[] = [...settled, "right-high"];
+    expect(chooseDive(mindReader, justSwitched, NO_EFFECT, scriptedRng([0]))).toBe("left-low");
+
+    // Second shot at the new corner: window is 2-2, so there is no pattern to
+    // read and the keeper has to guess rather than sit on the new corner.
+    const twiceThere: Zone[] = [...justSwitched, "right-high"];
+    expect(chooseDive(mindReader, twiceThere, NO_EFFECT, scriptedRng([0]))).toBe("left-low");
+
+    // Third shot there is a genuine new habit, and it gets punished.
+    const newHabit: Zone[] = [...twiceThere, "right-high"];
+    expect(chooseDive(mindReader, newHabit, NO_EFFECT, scriptedRng([0]))).toBe("right-high");
   });
 
   it("only reads as far back as readDepth", () => {
-    const shallow: KeeperArchetype = { ...reader, readDepth: 1 };
-    const history: Zone[] = ["left-low", "left-low", "centre-high"];
+    const shallow: KeeperArchetype = { ...reader, readDepth: 2 };
+    const history: Zone[] = ["left-low", "left-low", "centre-high", "centre-high"];
     expect(chooseDive(shallow, history, NO_EFFECT, scriptedRng([0]))).toBe("centre-high");
   });
 
   it("cannot read you at all with no history", () => {
-    // Falls through to the weighted random branch rather than throwing.
     expect(chooseDive(reader, [], NO_EFFECT, scriptedRng([0.5]))).toBeTruthy();
   });
 
   it("is distracted by the mascot", () => {
-    const effect = effectFor({ id: "mascot" } as Disruption, scriptedRng([0]));
+    const effect = effectFor({ id: "mascot" }, scriptedRng([0]));
     const history: Zone[] = ["right-high", "right-high", "right-high"];
     // readDepthMultiplier 0 means the pattern is ignored; a dive to the far side
     // is only reachable through the random branch.
@@ -150,7 +196,7 @@ describe("chooseTell", () => {
 
   it("is forced into the open by the away end", () => {
     const quiet: KeeperArchetype = { ...baseKeeper, telegraph: 0, bluffRate: 0 };
-    const effect = effectFor({ id: "away-end" } as Disruption, scriptedRng([0]));
+    const effect = effectFor({ id: "away-end" }, scriptedRng([0]));
     expect(chooseTell(quiet, "centre-low", effect, scriptedRng([0]))).toBe("centre-low");
   });
 });
@@ -169,6 +215,7 @@ describe("resolveShot", () => {
       rng: noScatter(),
     });
     expect(result.kind).toBe("saved");
+    expect(result.headline).toBe("saveGuessed");
     expect(result.zone).toBe("left-low");
   });
 
@@ -182,6 +229,7 @@ describe("resolveShot", () => {
     });
     expect(result.kind).toBe("goal");
     expect(result.zone).toBe("right-high");
+    expect(result.headline).toBe("goalCornerHigh");
   });
 
   it("misses when the aim is outside the frame", () => {
@@ -194,7 +242,7 @@ describe("resolveShot", () => {
     });
     expect(result.kind).toBe("missed");
     expect(result.zone).toBeNull();
-    expect(result.headline).toContain("Wide");
+    expect(result.headline).toBe("missWideRight");
   });
 
   it("hits the pitch invader before the keeper gets involved", () => {
@@ -222,13 +270,13 @@ describe("resolveShot", () => {
       rng: scriptedRng([0.5, 0.5, 0]),
     });
     expect(result.kind).toBe("saved");
-    expect(result.headline).toContain("Fingertips");
+    expect(result.headline).toBe("saveFingertips");
   });
 
   it("blows the ball sideways in a crosswind", () => {
-    const straight = { aim: { x: 0, y: 0.2 }, power: 0.5 };
     const drifted = resolveShot({
-      ...straight,
+      aim: { x: 0, y: 0.2 },
+      power: 0.5,
       keeper: baseKeeper,
       setup: setupWith({ effect: { ...NO_EFFECT, windX: 0.6 } }),
       rng: noScatter(),
@@ -238,7 +286,6 @@ describe("resolveShot", () => {
   });
 
   it("honours the muddy-spot power cap when working out scatter", () => {
-    // Same aim and rng, but a capped power must not scatter like a full-power shot.
     const wild = scriptedRng([1, 1, 0.99]);
     const uncapped = resolveShot({
       aim: { x: 0, y: 0.5 },
@@ -252,7 +299,7 @@ describe("resolveShot", () => {
       power: 1,
       keeper: baseKeeper,
       setup: setupWith({ effect: { ...NO_EFFECT, powerCap: 0.2 } }),
-      rng: wild,
+      rng: scriptedRng([1, 1, 0.99]),
     });
     expect(Math.abs(capped.landing.x)).toBeLessThan(Math.abs(uncapped.landing.x));
   });

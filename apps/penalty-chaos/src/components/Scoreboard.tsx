@@ -7,6 +7,7 @@ import {
   type MatchState,
   type Player,
 } from "../game/match";
+import { useI18n } from "../i18n";
 import { outcomeColour, palette, spacing, text } from "../theme";
 
 function pipsFor(state: MatchState, player: Player) {
@@ -39,6 +40,7 @@ function Side({ state, player }: { state: MatchState; player: Player }) {
 }
 
 export function Scoreboard({ state }: { state: MatchState }) {
+  const { t } = useI18n();
   const suddenDeath = isSuddenDeath(state);
 
   return (
@@ -51,10 +53,10 @@ export function Scoreboard({ state }: { state: MatchState }) {
         </>
       ) : (
         <View style={styles.side}>
-          <Text style={text.label}>of {REGULATION_SHOTS}</Text>
+          <Text style={text.label}>{t.match.outOf(REGULATION_SHOTS)}</Text>
         </View>
       )}
-      {suddenDeath ? <Text style={styles.suddenDeath}>SUDDEN DEATH</Text> : null}
+      {suddenDeath ? <Text style={styles.suddenDeath}>{t.match.suddenDeath}</Text> : null}
     </View>
   );
 }

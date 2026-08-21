@@ -1,4 +1,10 @@
-import { ZONE_COLS, type Disruption, type DisruptionEffect, type Rng, type ZoneCol } from "./types";
+import {
+  DISRUPTION_IDS,
+  ZONE_COLS,
+  type Disruption,
+  type DisruptionEffect,
+  type Rng,
+} from "./types";
 
 /**
  * The comedy. Every one of these is *telegraphed before the run-up* — that rule
@@ -7,46 +13,9 @@ import { ZONE_COLS, type Disruption, type DisruptionEffect, type Rng, type ZoneC
  * from exactly that feature: a random event that punishes you after you have
  * committed reads as cheating, not as a joke. Shown in advance, it is a puzzle.
  *
- * See docs/research/penalty-chaos.md §6b.
+ * See docs/research/penalty-chaos.md §6b. Names and briefs are in src/i18n.
  */
-export const DISRUPTIONS: readonly Disruption[] = [
-  {
-    id: "crosswind",
-    name: "Crosswind",
-    brief: "The flag is horizontal. The ball will drift — aim into it.",
-    icon: "🚩",
-  },
-  {
-    id: "pitch-invader",
-    name: "Pitch invader",
-    brief: "Someone's uncle is on the pitch. He is blocking one side of the goal.",
-    icon: "🏃",
-  },
-  {
-    id: "low-sun",
-    name: "Low sun",
-    brief: "Blinding. You lose the aim line the moment you start to drag.",
-    icon: "🌇",
-  },
-  {
-    id: "muddy-spot",
-    name: "Muddy penalty spot",
-    brief: "No run-up worth having. You cannot get full power on it — place it.",
-    icon: "🌧️",
-  },
-  {
-    id: "mascot",
-    name: "Mascot behind the goal",
-    brief: "A giant badger is dancing. The keeper has stopped paying attention to you.",
-    icon: "🦡",
-  },
-  {
-    id: "away-end",
-    name: "The away end starts singing",
-    brief: "He's playing to the crowd — commits early and showily, but he's stretching.",
-    icon: "📣",
-  },
-];
+export const DISRUPTIONS: readonly Disruption[] = DISRUPTION_IDS.map((id) => ({ id }));
 
 export const NO_EFFECT: DisruptionEffect = {
   windX: 0,
@@ -90,11 +59,6 @@ export function effectFor(disruption: Disruption | null, rng: Rng): DisruptionEf
       // Shows you exactly where he's going, then very nearly gets there anyway.
       return { ...NO_EFFECT, telegraphBonus: 1, reachBonus: 0.15 };
   }
-}
-
-/** Which side of the goal the invader is standing in, for the banner text. */
-export function blockedColLabel(col: ZoneCol): string {
-  return col === "centre" ? "the middle" : `the ${col}`;
 }
 
 /**

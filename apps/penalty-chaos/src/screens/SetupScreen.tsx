@@ -1,9 +1,11 @@
 import { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { Button } from "@repo/ui";
+import { KeeperFigure } from "../components/art/KeeperFigure";
 import { KEEPERS, difficultyOf } from "../game/keepers";
 import type { MatchMode } from "../game/match";
 import type { KeeperArchetype } from "../game/types";
+import { useI18n } from "../i18n";
 import { displayName, sanitiseName, type KeeperNames } from "../state/keeperNames";
 import { palette, spacing, text } from "../theme";
 
@@ -30,12 +32,14 @@ function useDifficultyScale() {
 function KeeperCard({
   keeper,
   label,
+  blurb,
   selected,
   difficulty,
   onPress,
 }: {
   keeper: KeeperArchetype;
   label: string;
+  blurb: string;
   selected: boolean;
   difficulty: number;
   onPress: () => void;
@@ -47,19 +51,24 @@ function KeeperCard({
       onPress={onPress}
       style={[styles.card, selected && styles.cardSelected]}
     >
-      <View style={[styles.badge, { backgroundColor: keeper.shirt }]}>
-        <Text style={styles.badgeText}>{keeper.monogram}</Text>
+      <View style={styles.portrait}>
+        <KeeperFigure
+          width={38}
+          height={58}
+          shirt={keeper.shirt}
+          shirtTrim={keeper.shirtTrim}
+          monogram={keeper.monogram}
+          pose="ready"
+          direction={0}
+        />
       </View>
       <View style={styles.cardBody}>
         <Text style={styles.cardName}>{label}</Text>
-        <Text style={text.muted}>{keeper.blurb}</Text>
+        <Text style={text.muted}>{blurb}</Text>
       </View>
       <View style={styles.gloves}>
         {Array.from({ length: 5 }, (_, index) => (
-          <View
-            key={index}
-            style={[styles.glove, index < difficulty && styles.gloveOn]}
-          />
+          <View key={index} style={[styles.glove, index < difficulty && styles.gloveOn]} />
         ))}
       </View>
     </Pressable>
@@ -67,37 +76,41 @@ function KeeperCard({
 }
 
 export function SetupScreen({ mode, names, onRename, onStart, onBack }: Props) {
-  const [selectedId, setSelectedId] = useState(KEEPERS[0]?.id ?? "");
-  const [playerOne, setPlayerOne] = useState("Player 1");
-  const [playerTwo, setPlayerTwo] = useState("Player 2");
+  const { t } = useI18n();
+  const [selectedId, setSelectedId] = useState(KEEPERS[0]?.id ?? "sunday");
+  const [playerOne, setPlayerOne] = useState("");
+  const [playerTwo, setPlayerTwo] = useState("");
   const difficultyOfKeeper = useDifficultyScale();
 
   const selected = KEEPERS.find((keeper) => keeper.id === selectedId) ?? KEEPERS[0];
   if (!selected) return null;
 
+  const shippedName = t.keepers[selected.id].name;
+
   const start = () => {
     if (mode === "solo") {
-      onStart(selected, ["You", ""]);
+      onStart(selected, [t.match.soloTaker, ""]);
       return;
     }
     onStart(selected, [
-      sanitiseName(playerOne) || "Player 1",
-      sanitiseName(playerTwo) || "Player 2",
+      sanitiseName(playerOne) || t.setup.playerOne,
+      sanitiseName(playerTwo) || t.setup.playerTwo,
     ]);
   };
 
   return (
     <View style={styles.screen}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={text.label}>{mode === "duel" ? "Two players" : "Solo shootout"}</Text>
-        <Text style={text.title}>Pick your keeper</Text>
+        <Text style={text.label}>{mode === "duel" ? t.setup.modeDuel : t.setup.modeSolo}</Text>
+        <Text style={text.title}>{t.setup.pickKeeper}</Text>
 
         <View style={styles.list}>
           {KEEPERS.map((keeper) => (
             <KeeperCard
               key={keeper.id}
               keeper={keeper}
-              label={displayName(keeper, names)}
+              label={displayName(keeper.id, names, t.keepers[keeper.id].name)}
+              blurb={t.keepers[keeper.id].blurb}
               selected={keeper.id === selected.id}
               difficulty={difficultyOfKeeper(keeper)}
               onPress={() => setSelectedId(keeper.id)}
@@ -106,29 +119,28 @@ export function SetupScreen({ mode, names, onRename, onStart, onBack }: Props) {
         </View>
 
         <View style={styles.panel}>
-          <Text style={text.label}>Call him something else</Text>
+          <Text style={text.label}>{t.setup.renameLabel}</Text>
           <TextInput
             style={styles.input}
             value={names[selected.id] ?? ""}
             onChangeText={(value) => onRename(selected.id, value)}
-            placeholder={selected.name}
+            placeholder={shippedName}
             placeholderTextColor={palette.chalkDim}
             maxLength={18}
             autoCorrect={false}
           />
-          <Text style={text.muted}>
-            Stays on this phone. Nothing leaves the device, and result cards always use{" "}
-            {selected.name}.
-          </Text>
+          <Text style={text.muted}>{t.setup.renameNote(shippedName)}</Text>
         </View>
 
         {mode === "duel" ? (
           <View style={styles.panel}>
-            <Text style={text.label}>Takers</Text>
+            <Text style={text.label}>{t.setup.takers}</Text>
             <TextInput
               style={styles.input}
               value={playerOne}
               onChangeText={setPlayerOne}
+              placeholder={t.setup.playerOne}
+              placeholderTextColor={palette.chalkDim}
               maxLength={14}
               autoCorrect={false}
             />
@@ -136,6 +148,8 @@ export function SetupScreen({ mode, names, onRename, onStart, onBack }: Props) {
               style={styles.input}
               value={playerTwo}
               onChangeText={setPlayerTwo}
+              placeholder={t.setup.playerTwo}
+              placeholderTextColor={palette.chalkDim}
               maxLength={14}
               autoCorrect={false}
             />
@@ -144,9 +158,9 @@ export function SetupScreen({ mode, names, onRename, onStart, onBack }: Props) {
       </ScrollView>
 
       <View style={styles.footer}>
-        <Button label="Take the penalties" onPress={start} />
+        <Button label={t.setup.start} onPress={start} />
         <Pressable onPress={onBack} style={styles.back} accessibilityRole="button">
-          <Text style={styles.backLabel}>Back</Text>
+          <Text style={styles.backLabel}>{t.setup.back}</Text>
         </Pressable>
       </View>
     </View>
@@ -168,23 +182,18 @@ const styles = StyleSheet.create({
     backgroundColor: palette.nightSoft,
   },
   cardSelected: { borderColor: palette.accent, backgroundColor: "#16233a" },
-  badge: {
-    width: 42,
-    height: 42,
-    borderRadius: 10,
+  portrait: {
+    width: 46,
+    height: 60,
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "flex-end",
+    borderRadius: 10,
+    backgroundColor: "rgba(15,23,42,0.6)",
   },
-  badgeText: { color: palette.chalk, fontWeight: "800", fontSize: 14 },
   cardBody: { flex: 1, gap: 2 },
   cardName: { color: palette.chalk, fontSize: 15, fontWeight: "700" },
   gloves: { gap: 3 },
-  glove: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: palette.line,
-  },
+  glove: { width: 6, height: 6, borderRadius: 3, backgroundColor: palette.line },
   gloveOn: { backgroundColor: palette.save },
   panel: {
     gap: spacing.sm,
