@@ -30,12 +30,12 @@ export type SfxId = (typeof SFX_IDS)[number];
 /* eslint-disable @typescript-eslint/no-require-imports */
 export const SFX_SOURCES: Record<SfxId, number> = {
   kick: require("../../assets/sfx/kick.mp3"),
-  goal: require("../../assets/sfx/goal.wav"),
+  goal: require("../../assets/sfx/goal.mp3"),
   save: require("../../assets/sfx/save.wav"),
-  miss: require("../../assets/sfx/miss.wav"),
+  miss: require("../../assets/sfx/miss.mp3"),
   blocked: require("../../assets/sfx/blocked.wav"),
   taunt: require("../../assets/sfx/taunt.wav"),
-  mascot: require("../../assets/sfx/mascot.wav"),
+  mascot: require("../../assets/sfx/mascot.mp3"),
   chant: require("../../assets/sfx/chant.wav"),
   whistle: require("../../assets/sfx/whistle.mp3"),
 };

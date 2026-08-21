@@ -37,16 +37,21 @@ licence is a row that must not ship.
 | `whistle.mp3` | shootout ends | **real** — 4.1s | *fill in* | *fill in* |
 | `menu-music.mp3` | any menu screen | **real** — 15s loop | *fill in* | *fill in* |
 | `stadium-crowd.mp3` | under a match, looping | **real** — 17.5s loop | *fill in* | *fill in* |
-| `goal.wav` | goal | placeholder — needs net ripple + cheer | — | — |
+| `goal.mp3` | goal | **real** — 5.1s | *fill in* | *fill in* |
+| `miss.mp3` | wide or over | **real** — 3.1s | *fill in* | *fill in* |
+| `mascot.mp3` | badger appears | **real** — 2.0s | *fill in* | *fill in* |
 | `save.wav` | keeper saves | placeholder — gloves on ball + reaction | — | — |
-| `miss.wav` | wide or over | placeholder — crowd "ooooh" | — | — |
 | `blocked.wav` | hits the pitch invader | placeholder — dull thud, ideally an "oof" | — | — |
 | `taunt.wav` | keeper taunts | placeholder — mumbled chatter, no real words | — | — |
-| `mascot.wav` | badger appears | placeholder — something silly and short | — | — |
 | `chant.wav` | away end starts singing | placeholder — terrace chant, no real club | — | — |
 
-**The four real files have no source or licence recorded.** Fill those in before
+**None of the real files has a source or licence recorded.** Fill those in before
 any release — a row with a blank licence is a row that must not ship.
+
+Three placeholders left. `taunt` is the one worth recording yourself: a wordless
+mumble from you or your son is free, unambiguously licensed, funnier than
+anything downloadable, and sidesteps ADR 8 entirely because it is your own voice
+with consent.
 
 The research doc argues `miss.wav` and `goal.wav` carry more of the comedy than
 any animation does, so they are the two worth spending real effort on.
