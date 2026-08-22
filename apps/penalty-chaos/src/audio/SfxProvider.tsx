@@ -58,9 +58,16 @@ export function SfxProvider({ children }: { children: ReactNode }) {
   const save = useAudioPlayer(SFX_SOURCES.save);
   const miss = useAudioPlayer(SFX_SOURCES.miss);
   const blocked = useAudioPlayer(SFX_SOURCES.blocked);
-  const taunt = useAudioPlayer(SFX_SOURCES.taunt);
   const chant = useAudioPlayer(SFX_SOURCES.chant);
   const whistle = useAudioPlayer(SFX_SOURCES.whistle);
+  const tauntSunday = useAudioPlayer(SFX_SOURCES["taunt-sunday"]);
+  const tauntStatue = useAudioPlayer(SFX_SOURCES["taunt-statue"]);
+  const tauntChatterbox = useAudioPlayer(SFX_SOURCES["taunt-chatterbox"]);
+  const tauntLineDancer = useAudioPlayer(SFX_SOURCES["taunt-line-dancer"]);
+  const tauntShowboat = useAudioPlayer(SFX_SOURCES["taunt-showboat"]);
+  const tauntVeteran = useAudioPlayer(SFX_SOURCES["taunt-veteran"]);
+  const tauntWall = useAudioPlayer(SFX_SOURCES["taunt-wall"]);
+  const tauntMindReader = useAudioPlayer(SFX_SOURCES["taunt-mind-reader"]);
   const music = useAudioPlayer(MUSIC_SOURCE);
   const ambience = useAudioPlayer(AMBIENCE_SOURCE);
 
@@ -69,8 +76,40 @@ export function SfxProvider({ children }: { children: ReactNode }) {
   const [ambienceActive, setAmbienceActive] = useState(false);
 
   const players = useMemo<Record<SfxId, AudioPlayer>>(
-    () => ({ kick, goal, save, miss, blocked, taunt, chant, whistle }),
-    [kick, goal, save, miss, blocked, taunt, chant, whistle],
+    () => ({
+      kick,
+      goal,
+      save,
+      miss,
+      blocked,
+      chant,
+      whistle,
+      "taunt-sunday": tauntSunday,
+      "taunt-statue": tauntStatue,
+      "taunt-chatterbox": tauntChatterbox,
+      "taunt-line-dancer": tauntLineDancer,
+      "taunt-showboat": tauntShowboat,
+      "taunt-veteran": tauntVeteran,
+      "taunt-wall": tauntWall,
+      "taunt-mind-reader": tauntMindReader,
+    }),
+    [
+      kick,
+      goal,
+      save,
+      miss,
+      blocked,
+      chant,
+      whistle,
+      tauntSunday,
+      tauntStatue,
+      tauntChatterbox,
+      tauntLineDancer,
+      tauntShowboat,
+      tauntVeteran,
+      tauntWall,
+      tauntMindReader,
+    ],
   );
 
   useEffect(() => {

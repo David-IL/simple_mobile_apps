@@ -1,3 +1,4 @@
+import type { TraitId } from "../game/keepers";
 import type { DisruptionId, HeadlineKey, KeeperId, ShotResultKind } from "../game/types";
 
 export const LOCALES = ["nb", "en"] as const;
@@ -40,6 +41,10 @@ export type Messages = {
     back: string;
     playerOne: string;
     playerTwo: string;
+    traits: Record<TraitId, string>;
+    neverFaced: string;
+    savePercent: (percent: number) => string;
+    record: (scored: number, faced: number) => string;
   };
 
   match: {

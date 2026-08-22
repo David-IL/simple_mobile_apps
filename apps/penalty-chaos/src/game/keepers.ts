@@ -117,3 +117,50 @@ export function difficultyOf(keeper: KeeperArchetype): number {
   const readPressure = keeper.readDepth * keeper.readAccuracy;
   return keeper.reach * 2 + readPressure - keeper.telegraph * 0.8;
 }
+
+/**
+ * The four axes a player is shown on the select screen.
+ *
+ * Every one of these **changes how a shot resolves**. That constraint is the
+ * point: a bar is a promise about how the game behaves, and a keeper's build —
+ * his girth and stature — is art with no effect on any outcome. Showing a "size"
+ * score would invent a mechanic that does not exist, which is precisely how a
+ * game earns the "it's rigged" reputation this genre already has. Build already
+ * *reflects* reach (The Wall is the widest figure because his reach is the
+ * highest), so the picture carries it without a bar pretending otherwise.
+ */
+export const TRAIT_IDS = ["memory", "telegraph", "reach", "talk"] as const;
+export type TraitId = (typeof TRAIT_IDS)[number];
+
+/** Raw, before normalising: whatever number best expresses that axis. */
+function rawTrait(keeper: KeeperArchetype, trait: TraitId): number {
+  switch (trait) {
+    case "memory":
+      // Depth alone is misleading — a keeper who looks back four shots but
+      // rarely acts on it is not a good reader.
+      return keeper.readDepth * keeper.readAccuracy;
+    case "telegraph":
+      return keeper.telegraph;
+    case "reach":
+      return keeper.reach;
+    case "talk":
+      return keeper.tauntRate;
+  }
+}
+
+/**
+ * Scores in 0..1, normalised **across the roster** rather than against an
+ * absolute scale. A bar is only useful for choosing between keepers, so the
+ * comparison that matters is with the other seven.
+ */
+export function traitScores(keeper: KeeperArchetype): Record<TraitId, number> {
+  const scores = {} as Record<TraitId, number>;
+  for (const trait of TRAIT_IDS) {
+    const all = KEEPERS.map((candidate) => rawTrait(candidate, trait));
+    const min = Math.min(...all);
+    const max = Math.max(...all);
+    const span = max - min || 1;
+    scores[trait] = (rawTrait(keeper, trait) - min) / span;
+  }
+  return scores;
+}

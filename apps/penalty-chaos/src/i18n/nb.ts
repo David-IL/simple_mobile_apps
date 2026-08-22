@@ -34,6 +34,16 @@ export const nb: Messages = {
     back: "Tilbake",
     playerOne: "Spiller 1",
     playerTwo: "Spiller 2",
+    traits: {
+      memory: "Hukommelse",
+      telegraph: "Røper seg",
+      reach: "Rekkevidde",
+      talk: "Kjefter",
+    },
+    neverFaced: "Aldri møtt",
+    // Norwegian puts a space before the per-cent sign.
+    savePercent: (percent) => `Redder ${percent} %`,
+    record: (scored, faced) => `Du har scoret ${scored} av ${faced}`,
   },
 
   match: {

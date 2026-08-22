@@ -3,12 +3,13 @@ import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-
 import { Button } from "@repo/ui";
 import { KeeperFigure } from "../components/art/KeeperFigure";
 import { looksFor } from "../components/art/keeperLooks";
-import { KEEPERS, difficultyOf } from "../game/keepers";
+import { KEEPERS, TRAIT_IDS, difficultyOf, traitScores } from "../game/keepers";
 import type { MatchMode } from "../game/match";
 import type { KeeperArchetype } from "../game/types";
 import { useI18n } from "../i18n";
 import { displayName, sanitiseName, type KeeperNames } from "../state/keeperNames";
 import { usePlayerNames } from "../state/playerNames";
+import { savePercent, tallyFor, useKeeperRecord } from "../state/keeperRecord";
 import { palette, spacing, text } from "../theme";
 
 type Props = {
@@ -35,6 +36,7 @@ function KeeperCard({
   keeper,
   label,
   blurb,
+  record,
   selected,
   difficulty,
   onPress,
@@ -42,6 +44,8 @@ function KeeperCard({
   keeper: KeeperArchetype;
   label: string;
   blurb: string;
+  /** Null until they have actually met. */
+  record: string | null;
   selected: boolean;
   difficulty: number;
   onPress: () => void;
@@ -59,6 +63,7 @@ function KeeperCard({
       <View style={styles.cardBody}>
         <Text style={styles.cardName}>{label}</Text>
         <Text style={text.muted}>{blurb}</Text>
+        {record ? <Text style={styles.cardRecord}>{record}</Text> : null}
       </View>
       <View style={styles.gloves}>
         {Array.from({ length: 5 }, (_, index) => (
@@ -75,6 +80,7 @@ export function SetupScreen({ mode, names, onRename, onStart, onBack }: Props) {
   // Persisted, not local state: leaving this screen and coming back — which is
   // what "Different keeper" and "Give up" both do — used to wipe the names.
   const { names: players, setPlayerName, maxLength } = usePlayerNames();
+  const { record } = useKeeperRecord();
   const [renameFocused, setRenameFocused] = useState(false);
   const difficultyOfKeeper = useDifficultyScale();
 
@@ -82,6 +88,9 @@ export function SetupScreen({ mode, names, onRename, onStart, onBack }: Props) {
   if (!selected) return null;
 
   const shippedName = t.keepers[selected.id].name;
+  const selectedTally = tallyFor(record, selected.id);
+  const selectedSave = savePercent(selectedTally);
+  const selectedTraits = traitScores(selected);
 
   const start = () => {
     if (mode === "solo") {
@@ -139,10 +148,50 @@ export function SetupScreen({ mode, names, onRename, onStart, onBack }: Props) {
               keeper={keeper}
               label={displayName(keeper.id, names, t.keepers[keeper.id].name)}
               blurb={t.keepers[keeper.id].blurb}
+              record={(() => {
+                const percent = savePercent(tallyFor(record, keeper.id));
+                return percent === null ? null : t.setup.savePercent(percent);
+              })()}
               selected={keeper.id === selected.id}
               difficulty={difficultyOfKeeper(keeper)}
               onPress={() => setSelectedId(keeper.id)}
             />
+          ))}
+        </View>
+
+        {/*
+          Not an accordion. There is only ever one selected keeper, so a panel
+          that always shows the selection needs no disclosure control, no hidden
+          state and no animation — and it matches the rename panel already
+          sitting directly below it.
+        */}
+        <View style={styles.panel}>
+          <View style={styles.statLine}>
+            <Text style={styles.statHeadline}>
+              {selectedSave === null ? t.setup.neverFaced : t.setup.savePercent(selectedSave)}
+            </Text>
+            {selectedTally.faced > 0 ? (
+              <Text style={text.muted}>
+                {t.setup.record(selectedTally.conceded, selectedTally.faced)}
+              </Text>
+            ) : null}
+          </View>
+
+          {TRAIT_IDS.map((trait) => (
+            <View key={trait} style={styles.traitRow}>
+              <Text style={styles.traitLabel}>{t.setup.traits[trait]}</Text>
+              <View style={styles.traitBar}>
+                {Array.from({ length: 10 }, (_, index) => (
+                  <View
+                    key={index}
+                    style={[
+                      styles.traitPip,
+                      index < Math.round(selectedTraits[trait] * 10) && styles.traitPipOn,
+                    ]}
+                  />
+                ))}
+              </View>
+            </View>
           ))}
         </View>
 
@@ -243,6 +292,19 @@ const styles = StyleSheet.create({
   },
   cardBody: { flex: 1, gap: 2 },
   cardName: { color: palette.chalk, fontSize: 15, fontWeight: "700" },
+  cardRecord: { color: palette.brand, fontSize: 12, fontWeight: "700", marginTop: 2 },
+  statLine: { gap: 2, marginBottom: spacing.xs },
+  statHeadline: { color: palette.chalk, fontSize: 20, fontWeight: "800" },
+  traitRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  traitLabel: { ...text.muted, width: 96 },
+  traitBar: { flexDirection: "row", gap: 3, flex: 1 },
+  traitPip: {
+    flex: 1,
+    height: 7,
+    borderRadius: 2,
+    backgroundColor: palette.line,
+  },
+  traitPipOn: { backgroundColor: palette.brand },
   gloves: { gap: 3 },
   glove: { width: 6, height: 6, borderRadius: 3, backgroundColor: palette.line },
   gloveOn: { backgroundColor: palette.save },

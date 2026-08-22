@@ -28,6 +28,15 @@ export const en: Messages = {
     back: "Back",
     playerOne: "Player 1",
     playerTwo: "Player 2",
+    traits: {
+      memory: "Memory",
+      telegraph: "Gives it away",
+      reach: "Reach",
+      talk: "Talks",
+    },
+    neverFaced: "Never faced",
+    savePercent: (percent) => `Saves ${percent}%`,
+    record: (scored, faced) => `You have scored ${scored} of ${faced}`,
   },
 
   match: {

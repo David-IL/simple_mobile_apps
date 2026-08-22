@@ -13,19 +13,33 @@
  * and the licence rules for replacing it.
  */
 
+import type { KeeperId } from "../game/types";
+
 export const SFX_IDS = [
   "kick",
   "goal",
   "save",
   "miss",
   "blocked",
-  "taunt",
   "chant",
   "whistle",
+  "taunt-sunday",
+  "taunt-statue",
+  "taunt-chatterbox",
+  "taunt-line-dancer",
+  "taunt-showboat",
+  "taunt-veteran",
+  "taunt-wall",
+  "taunt-mind-reader",
 ] as const;
 
 export type SfxId = (typeof SFX_IDS)[number];
 
+/**
+ * One distinct laugh per keeper, keyed the same way as `src/i18n`'s taunt
+ * copy — `taunt-${KeeperId}`. Every keeper gets a different clip so a taunt
+ * says something about who is taunting, not just that someone is.
+ */
 /* eslint-disable @typescript-eslint/no-require-imports */
 export const SFX_SOURCES: Record<SfxId, number> = {
   kick: require("../../assets/sfx/kick.mp3"),
@@ -33,9 +47,16 @@ export const SFX_SOURCES: Record<SfxId, number> = {
   save: require("../../assets/sfx/save.mp3"),
   miss: require("../../assets/sfx/miss.mp3"),
   blocked: require("../../assets/sfx/blocked.mp3"),
-  taunt: require("../../assets/sfx/taunt.mp3"),
   chant: require("../../assets/sfx/chant.mp3"),
   whistle: require("../../assets/sfx/whistle.mp3"),
+  "taunt-sunday": require("../../assets/sfx/sunday-taunt.mp3"),
+  "taunt-statue": require("../../assets/sfx/statue-taunt.mp3"),
+  "taunt-chatterbox": require("../../assets/sfx/chatterbox-taunt.mp3"),
+  "taunt-line-dancer": require("../../assets/sfx/line-dancer-taunt.mp3"),
+  "taunt-showboat": require("../../assets/sfx/showboat-taunt.mp3"),
+  "taunt-veteran": require("../../assets/sfx/veteran-taunt.mp3"),
+  "taunt-wall": require("../../assets/sfx/wall-taunt.mp3"),
+  "taunt-mind-reader": require("../../assets/sfx/mind-reader-taunt.mp3"),
 };
 /* eslint-enable @typescript-eslint/no-require-imports */
 
@@ -73,8 +94,24 @@ export const SFX_VOLUME: Record<SfxId, number> = {
   // underneath it. At the old 0.7 it was easy to miss entirely.
   miss: 1,
   blocked: 0.9,
-  // Short and speech-like: quiet enough to be atmosphere, loud enough to hear.
-  taunt: 0.85,
   chant: 0.85,
   whistle: 0.8,
+  // Short and speech-like: quiet enough to be atmosphere, loud enough to
+  // hear. All eight are loudness-normalised to the same target during
+  // trimming (see assets/sfx/README.md), so one shared level is enough —
+  // no keeper's laugh should need to be louder than another's.
+  "taunt-sunday": 0.85,
+  "taunt-statue": 0.85,
+  "taunt-chatterbox": 0.85,
+  "taunt-line-dancer": 0.85,
+  "taunt-showboat": 0.85,
+  "taunt-veteran": 0.85,
+  "taunt-wall": 0.85,
+  "taunt-mind-reader": 0.85,
 };
+
+/** Which laugh a keeper's taunt plays. Kept here, not in `game/keepers.ts` — a
+ * sound is presentation, and that module is deliberately pure parameters. */
+export function tauntSfxId(keeper: KeeperId): SfxId {
+  return `taunt-${keeper}`;
+}

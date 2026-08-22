@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { LayoutChangeEvent, PanResponder, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSfx } from "../audio/SfxProvider";
-import type { SfxId } from "../audio/sounds";
+import { tauntSfxId, type SfxId } from "../audio/sounds";
 import { DisruptionBanner } from "../components/DisruptionBanner";
 import { GoalScene, type ScenePhase } from "../components/GoalScene";
 import { HoldButton } from "../components/HoldButton";
@@ -26,6 +26,7 @@ import type {
   ShotResultKind,
 } from "../game/types";
 import { useI18n } from "../i18n";
+import { useKeeperRecord } from "../state/keeperRecord";
 import { useShotTutorial } from "../state/tutorial";
 import { outcomeColour, palette, spacing, text } from "../theme";
 
@@ -90,6 +91,7 @@ export function MatchScreen({ keeper, keeperName, initialState, onFinish, onQuit
   const { t } = useI18n();
   const { play } = useSfx();
   const { showAimHint, recordShotTaken } = useShotTutorial();
+  const { recordShot: recordAgainstKeeper } = useKeeperRecord();
   const [state, setState] = useState(initialState);
   const [round, setRound] = useState<Round>(() => makeRound(keeper, initialState));
   const [phase, setPhase] = useState<ScenePhase>("aiming");
@@ -185,12 +187,14 @@ export function MatchScreen({ keeper, keeperName, initialState, onFinish, onQuit
     const disruptionId = round.setup.disruption?.id;
     const disruptionSfx = disruptionId ? DISRUPTION_SFX[disruptionId] : undefined;
     if (disruptionSfx) play(disruptionSfx);
-    else if (round.tauntRoll !== null) play("taunt");
-  }, [round, play]);
+    else if (round.tauntRoll !== null) play(tauntSfxId(keeper.id));
+  }, [round, play, keeper.id]);
 
   const advance = useCallback(() => {
     if (!result) return;
     const next = recordShot(state, result.kind, result.zone, result.landing);
+    // Per shot, not per match, so an abandoned shootout still counts against him.
+    recordAgainstKeeper(keeper.id, result.kind);
     setState(next);
     if (isOver(next)) {
       play("whistle");
@@ -200,7 +204,7 @@ export function MatchScreen({ keeper, keeperName, initialState, onFinish, onQuit
     setRound(makeRound(keeper, next));
     setResult(null);
     setPhase("aiming");
-  }, [result, state, keeper, onFinish, play]);
+  }, [result, state, keeper, onFinish, play, recordAgainstKeeper]);
 
   const onSceneLayout = useCallback((event: LayoutChangeEvent) => {
     const { width, height } = event.nativeEvent.layout;
