@@ -1,62 +1,64 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { KeeperId, ShotResultKind } from "../game/types";
+import { applyShot, parseRecord, type KeeperRecord } from "./keeperTally";
+
+export { savePercent, tallyFor, type KeeperRecord, type KeeperTally } from "./keeperTally";
 
 /**
  * How every keeper has done against this phone, for good.
  *
- * Built because it is what the player was already doing in his head. Two
- * sessions in he was talking about keepers by name, with reputations — "X has
- * become much better", "Y is bad" — and the app remembered nothing about any of
- * them between matches. This turns a feeling he was already having into
- * something the game can show him.
+ * The persistence here is deliberately more careful than the other stores in
+ * this app, because the first version lost shots and it took a player counting
+ * to notice. Two separate defects, both worth remembering:
  *
- * Recorded per shot rather than per match, so an abandoned shootout still
- * counts. The shots happened; the keeper faced them.
+ * 1. **The write lived inside a `setState` updater.** On the final shot of a
+ *    shootout the match screen unmounts in the same batch, and React is free to
+ *    discard queued updates for a component that is going away — so the updater
+ *    never ran and the last shot of every match was silently dropped. That is
+ *    the "scored 4 of 4 after scoring 5 of 5" the player reported.
+ * 2. **The write serialised in-memory state, which starts empty.** The record
+ *    loads asynchronously, so a shot taken before the load resolved would write
+ *    a record built from `{}` — wiping every other keeper's history. Nobody had
+ *    hit it yet, but it was a data-loss bug waiting for a fast first tap.
+ *
+ * Both are fixed the same way: every write is a read-modify-write against
+ * storage rather than against React state, and writes are queued behind each
+ * other so two shots cannot interleave. Nothing here depends on a component
+ * still being mounted.
  */
 const STORAGE_KEY = "penalty-chaos/keeper-record";
 
-export type KeeperTally = { faced: number; conceded: number };
-export type KeeperRecord = Readonly<Partial<Record<KeeperId, KeeperTally>>>;
+/**
+ * Serialises writes. Module-level on purpose — two mounted copies of this hook
+ * (the match screen and the setup screen) must not interleave their
+ * read-modify-write cycles.
+ */
+let writeQueue: Promise<KeeperRecord> = Promise.resolve({});
 
-const EMPTY: KeeperTally = { faced: 0, conceded: 0 };
-
-export function tallyFor(record: KeeperRecord, keeperId: KeeperId): KeeperTally {
-  return record[keeperId] ?? EMPTY;
-}
-
-/** Rounded save percentage, or null when they have never met. */
-export function savePercent(tally: KeeperTally): number | null {
-  if (tally.faced === 0) return null;
-  return Math.round(((tally.faced - tally.conceded) / tally.faced) * 100);
-}
-
-function parse(stored: string | null): KeeperRecord {
-  if (!stored) return {};
-  try {
-    const parsed: unknown = JSON.parse(stored);
-    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return {};
-    const entries = Object.entries(parsed as Record<string, unknown>).flatMap(([key, value]) => {
-      if (typeof value !== "object" || value === null) return [];
-      const { faced, conceded } = value as Partial<KeeperTally>;
-      if (typeof faced !== "number" || typeof conceded !== "number") return [];
-      return [[key, { faced, conceded }] as const];
-    });
-    return Object.fromEntries(entries);
-  } catch {
-    // A corrupt record is worth losing silently; it is only bragging rights.
-    return {};
-  }
+async function commitShot(keeperId: KeeperId, kind: ShotResultKind): Promise<KeeperRecord> {
+  const stored = await AsyncStorage.getItem(STORAGE_KEY);
+  const next = applyShot(parseRecord(stored), keeperId, kind);
+  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  return next;
 }
 
 export function useKeeperRecord() {
   const [record, setRecord] = useState<KeeperRecord>({});
+  const mounted = useRef(true);
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;
     void AsyncStorage.getItem(STORAGE_KEY)
       .then((stored) => {
-        if (active) setRecord(parse(stored));
+        if (active) setRecord(parseRecord(stored));
       })
       .catch(() => {
         // Storage unavailable — an empty record just reads as "never faced".
@@ -67,21 +69,16 @@ export function useKeeperRecord() {
   }, []);
 
   const recordShot = useCallback((keeperId: KeeperId, kind: ShotResultKind) => {
-    setRecord((previous) => {
-      const current = previous[keeperId] ?? EMPTY;
-      const next: KeeperRecord = {
-        ...previous,
-        [keeperId]: {
-          faced: current.faced + 1,
-          // Only a goal counts against him. A shot into row Z was not his doing,
-          // and neither was one that hit someone's uncle.
-          conceded: current.conceded + (kind === "goal" ? 1 : 0),
-        },
-      };
-      void AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next)).catch(() => {
-        // Best effort; the tally still holds for this session.
+    // The chain starts synchronously here, so the write is already in flight
+    // before this screen can unmount.
+    writeQueue = writeQueue
+      .then(() => commitShot(keeperId, kind))
+      .catch(() => {
+        // Best effort. Losing bragging rights must never interrupt a match.
+        return {} as KeeperRecord;
       });
-      return next;
+    void writeQueue.then((next) => {
+      if (mounted.current) setRecord(next);
     });
   }, []);
 
