@@ -20,8 +20,6 @@ export const en: Messages = {
     modeDuel: "Two players",
     pickKeeper: "Pick your keeper",
     renameLabel: "Call him something else",
-    renameNote: (shippedName) =>
-      `Stays on this phone. Nothing leaves the device, and result cards always use ${shippedName}.`,
     clearName: "Reset to the original name",
     takers: "Takers",
     start: "Take the penalties",

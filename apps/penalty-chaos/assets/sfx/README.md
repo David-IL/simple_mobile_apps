@@ -167,8 +167,10 @@ placeholders were. Two need watching:
   plays `save` (gloves) and `miss` (the groan) together, because a save is two
   events. It also has a slow onset and plays over the stadium ambience rather
   than over silence, so it sits at 1.0.
-- **`taunt`** is short and speech-like; too quiet and it reads as noise, too loud
-  and it stops being atmosphere.
+- **The eight `taunt-*` sounds** share one level (0.85) rather than eight
+  hand-tuned ones, because they are already loudness-normalised to the same
+  target during trimming — see "The eight taunt laughs" above. If a
+  replacement clip skips that step, it will likely need its own volume entry.
 
 ## Behaviour worth knowing
 

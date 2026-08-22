@@ -26,8 +26,6 @@ export const nb: Messages = {
     modeDuel: "To spillere",
     pickKeeper: "Velg keeper",
     renameLabel: "Kall ham noe annet",
-    renameNote: (shippedName) =>
-      `Blir liggende på denne telefonen. Ingenting sendes noe sted, og resultatkortet bruker alltid ${shippedName}.`,
     clearName: "Tilbake til originalnavnet",
     takers: "Skyttere",
     start: "Ta straffene",

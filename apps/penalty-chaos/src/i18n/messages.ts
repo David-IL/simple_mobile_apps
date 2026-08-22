@@ -34,7 +34,6 @@ export type Messages = {
     modeDuel: string;
     pickKeeper: string;
     renameLabel: string;
-    renameNote: (shippedName: string) => string;
     clearName: string;
     takers: string;
     start: string;
