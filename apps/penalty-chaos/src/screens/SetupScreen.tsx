@@ -10,6 +10,8 @@ import {
   View,
 } from "react-native";
 import { Button } from "@repo/ui";
+import { useSfx } from "../audio/SfxProvider";
+import { tauntSfxId } from "../audio/sounds";
 import { KeeperFigure } from "../components/art/KeeperFigure";
 import { looksFor } from "../components/art/keeperLooks";
 import { KEEPERS, TRAIT_IDS, difficultyOf, traitScores } from "../game/keepers";
@@ -96,6 +98,7 @@ export function SetupScreen({ mode, names, onRename, onStart, onBack }: Props) {
   const { record } = useKeeperRecord();
   const [renameFocused, setRenameFocused] = useState(false);
   const difficultyOfKeeper = useDifficultyScale();
+  const { play } = useSfx();
 
   const bob = useRef(new Animated.Value(0)).current;
   const pop = useRef(new Animated.Value(1)).current;
@@ -124,8 +127,18 @@ export function SetupScreen({ mode, names, onRename, onStart, onBack }: Props) {
     return () => loop.stop();
   }, [bob]);
 
-  // A small punch on selection, so tapping a name in the list clearly does
-  // something up here even though the list is what you were looking at.
+  /**
+   * A punch and the keeper's own laugh on selection.
+   *
+   * The sound is doing more than decoration: hearing the same laugh mid-match
+   * is what makes a keeper recognisable as *him* rather than as a generic
+   * opponent, which is the hook playtesting actually found.
+   *
+   * Skipped on first render. Arriving at the screen should not fire a laugh
+   * nobody asked for — this is feedback for a choice, and on mount no choice
+   * has been made.
+   */
+  const hasSelected = useRef(false);
   useEffect(() => {
     pop.setValue(0.86);
     Animated.spring(pop, {
@@ -134,7 +147,13 @@ export function SetupScreen({ mode, names, onRename, onStart, onBack }: Props) {
       tension: 120,
       useNativeDriver: true,
     }).start();
-  }, [selectedId, pop]);
+
+    if (!hasSelected.current) {
+      hasSelected.current = true;
+      return;
+    }
+    play(tauntSfxId(selectedId));
+  }, [selectedId, pop, play]);
 
   const selected = KEEPERS.find((keeper) => keeper.id === selectedId) ?? KEEPERS[0];
   if (!selected) return null;
@@ -328,8 +347,17 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.md,
     gap: spacing.xs,
     backgroundColor: palette.nightSoft,
-    borderBottomWidth: 1,
-    borderBottomColor: palette.line,
+    // A hard edge plus a shadow, so the pane reads as a fixed layer sitting
+    // above the list rather than as the first item in it. On Android elevation
+    // also lifts it in the draw order, so the shadow falls across the roster.
+    borderBottomWidth: 2,
+    borderBottomColor: "#4c3d61",
+    elevation: 10,
+    shadowColor: "#000000",
+    shadowOpacity: 0.45,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    zIndex: 2,
   },
   detailTop: { flexDirection: "row", alignItems: "center", gap: spacing.md },
   detailPortrait: { width: 116, alignItems: "center" },

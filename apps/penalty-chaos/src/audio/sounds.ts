@@ -112,6 +112,20 @@ export const SFX_VOLUME: Record<SfxId, number> = {
 
 /** Which laugh a keeper's taunt plays. Kept here, not in `game/keepers.ts` — a
  * sound is presentation, and that module is deliberately pure parameters. */
+/**
+ * The taunts, as a set.
+ *
+ * They are treated as one group because only one keeper can be talking at a
+ * time — see the exclusivity rule in SfxProvider.
+ */
+export const TAUNT_SFX_IDS: readonly SfxId[] = SFX_IDS.filter((id) =>
+  id.startsWith("taunt-"),
+);
+
+export function isTauntSfx(id: SfxId): boolean {
+  return TAUNT_SFX_IDS.includes(id);
+}
+
 export function tauntSfxId(keeper: KeeperId): SfxId {
   return `taunt-${keeper}`;
 }

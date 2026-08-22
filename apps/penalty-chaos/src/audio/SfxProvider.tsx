@@ -16,6 +16,8 @@ import {
   MUSIC_VOLUME,
   SFX_SOURCES,
   SFX_VOLUME,
+  TAUNT_SFX_IDS,
+  isTauntSfx,
   type SfxId,
 } from "./sounds";
 
@@ -161,6 +163,15 @@ export function SfxProvider({ children }: { children: ReactNode }) {
       if (muted) return;
       const player = players[id];
       try {
+        // Only one keeper talks at a time. Flicking through the roster fires a
+        // taunt per tap, and without this they pile on top of each other into
+        // noise — every clip has its own player, so nothing stops them
+        // overlapping by default.
+        if (isTauntSfx(id)) {
+          for (const other of TAUNT_SFX_IDS) {
+            if (other !== id) players[other].pause();
+          }
+        }
         // Re-apply volume here, not just in the mount effect — see above.
         player.volume = SFX_VOLUME[id];
         // seekTo is async, but the docs' own quick-replay pattern does not await
