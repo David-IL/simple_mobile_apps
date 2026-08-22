@@ -39,12 +39,22 @@ function Side({ state, player }: { state: MatchState; player: Player }) {
   );
 }
 
-export function Scoreboard({ state }: { state: MatchState }) {
+/**
+ * `keeperName` lives here rather than over the pitch.
+ *
+ * It used to float above the crossbar, directly under the speech bubble, where
+ * the two crowded each other and both sat on top of the only part of the screen
+ * the player is reading. Who you are facing is match metadata, the same as the
+ * score — so it belongs in the place that already shows match metadata, off the
+ * pitch entirely.
+ */
+export function Scoreboard({ state, keeperName }: { state: MatchState; keeperName: string }) {
   const { t } = useI18n();
   const suddenDeath = isSuddenDeath(state);
 
   return (
     <View style={styles.wrap}>
+      <View style={styles.scores}>
       <Side state={state} player={0} />
       {state.mode === "duel" ? (
         <>
@@ -57,20 +67,32 @@ export function Scoreboard({ state }: { state: MatchState }) {
         </View>
       )}
       {suddenDeath ? <Text style={styles.suddenDeath}>{t.match.suddenDeath}</Text> : null}
+      </View>
+      <Text style={styles.versus} numberOfLines={1}>
+        {t.result.versus(keeperName)}
+      </Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   wrap: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.sm,
     backgroundColor: palette.nightSoft,
     borderBottomWidth: 1,
     borderBottomColor: palette.line,
+  },
+  scores: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  versus: {
+    ...text.muted,
+    textAlign: "center",
+    marginTop: 2,
+    color: palette.chalkDim,
   },
   side: { flex: 1, alignItems: "center", gap: 2 },
   name: { color: palette.chalkDim, fontSize: 12, fontWeight: "700" },

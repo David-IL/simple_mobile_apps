@@ -228,7 +228,7 @@ export function MatchScreen({ keeper, keeperName, initialState, onFinish, onQuit
 
   return (
     <View style={styles.screen}>
-      <Scoreboard state={state} />
+      <Scoreboard state={state} keeperName={keeperName} />
       <DisruptionBanner setup={round.setup} />
 
       <View style={styles.stage} onLayout={onSceneLayout} {...responder.panHandlers}>
@@ -237,7 +237,6 @@ export function MatchScreen({ keeper, keeperName, initialState, onFinish, onQuit
             width={scene.width}
             height={scene.height}
             keeper={keeper}
-            keeperName={keeperName}
             setup={round.setup}
             phase={phase}
             aimPreview={showPreview}

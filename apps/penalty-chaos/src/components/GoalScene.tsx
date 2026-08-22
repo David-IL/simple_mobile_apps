@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { Animated, Easing, Platform, StyleSheet, Text, View } from "react-native";
-import Svg, { Circle, Line } from "react-native-svg";
+import Svg, { Circle, Line, Path } from "react-native-svg";
 import { splitZone } from "../game/engine";
 import { ZONE_COLS, type Aim, type KeeperArchetype, type KeeperPose } from "../game/types";
 import type { RoundSetup, ShotResult, Zone, ZoneCol } from "../game/types";
@@ -16,7 +16,6 @@ type Props = {
   width: number;
   height: number;
   keeper: KeeperArchetype;
-  keeperName: string;
   setup: RoundSetup;
   phase: ScenePhase;
   /** Live drag preview. Null while not dragging, or when the sun is in your eyes. */
@@ -56,6 +55,10 @@ const TAUNT_FONT = Platform.select({ android: "casual", default: undefined });
 
 /** Churned-up pitch colour for the muddy round. */
 const MUD = "#4a3a20";
+
+/** Comic-book balloon: flat fill, heavy ink line, same as the banner art. */
+const BUBBLE_FILL = "#fdfcf7";
+const BUBBLE_INK = "#1c1207";
 const FLIGHT_MS = 520;
 
 function directionOf(col: ZoneCol): Direction {
@@ -189,7 +192,6 @@ export function GoalScene({
   width,
   height,
   keeper,
-  keeperName,
   setup,
   phase,
   aimPreview,
@@ -740,10 +742,6 @@ export function GoalScene({
         <Ball width={BALL_SIZE} height={BALL_SIZE} />
       </Animated.View>
 
-      <Text style={[styles.keeperName, { top: geo.goalTop - 24, width }]} numberOfLines={1}>
-        {keeperName}
-      </Text>
-
       {/*
         Anchored to the keeper's *resting* position, never his lean.
         Deliberate: rule 2 makes the lean the only honest signal, and a bubble
@@ -760,8 +758,7 @@ export function GoalScene({
                 8,
                 Math.min(width - 8 - bubbleWidth, restingKeeper.x - bubbleWidth / 2),
               ),
-              // Clears the keeper's name, which sits just above the crossbar.
-              bottom: height - geo.goalTop + 30,
+              bottom: height - geo.goalTop + 12,
             },
           ]}
           pointerEvents="none"
@@ -769,7 +766,23 @@ export function GoalScene({
           <Text style={styles.bubbleText} numberOfLines={2}>
             {taunt}
           </Text>
-          <View style={styles.bubbleTail} />
+          {/*
+            The tail is drawn rather than built from a rotated square: a square
+            cannot taper, and a tail that does not taper is what made the whole
+            thing read as a box with a corner stuck on it. Stroking only the two
+            slanted sides leaves the join with the balloon seamless.
+          */}
+          <Svg width={26} height={16} style={styles.bubbleTail}>
+            <Path d="M1 0 L25 0 L7 15 Z" fill={BUBBLE_FILL} />
+            <Path
+              d="M1 0 L7 15 L25 0"
+              fill="none"
+              stroke={BUBBLE_INK}
+              strokeWidth={2.5}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </Svg>
         </View>
       ) : null}
     </View>
@@ -788,39 +801,26 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     overflow: "hidden",
   },
-  keeperName: {
-    position: "absolute",
-    textAlign: "center",
-    color: palette.chalk,
-    fontSize: 17,
-    fontWeight: "800",
-    letterSpacing: 1.1,
-  },
   bubble: {
     position: "absolute",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 14,
-    backgroundColor: "rgba(248,250,252,0.96)",
+    paddingHorizontal: 16,
+    paddingVertical: 11,
+    borderRadius: 22,
+    backgroundColor: BUBBLE_FILL,
+    borderWidth: 2.5,
+    borderColor: BUBBLE_INK,
+    // A degree and a half off true, so it looks drawn rather than laid out.
+    transform: [{ rotate: "-1.5deg" }],
   },
   bubbleText: {
-    color: "#0f172a",
+    color: BUBBLE_INK,
     fontSize: 15,
     lineHeight: 19,
-    fontWeight: "600",
+    fontWeight: "700",
     fontFamily: TAUNT_FONT,
     textAlign: "center",
   },
-  bubbleTail: {
-    position: "absolute",
-    bottom: -5,
-    alignSelf: "center",
-    width: 12,
-    height: 12,
-    backgroundColor: "rgba(248,250,252,0.94)",
-    transform: [{ rotate: "45deg" }],
-    borderRadius: 2,
-  },
+  bubbleTail: { position: "absolute", bottom: -14, alignSelf: "center" },
   spot: {
     position: "absolute",
     width: 8,
