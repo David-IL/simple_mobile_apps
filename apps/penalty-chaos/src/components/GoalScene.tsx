@@ -8,7 +8,7 @@ import { palette } from "../theme";
 import { Ball, PitchInvader, Steward } from "./art/Characters";
 import { KeeperFigure, keeperBoxWidth, type Direction } from "./art/KeeperFigure";
 import { looksFor } from "./art/keeperLooks";
-import { CrowdBank, MudPatch, NightSky, Rain, SunGlare, WindSock } from "./art/Scenery";
+import { CrowdBank, MudPatch, NightSky, PitchSurface, Rain, SunGlare, WindSock } from "./art/Scenery";
 
 export type ScenePhase = "aiming" | "flying" | "settled";
 
@@ -512,13 +512,22 @@ export function GoalScene({
             top: geo.goalBottom - 6,
             height: height - geo.goalBottom + 6,
             width,
-            // The muddy round churns the whole pitch, not one patch by the spot.
-            // A local splat was too small to read as "the conditions are against
-            // you"; the surface itself has to change.
-            backgroundColor: disruption?.id === "muddy-spot" ? MUD : palette.grass,
           },
         ]}
-      />
+      >
+        <PitchSurface
+          width={width}
+          height={height - geo.goalBottom + 6}
+          base={disruption?.id === "muddy-spot" ? MUD : palette.grass}
+          stripe={disruption?.id === "muddy-spot" ? "#3a2d16" : palette.grassDark}
+          goalWidth={geo.goalWidth}
+          spotY={geo.spotY - (geo.goalBottom - 6)}
+          // The muddy round churns the whole pitch, not one patch by the spot —
+          // a local splat was too small to read as "the conditions are against
+          // you"; the surface itself has to change, markings and all.
+          muddy={disruption?.id === "muddy-spot"}
+        />
+      </View>
 
       {/* Goal frame, with the net and zone dividers drawn inside it. */}
       <View

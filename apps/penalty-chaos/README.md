@@ -94,6 +94,7 @@ Two seams worth not breaking:
 - [x] Playtested in Norwegian — [first session](testing/2026-08-21-first-playtest.md),
       two children, ~20 min, both said no to "are you done?"
 - [ ] Played again unprompted a week later — the actual §6 success bar
+      ([day one observed](testing/2026-08-22-day-two.md))
 - [ ] Real-device performance check on the SVG version
 - [x] Sound *integration* — `expo-audio`, mute toggle, respects the ringer switch
 - [ ] Sound *assets* — all 8 files are synthesised placeholders; see

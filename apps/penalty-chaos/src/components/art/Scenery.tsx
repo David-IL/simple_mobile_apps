@@ -48,6 +48,75 @@ export function WindSock({ width, height, strength }: Size & { strength: number 
   );
 }
 
+/**
+ * The pitch itself: mow stripes, a 6-yard box at the goal line, and the D
+ * arced behind the spot.
+ *
+ * Real dimensions don't fit this camera — the box is 18 yards deep and the D
+ * sits 10 yards beyond that, but the grass strip here is only the run-up
+ * compressed into the last ~30% of scene height. Drawing them at scale would
+ * put the D off the bottom of the phone. So this is a stylised compression,
+ * not a scale pitch: the 6-yard box anchored at the goal line, then the D
+ * right behind the spot — it's the one mark that reads as "penalty" at a
+ * glance, which matters more here than yardage accuracy.
+ *
+ * Skipped entirely on the muddy round: `disruption.id === "muddy-spot"`
+ * already swaps the whole surface to churned mud in `GoalScene`, and lines
+ * painted on a pitch that's supposed to be torn up would contradict the
+ * disruption they're meant to sell.
+ */
+export function PitchSurface({
+  width,
+  height,
+  base,
+  stripe,
+  goalWidth,
+  spotY,
+  muddy,
+}: Size & { base: string; stripe: string; goalWidth: number; spotY: number; muddy?: boolean }) {
+  const stripeCount = 6;
+  const centreX = width / 2;
+  const boxWidth = goalWidth * 0.6;
+  const boxLeft = centreX - boxWidth / 2;
+  const boxHeight = height * 0.26;
+  const arcSpan = goalWidth * 0.2;
+  const arcBulge = arcSpan * 0.7;
+
+  return (
+    <Svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
+      <Rect x={0} y={0} width={width} height={height} fill={base} />
+      {Array.from({ length: stripeCount }, (_, index) => {
+        if (index % 2 === 0) return null;
+        const bandHeight = height / stripeCount;
+        return (
+          <Rect
+            key={index}
+            x={0}
+            y={(height * index) / stripeCount}
+            width={width}
+            height={bandHeight}
+            fill={stripe}
+          />
+        );
+      })}
+      {!muddy ? (
+        <G stroke="#f8fafc" strokeWidth={2} fill="none" opacity={0.55}>
+          <Path
+            d={`M ${boxLeft} 0 L ${boxLeft} ${boxHeight} L ${boxLeft + boxWidth} ${boxHeight} L ${
+              boxLeft + boxWidth
+            } 0`}
+          />
+          <Path
+            d={`M ${centreX - arcSpan} ${spotY} Q ${centreX} ${spotY + arcBulge}, ${
+              centreX + arcSpan
+            } ${spotY}`}
+          />
+        </G>
+      ) : null}
+    </Svg>
+  );
+}
+
 /** Churned-up mud around the penalty spot. */
 export function MudPatch({ width, height }: Size) {
   return (

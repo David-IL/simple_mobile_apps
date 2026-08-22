@@ -286,6 +286,22 @@ be answered first. Not now.
 dives, and *one* disruption — shown to the son. If he doesn't want another go at that point, the
 remaining four evenings don't get spent. Ship or stop at six either way.
 
+## 8b. What actually happened
+
+Kept separate from the sections above, which are the record of the gate as it was
+argued on 2026-08-21 and should stay that way.
+
+Playtests live in
+[apps/penalty-chaos/testing/](../../apps/penalty-chaos/testing/). Two sessions in:
+
+- **§3's riskiest assumption is answered, and the answer is no.** Comedic
+  disruptions are not the hook. Two of five worked, two were not understood, one
+  was deleted.
+- **§9's second condition was right.** The keepers are the product and the
+  disruptions are texture — exactly what the *Dibu* proof point implied.
+- **§6 is part-met.** Unprompted return the next morning; the week-later bar is
+  still running.
+
 ## 9. Decision
 
 - **Decision:** proceed *(recommendation — David's call to flip the status)*

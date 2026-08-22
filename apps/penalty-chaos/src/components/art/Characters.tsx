@@ -1,4 +1,4 @@
-import Svg, { Circle, Ellipse, G, Path, Rect, Text as SvgText } from "react-native-svg";
+import Svg, { Circle, Defs, Ellipse, G, LinearGradient, Path, Rect, Stop, Text as SvgText } from "react-native-svg";
 
 /**
  * The two comic characters that wander into shot. Flat vector, no animation
@@ -10,6 +10,8 @@ import Svg, { Circle, Ellipse, G, Path, Rect, Text as SvgText } from "react-nati
 
 type Size = { width: number; height: number };
 
+const INVADER_INK = "#181026";
+
 /**
  * Someone's uncle, mid-run, scarf streaming, brandishing a KAOS sign.
  *
@@ -18,89 +20,136 @@ type Size = { width: number; height: number };
  * he mattered was a paragraph of text above the pitch. The sign and the scale
  * are the fix: he has to be the loudest thing on the grass, because he *is* the
  * announcement now.
+ *
+ * Redrawn again for the "Banner-close" direction picked from the character
+ * canvas: bold ink outline, cel-shaded gradients, a beanie and chin-beard
+ * lifted straight from the banner art. He holds still (paces, never dives),
+ * so he can carry more of that detail than the keeper can.
  */
 export function PitchInvader({ width, height }: Size) {
   return (
     <Svg width={width} height={height} viewBox="0 0 74 84">
-      {/* Scarf, trailing behind him */}
-      <Path
-        d="M22 30 C 10 26, 6 34, 0 30"
-        stroke="#dc2626"
-        strokeWidth={5}
-        strokeLinecap="round"
-        fill="none"
-      />
-      {/* Back leg, thrown out behind */}
-      <Rect
-        x={22}
-        y={52}
-        width={7}
-        height={26}
-        rx={3.5}
-        fill="#1e3a8a"
-        transform="rotate(28 25 54)"
-      />
-      {/* Front leg, driving forward */}
-      <Rect
-        x={28}
-        y={52}
-        width={7}
-        height={26}
-        rx={3.5}
-        fill="#1e3a8a"
-        transform="rotate(-24 31 54)"
-      />
-      {/* Belly */}
-      <Ellipse cx={29} cy={40} rx={13} ry={14} fill="#facc15" />
-      {/* Arms, one up in triumph */}
-      <Rect
-        x={36}
-        y={22}
-        width={6}
-        height={22}
-        rx={3}
-        fill="#facc15"
-        transform="rotate(24 39 33)"
-      />
-      <Rect
-        x={16}
-        y={34}
-        width={6}
-        height={20}
-        rx={3}
-        fill="#facc15"
-        transform="rotate(-30 19 44)"
-      />
-      <Circle cx={44} cy={20} r={4} fill="#d9a074" />
-      <Circle cx={13} cy={54} r={4} fill="#d9a074" />
-      {/* The sign, straight off the banner art. Sits inside the widened box. */}
-      <G transform="rotate(-12 51 14)">
-        <Rect
-          x={34}
-          y={4}
-          width={34}
-          height={19}
-          rx={3}
-          fill="#dc2626"
-          stroke="#7f1d1d"
-          strokeWidth={1.5}
+      <Defs>
+        <LinearGradient id="piCoat" x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0" stopColor="#f4e3b8" />
+          <Stop offset="1" stopColor="#dcc27f" />
+        </LinearGradient>
+        <LinearGradient id="piJeans" x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0" stopColor="#3b5a8a" />
+          <Stop offset="1" stopColor="#1e3a5f" />
+        </LinearGradient>
+        <LinearGradient id="piSkin" x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0" stopColor="#f4c599" />
+          <Stop offset="1" stopColor="#d99e68" />
+        </LinearGradient>
+      </Defs>
+      <G stroke={INVADER_INK} strokeLinejoin="round">
+        {/* Scarf, trailing behind him */}
+        <Path
+          d="M22 30 C 10 26, 6 34, 0 30"
+          stroke="#dc2626"
+          strokeWidth={5.5}
+          strokeLinecap="round"
+          fill="none"
         />
-        <SvgText x={51} y={18} fontSize={11} fontWeight="bold" fill="#fde68a" textAnchor="middle">
-          KAOS!
-        </SvgText>
+        <Path
+          d="M18 31.5 Q 10 30.5, 3 30"
+          stroke="#fde68a"
+          strokeWidth={1.6}
+          strokeLinecap="round"
+          fill="none"
+        />
+        {/* Back leg, thrown out behind */}
+        <Rect
+          x={22}
+          y={52}
+          width={7}
+          height={26}
+          rx={3.5}
+          fill="url(#piJeans)"
+          strokeWidth={1.4}
+          transform="rotate(28 25 54)"
+        />
+        {/* Front leg, driving forward */}
+        <Rect
+          x={28}
+          y={52}
+          width={7}
+          height={26}
+          rx={3.5}
+          fill="url(#piJeans)"
+          strokeWidth={1.4}
+          transform="rotate(-24 31 54)"
+        />
+        {/* Belly */}
+        <Ellipse cx={29} cy={40} rx={13} ry={14} fill="url(#piCoat)" strokeWidth={1.5} />
+        {/* Arms, one up in triumph */}
+        <Rect
+          x={36}
+          y={22}
+          width={6}
+          height={22}
+          rx={3}
+          fill="url(#piCoat)"
+          strokeWidth={1.3}
+          transform="rotate(24 39 33)"
+        />
+        <Rect
+          x={16}
+          y={34}
+          width={6}
+          height={20}
+          rx={3}
+          fill="url(#piCoat)"
+          strokeWidth={1.3}
+          transform="rotate(-30 19 44)"
+        />
+        <Circle cx={44} cy={20} r={4} fill="url(#piSkin)" strokeWidth={1.2} />
+        <Circle cx={13} cy={54} r={4} fill="url(#piSkin)" strokeWidth={1.2} />
+        {/* Head, delighted with himself */}
+        <Circle cx={29} cy={17} r={10} fill="url(#piSkin)" strokeWidth={1.4} />
+        {/* Chin-beard */}
+        <Path d="M20 19 Q 21 28, 29 28 Q 37 28, 38 19 Q 34 25, 29 25 Q 24 25, 20 19 Z" fill="#5b3a22" stroke="none" />
+        {/* Beanie, with a turned-up brim */}
+        <Path
+          d="M18 13 Q 20 1, 29 1 Q 38 1, 40 13 Q 34 8, 29 8 Q 24 8, 18 13 Z"
+          fill="#fbbf24"
+          strokeWidth={1.3}
+        />
+        <Ellipse cx={22} cy={11} rx={4} ry={2.4} fill="#fde68a" opacity={0.75} stroke="none" />
+        <Rect x={18} y={12} width={22} height={4} rx={2} fill="#ca8a04" strokeWidth={1} />
+        <Circle cx={25.5} cy={17} r={1.6} fill="#1f2937" stroke="none" />
+        <Circle cx={32.5} cy={17} r={1.6} fill="#1f2937" stroke="none" />
+        <Circle cx={26.2} cy={16.4} r={0.55} fill="#fdfdfd" stroke="none" />
+        <Circle cx={33.2} cy={16.4} r={0.55} fill="#fdfdfd" stroke="none" />
+        <G opacity={0.55} fill="#fb7185" stroke="none">
+          <Circle cx={20.4} cy={19.6} r={2.1} />
+          <Circle cx={37.6} cy={19.6} r={2.1} />
+        </G>
+        <Path d="M22 20.5 Q 29 27, 36 20.5 Q 33 25.4, 29 25.4 Q 25 25.4, 22 20.5 Z" fill="#7f1d1d" strokeWidth={1} />
+        <Path d="M24.4 21.2 L 33.6 21.2 L 32.2 23 L 25.8 23 Z" fill="#fdfdfd" stroke="none" />
+        {/*
+          The sign, straight off the banner art, drawn last so it sits in front
+          of his head rather than being clipped by it — its left edge and the
+          head circle genuinely overlap at this rotation, and drawing order
+          decides who's on top.
+        */}
+        <G transform="rotate(-12 51 14)">
+          <Rect
+            x={34}
+            y={4}
+            width={34}
+            height={19}
+            rx={3}
+            fill="#dc2626"
+            stroke="#7f1d1d"
+            strokeWidth={1.5}
+          />
+          <SvgText x={51} y={18} fontSize={11} fontWeight="bold" fill="#fde68a" textAnchor="middle" stroke="none">
+            KAOS!
+          </SvgText>
+        </G>
       </G>
-      {/* Head, delighted with himself */}
-      <Circle cx={29} cy={17} r={10} fill="#d9a074" />
-      <Ellipse cx={29} cy={10} rx={10} ry={5} fill="#78350f" />
-      <Circle cx={25.5} cy={17} r={1.5} fill="#1f2937" />
-      <Circle cx={32.5} cy={17} r={1.5} fill="#1f2937" />
-      <Path
-        d="M24 21 Q 29 25.5, 34 21"
-        stroke="#7f1d1d"
-        strokeWidth={2}
-        strokeLinecap="round"
-        fill="none"
-      />
     </Svg>
   );
 }
