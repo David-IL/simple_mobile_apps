@@ -32,6 +32,20 @@ export type KeeperLooks = {
   beard: Beard;
   brow: Brow;
   mouth: Mouth;
+  /**
+   * How the tell reads. "lean" is the default subtle shift; "point" throws
+   * one arm out toward the tell side and leaves the other alone, for the one
+   * keeper whose blurb specifically claims a pointing gesture rather than
+   * just "shows you a bit".
+   */
+  tellStyle: "lean" | "point";
+  /**
+   * Restless idle movement while the player aims — independent of the tell,
+   * which most of the roster has nothing to do while waiting for. Only the
+   * keeper whose blurb is built entirely around constant motion gets this;
+   * everyone else stands as still as their tell allows.
+   */
+  fidgets: boolean;
 };
 
 export const KEEPER_LOOKS: Record<KeeperId, KeeperLooks> = {
@@ -45,6 +59,8 @@ export const KEEPER_LOOKS: Record<KeeperId, KeeperLooks> = {
     beard: "dark",
     brow: "raised",
     mouth: "open",
+    tellStyle: "lean",
+    fidgets: false,
   },
   statue: {
     shirt: "#64748b",
@@ -56,6 +72,8 @@ export const KEEPER_LOOKS: Record<KeeperId, KeeperLooks> = {
     beard: "none",
     brow: "neutral",
     mouth: "flat",
+    tellStyle: "lean",
+    fidgets: false,
   },
   chatterbox: {
     shirt: "#f59e0b",
@@ -68,6 +86,8 @@ export const KEEPER_LOOKS: Record<KeeperId, KeeperLooks> = {
     brow: "raised",
     // Permanently mid-sentence.
     mouth: "open",
+    tellStyle: "lean",
+    fidgets: false,
   },
   "line-dancer": {
     shirt: "#ec4899",
@@ -79,6 +99,11 @@ export const KEEPER_LOOKS: Record<KeeperId, KeeperLooks> = {
     beard: "none",
     brow: "raised",
     mouth: "grin",
+    tellStyle: "lean",
+    // "Jigs about so much you cannot read him" was previously only true of
+    // his (absent) tell — he stood as still as anyone while you aimed. This
+    // is the actual jigging: a small continuous hop, aiming-phase only.
+    fidgets: true,
   },
   showboat: {
     shirt: "#a855f7",
@@ -91,6 +116,11 @@ export const KEEPER_LOOKS: Record<KeeperId, KeeperLooks> = {
     beard: "none",
     brow: "raised",
     mouth: "grin",
+    // "Points at the corner he's going to save" — the roster's only literal
+    // pointing claim, so he's the only one who gets an actual pointing arm
+    // instead of the generic lean everyone else's tell uses.
+    tellStyle: "point",
+    fidgets: false,
   },
   veteran: {
     shirt: "#0ea5e9",
@@ -103,6 +133,8 @@ export const KEEPER_LOOKS: Record<KeeperId, KeeperLooks> = {
     beard: "grey",
     brow: "neutral",
     mouth: "flat",
+    tellStyle: "lean",
+    fidgets: false,
   },
   wall: {
     shirt: "#ef4444",
@@ -115,6 +147,8 @@ export const KEEPER_LOOKS: Record<KeeperId, KeeperLooks> = {
     beard: "dark",
     brow: "narrow",
     mouth: "flat",
+    tellStyle: "lean",
+    fidgets: false,
   },
   "mind-reader": {
     shirt: "#1e293b",
@@ -127,6 +161,8 @@ export const KEEPER_LOOKS: Record<KeeperId, KeeperLooks> = {
     // Narrowed eyes. He has seen your last four shots.
     brow: "narrow",
     mouth: "flat",
+    tellStyle: "lean",
+    fidgets: false,
   },
 };
 

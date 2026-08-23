@@ -77,22 +77,15 @@ export function aimFromDrag(
   return { aim: { x: dx * scale, y: -dy * scale }, power };
 }
 
-function randomZone(diveBias: number, rng: Rng): Zone {
-  // Keepers dive more often than they stand up, so centre is deliberately light.
-  const weights: Array<[ZoneCol, number]> = [
-    ["left", 1 - diveBias],
-    ["centre", 0.55],
-    ["right", 1 + diveBias],
-  ];
-  const total = weights.reduce((sum, [, weight]) => sum + weight, 0);
-  let roll = rng() * total;
-  let col: ZoneCol = "centre";
-  for (const [candidate, weight] of weights) {
-    roll -= weight;
-    if (roll <= 0) {
-      col = candidate;
-      break;
-    }
+function randomZone(diveBias: number, stillChance: number, rng: Rng): Zone {
+  let col: ZoneCol;
+  if (rng() < stillChance) {
+    col = "centre";
+  } else {
+    // Whatever's left splits between the sides, skewed by diveBias — +1 always
+    // right, -1 always left, exactly as documented on the type.
+    const leftShare = clamp(0.5 - diveBias / 2, 0, 1);
+    col = rng() < leftShare ? "left" : "right";
   }
   // Slight bias low: most penalties are, so most dives are.
   const row: ZoneRow = rng() < 0.58 ? "low" : "high";
@@ -151,7 +144,7 @@ export function chooseDive(
     const pattern = readablePattern(history.slice(-depth));
     if (pattern && rng() < keeper.readAccuracy) return pattern;
   }
-  return randomZone(keeper.diveBias, rng);
+  return randomZone(keeper.diveBias, keeper.stillChance, rng);
 }
 
 /** What the keeper shows. Null when it gives nothing away. */

@@ -20,6 +20,7 @@ export const KEEPERS: readonly KeeperArchetype[] = [
     readDepth: 0,
     readAccuracy: 0,
     diveBias: 0,
+    stillChance: 0.22,
     telegraph: 0.85,
     bluffRate: 0,
     reach: 0.15,
@@ -30,6 +31,12 @@ export const KEEPERS: readonly KeeperArchetype[] = [
     readDepth: 0,
     readAccuracy: 0,
     diveBias: 0,
+    // "Does not move. Does not need to." was previously just the blurb — the
+    // random dive had no lever for it at all, so he committed to a side about
+    // as often as everyone else (roster default below is 0.22). This is the
+    // lever: three dives in four now stay put, matching the roster's one
+    // keeper whose whole identity is not diving.
+    stillChance: 0.75,
     telegraph: 1,
     bluffRate: 0,
     reach: 0.5,
@@ -42,6 +49,7 @@ export const KEEPERS: readonly KeeperArchetype[] = [
     readDepth: 2,
     readAccuracy: 0.35,
     diveBias: -0.15,
+    stillChance: 0.22,
     telegraph: 0.55,
     bluffRate: 0.15,
     reach: 0.3,
@@ -52,6 +60,7 @@ export const KEEPERS: readonly KeeperArchetype[] = [
     readDepth: 2,
     readAccuracy: 0.4,
     diveBias: 0,
+    stillChance: 0.22,
     telegraph: 0,
     bluffRate: 0,
     reach: 0.2,
@@ -62,6 +71,7 @@ export const KEEPERS: readonly KeeperArchetype[] = [
     readDepth: 2,
     readAccuracy: 0.45,
     diveBias: 0.1,
+    stillChance: 0.22,
     telegraph: 0.9,
     bluffRate: 0.45,
     reach: 0.35,
@@ -72,6 +82,7 @@ export const KEEPERS: readonly KeeperArchetype[] = [
     readDepth: 2,
     readAccuracy: 0.55,
     diveBias: 0,
+    stillChance: 0.22,
     telegraph: 0.45,
     bluffRate: 0.2,
     reach: 0.4,
@@ -82,6 +93,7 @@ export const KEEPERS: readonly KeeperArchetype[] = [
     readDepth: 2,
     readAccuracy: 0.5,
     diveBias: 0,
+    stillChance: 0.22,
     telegraph: 0.3,
     bluffRate: 0.15,
     reach: 0.65,
@@ -92,6 +104,7 @@ export const KEEPERS: readonly KeeperArchetype[] = [
     readDepth: 4,
     readAccuracy: 0.75,
     diveBias: 0,
+    stillChance: 0.22,
     telegraph: 0.1,
     bluffRate: 0.3,
     reach: 0.45,
@@ -115,7 +128,10 @@ export function keeperById(id: KeeperId): KeeperArchetype {
  */
 export function difficultyOf(keeper: KeeperArchetype): number {
   const readPressure = keeper.readDepth * keeper.readAccuracy;
-  return keeper.reach * 2 + readPressure - keeper.telegraph * 0.8;
+  // A keeper who mostly camps the centre is easier to beat than his other
+  // numbers suggest — "aim wide" becomes close to a guaranteed plan — so this
+  // counts against him the same way telegraph does.
+  return keeper.reach * 2 + readPressure - keeper.telegraph * 0.8 - keeper.stillChance * 0.5;
 }
 
 /**

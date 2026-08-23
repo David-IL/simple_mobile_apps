@@ -12,6 +12,7 @@ import {
 import { Button } from "@repo/ui";
 import { useSfx } from "../audio/SfxProvider";
 import { tauntSfxId } from "../audio/sounds";
+import { PlayerBadge } from "../components/PlayerBadge";
 import { KeeperFigure } from "../components/art/KeeperFigure";
 import { looksFor } from "../components/art/keeperLooks";
 import { KEEPERS, TRAIT_IDS, difficultyOf, traitScores } from "../game/keepers";
@@ -165,7 +166,7 @@ export function SetupScreen({ mode, names, onRename, onStart, onBack }: Props) {
 
   const start = () => {
     if (mode === "solo") {
-      onStart(selected, [t.match.soloTaker, ""]);
+      onStart(selected, [sanitiseName(players[0]) || t.match.soloTaker, ""]);
       return;
     }
     onStart(selected, [
@@ -270,24 +271,33 @@ export function SetupScreen({ mode, names, onRename, onStart, onBack }: Props) {
 
       <ScrollView contentContainerStyle={styles.scroll}>
         {/*
-          Takers stay above the roster in two-player mode: you sort out who is
-          playing before you argue about which keeper to face.
+          Takers stay above the roster: you sort out who is playing before you
+          argue about which keeper to face. Solo gets the same field, singular
+          — his own name, remembered the same way the duel takers' names are,
+          rather than a fixed "You" nobody can change.
         */}
-        {mode === "duel" ? (
-          <>
-            <Text style={text.label}>{t.setup.takers}</Text>
-            <View style={styles.panel}>
+        <Text style={text.label}>{mode === "duel" ? t.setup.takers : t.setup.yourName}</Text>
+        <View style={styles.panel}>
+          <View style={styles.takerRow}>
+            <PlayerBadge
+              name={sanitiseName(players[0]) || (mode === "duel" ? t.setup.playerOne : t.match.soloTaker)}
+              player={0}
+            />
+            <TextInput
+              style={[styles.input, styles.takerInput]}
+              value={players[0]}
+              onChangeText={(value) => setPlayerName(0, value)}
+              placeholder={mode === "duel" ? t.setup.playerOne : t.match.soloTaker}
+              placeholderTextColor={palette.chalkDim}
+              maxLength={maxLength}
+              autoCorrect={false}
+            />
+          </View>
+          {mode === "duel" ? (
+            <View style={styles.takerRow}>
+              <PlayerBadge name={sanitiseName(players[1]) || t.setup.playerTwo} player={1} />
               <TextInput
-                style={styles.input}
-                value={players[0]}
-                onChangeText={(value) => setPlayerName(0, value)}
-                placeholder={t.setup.playerOne}
-                placeholderTextColor={palette.chalkDim}
-                maxLength={maxLength}
-                autoCorrect={false}
-              />
-              <TextInput
-                style={styles.input}
+                style={[styles.input, styles.takerInput]}
                 value={players[1]}
                 onChangeText={(value) => setPlayerName(1, value)}
                 placeholder={t.setup.playerTwo}
@@ -296,8 +306,8 @@ export function SetupScreen({ mode, names, onRename, onStart, onBack }: Props) {
                 autoCorrect={false}
               />
             </View>
-          </>
-        ) : null}
+          ) : null}
+        </View>
 
         <Text style={text.label}>{t.setup.pickKeeper}</Text>
 
@@ -421,6 +431,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: palette.line,
   },
+  takerRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  takerInput: { flex: 1 },
   input: {
     backgroundColor: palette.night,
     borderRadius: 8,

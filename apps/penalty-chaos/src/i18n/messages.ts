@@ -36,6 +36,7 @@ export type Messages = {
     renameLabel: string;
     clearName: string;
     takers: string;
+    yourName: string;
     start: string;
     back: string;
     playerOne: string;

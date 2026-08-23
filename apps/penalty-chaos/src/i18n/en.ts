@@ -22,6 +22,7 @@ export const en: Messages = {
     renameLabel: "Call him something else",
     clearName: "Reset to the original name",
     takers: "Takers",
+    yourName: "Your name",
     start: "Take the penalties",
     back: "Back",
     playerOne: "Player 1",

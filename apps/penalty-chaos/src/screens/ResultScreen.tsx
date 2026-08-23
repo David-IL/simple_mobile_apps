@@ -1,5 +1,6 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Button } from "@repo/ui";
+import { PlayerBadge } from "../components/PlayerBadge";
 import { ShotMap } from "../components/ShotMap";
 import { KeeperFigure } from "../components/art/KeeperFigure";
 import { looksFor } from "../components/art/keeperLooks";
@@ -27,9 +28,12 @@ function Recap({ state, player }: { state: MatchState; player: Player }) {
   const shots = state.shots.filter((shot) => shot.player === player);
   return (
     <View style={styles.recapRow}>
-      <Text style={text.label} numberOfLines={1}>
-        {state.names[player]}
-      </Text>
+      <View style={styles.recapName}>
+        <PlayerBadge name={state.names[player]} player={player} size={20} />
+        <Text style={text.label} numberOfLines={1}>
+          {state.names[player]}
+        </Text>
+      </View>
       <View style={styles.recapShots}>
         {shots.map((shot, index) => (
           <View key={index} style={[styles.chip, { borderColor: outcomeColour[shot.kind] }]}>
@@ -161,6 +165,7 @@ const styles = StyleSheet.create({
   bigScore: { color: palette.chalk, fontSize: 56, fontWeight: "900", letterSpacing: -2 },
   recap: { marginTop: spacing.xl, gap: spacing.md },
   recapRow: { gap: spacing.xs },
+  recapName: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
   recapShots: { flexDirection: "row", flexWrap: "wrap", gap: spacing.xs },
   chip: { borderWidth: 1, borderRadius: 999, paddingHorizontal: spacing.sm, paddingVertical: 3 },
   chipText: { fontSize: 11, fontWeight: "700" },

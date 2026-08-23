@@ -58,6 +58,16 @@ export type KeeperArchetype = {
   /** Natural lean. -1 = always goes left, +1 = always right, 0 = even. */
   diveBias: number;
   /**
+   * Chance of simply not diving to a side at all when there is no pattern to
+   * read, 0..1. Most of the roster sits around 0.2 — real penalties are
+   * usually saved by diving, not standing still, so centre is deliberately
+   * the less likely outcome. A keeper whose actual identity is "does not
+   * move" needs this pushed well above the roster default, or the claim is
+   * just prose with no mechanic behind it — which is exactly what shipped
+   * first, and it was false roughly 4 shots in 5.
+   */
+  stillChance: number;
+  /**
    * How strongly it pre-commits before you shoot, 0..1. This is the player's
    * counterplay to readDepth: a keeper that reads you hard should telegraph
    * little, and vice versa. Balance the roster on this axis.

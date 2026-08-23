@@ -8,7 +8,16 @@ import { palette } from "../theme";
 import { Ball, PitchInvader, Steward } from "./art/Characters";
 import { KeeperFigure, keeperBoxWidth, type Direction } from "./art/KeeperFigure";
 import { looksFor } from "./art/keeperLooks";
-import { CrowdBank, MudPatch, NightSky, PitchSurface, Rain, SunGlare, WindSock } from "./art/Scenery";
+import {
+  CrowdBank,
+  MudPatch,
+  NightSky,
+  PitchSurface,
+  Rain,
+  SunGlare,
+  WindSock,
+  WindStreaks,
+} from "./art/Scenery";
 
 export type ScenePhase = "aiming" | "flying" | "settled";
 
@@ -212,6 +221,9 @@ export function GoalScene({
   const stewardRun = useRef(new Animated.Value(0)).current;
   const rainFall = useRef(new Animated.Value(0)).current;
   const hintSweep = useRef(new Animated.Value(0)).current;
+  const sockFlutter = useRef(new Animated.Value(0)).current;
+  const windFlow = useRef(new Animated.Value(0)).current;
+  const keeperFidget = useRef(new Animated.Value(0)).current;
 
   const restingKeeper = geo.zoneCentre("centre-low");
   const { effect, disruption, keeperTell, keeperDive } = setup;
@@ -376,6 +388,83 @@ export function GoalScene({
     return () => loop.stop();
   }, [disruption, rainFall]);
 
+  /**
+   * The sock sways gently from its base — a real pole flexes a little under a
+   * gust, it doesn't just hang at a fixed tilt. Only while aiming: the bend
+   * itself is the telegraph and has to stay readable, this is just proof it's
+   * moving air rather than a stiff flag glued in place.
+   */
+  useEffect(() => {
+    if (disruption?.id !== "crosswind" || phase !== "aiming") return;
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(sockFlutter, {
+          toValue: 1,
+          duration: 650,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(sockFlutter, {
+          toValue: -1,
+          duration: 650,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [disruption, phase, sockFlutter]);
+
+  // A single value scrolled the width of the scene, on repeat — same loop
+  // trick as the rain tile, just sideways.
+  useEffect(() => {
+    if (disruption?.id !== "crosswind" || phase !== "aiming") return;
+    const loop = Animated.loop(
+      Animated.timing(windFlow, {
+        toValue: 1,
+        duration: 1400,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      }),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [disruption, phase, windFlow]);
+
+  /**
+   * The Line-Dancer's whole blurb is constant motion — "jigs about so much
+   * you cannot read him" — but he has telegraph 0, so with nothing else
+   * driving his pose he simply stood in "ready" like everyone else while
+   * you aimed. This is independent of the tell entirely: a small continuous
+   * hop, on top of whatever the lean/tell animation is doing, only for him
+   * and only while there's actually a decision to jig about.
+   */
+  useEffect(() => {
+    if (keeper.id !== "line-dancer" || phase !== "aiming") {
+      keeperFidget.setValue(0);
+      return;
+    }
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(keeperFidget, {
+          toValue: 1,
+          duration: 230,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(keeperFidget, {
+          toValue: 0,
+          duration: 230,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [keeper.id, phase, keeperFidget]);
+
   useEffect(() => {
     if (phase !== "flying" || !result) return;
 
@@ -410,24 +499,36 @@ export function GoalScene({
         ? { x: geo.colCentre(effect.blockedCol), y: geo.goalBottom - geo.keeperHeight * 0.34 }
         : landing;
 
+    /**
+     * Linear, not eased out — a struck ball doesn't coast to a stop over its
+     * last few frames, and `Easing.out` brings its velocity to exactly zero
+     * right as it reaches the keeper. Chained into `deflection` below (which
+     * starts its own burst from a standing start), that read as the ball
+     * slowing to a near-halt, pausing, then suddenly launching sideways —
+     * reported as a hitch, and it was one: two independently-eased tweens
+     * with a velocity discontinuity between them. Keeping the approach at a
+     * constant speed means it still has real motion at the moment of
+     * contact, so the deflection reads as a rebound off something moving,
+     * not a second shot fired from a dead stop.
+     */
     const flight = Animated.parallel([
       Animated.timing(ball, {
         toValue: { x: contact.x - geo.spotX, y: contact.y - geo.spotY },
         duration: FLIGHT_MS,
-        easing: Easing.out(Easing.quad),
+        easing: Easing.linear,
         useNativeDriver: true,
       }),
       Animated.timing(ballScale, {
         toValue: 0.55,
         duration: FLIGHT_MS,
-        easing: Easing.out(Easing.quad),
+        easing: Easing.linear,
         useNativeDriver: true,
       }),
       // Spin sells the strike far better than panel detail does at this size.
       Animated.timing(ballSpin, {
         toValue: 1,
         duration: FLIGHT_MS,
-        easing: Easing.out(Easing.quad),
+        easing: Easing.linear,
         useNativeDriver: true,
       }),
       Animated.timing(keeperMove, {
@@ -552,7 +653,15 @@ export function GoalScene({
           {
             left: restingKeeper.x - keeperWidth / 2,
             top: restingKeeper.y - geo.keeperHeight / 2,
-            transform: keeperMove.getTranslateTransform(),
+            transform: [
+              ...keeperMove.getTranslateTransform(),
+              {
+                translateY: keeperFidget.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, -geo.keeperHeight * 0.05],
+                }),
+              },
+            ],
           },
         ]}
       >
@@ -649,9 +758,53 @@ export function GoalScene({
       ) : null}
 
       {disruption?.id === "crosswind" ? (
-        <View style={[styles.absolute, { left: width - 52, top: geo.goalTop - 34 }]}>
-          <WindSock width={44} height={60} strength={effect.windX} />
-        </View>
+        <>
+          <Animated.View
+            style={[
+              styles.absolute,
+              {
+                left: 0,
+                top: geo.goalTop,
+                width,
+                height: geo.goalHeight,
+                transform: [
+                  {
+                    translateX: windFlow.interpolate({
+                      inputRange: [0, 1],
+                      // Blowing left drifts the ball left, so the air itself
+                      // has to visibly move right-to-left, and vice versa —
+                      // same sign the engine uses for windX.
+                      outputRange: effect.windX < 0 ? [0, -width] : [0, width],
+                    }),
+                  },
+                ],
+              },
+            ]}
+            pointerEvents="none"
+          >
+            <WindStreaks width={width * 2} height={geo.goalHeight} />
+          </Animated.View>
+          <Animated.View
+            style={[
+              styles.absolute,
+              {
+                left: width - 52,
+                top: geo.goalTop - 34,
+                transformOrigin: "bottom center",
+                transform: [
+                  {
+                    rotate: sockFlutter.interpolate({
+                      inputRange: [-1, 1],
+                      outputRange: ["-2.5deg", "2.5deg"],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          >
+            <WindSock width={44} height={60} strength={effect.windX} />
+          </Animated.View>
+        </>
       ) : null}
 
       {disruption?.id === "low-sun" ? (

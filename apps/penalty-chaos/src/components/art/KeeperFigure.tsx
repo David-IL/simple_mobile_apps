@@ -84,11 +84,17 @@ function shade(hex: string, amount: number): string {
 }
 
 /** Arm angles in degrees, measured from straight down, per pose. */
-function armAngles(pose: KeeperPose, direction: Direction): [number, number] {
+function armAngles(pose: KeeperPose, direction: Direction, pointing: boolean): [number, number] {
   switch (pose) {
     case "ready":
       return [-38, 38];
     case "lean":
+      if (pointing && direction !== 0) {
+        // One arm thrown out toward the tell, the other left alone — an
+        // actual pointing gesture, distinct from every other keeper's tell,
+        // which shifts both arms together (see below).
+        return direction === 1 ? [-15, 100] : [-100, 15];
+      }
       // Both arms shift toward the side he is favouring — that is the tell.
       return [-38 + direction * 22, 38 + direction * 22];
     case "dive":
@@ -204,7 +210,7 @@ function MouthPiece({ mouth }: { mouth: Mouth }) {
 }
 
 export function KeeperFigure({ height, looks, pose, direction }: Props) {
-  const [leftArm, rightArm] = armAngles(pose, direction);
+  const [leftArm, rightArm] = armAngles(pose, direction, looks.tellStyle === "point");
   const rotation = bodyRotation(pose, direction);
   const crouch = pose === "beaten" ? 5 : 0;
 

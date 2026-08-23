@@ -211,8 +211,9 @@ export function MatchScreen({ keeper, keeperName, initialState, onFinish, onQuit
     setScene({ width, height });
   }, []);
 
-  const takerName =
-    state.mode === "solo" ? t.match.soloTaker : state.names[currentPlayer(state)];
+  // Solo now stores a real (or "You"-defaulted) name at the same slot duel
+  // uses, set once at SetupScreen — no mode split needed here any more.
+  const takerName = state.names[currentPlayer(state)];
   const showPreview = drag && !round.setup.effect.blindAim ? drag.aim : null;
 
   const taunts = t.keepers[keeper.id].taunts;

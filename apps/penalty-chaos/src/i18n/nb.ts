@@ -28,6 +28,7 @@ export const nb: Messages = {
     renameLabel: "Kall ham noe annet",
     clearName: "Tilbake til originalnavnet",
     takers: "Skyttere",
+    yourName: "Ditt navn",
     start: "Ta straffene",
     back: "Tilbake",
     playerOne: "Spiller 1",

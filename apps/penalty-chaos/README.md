@@ -99,8 +99,14 @@ Two seams worth not breaking:
 - [x] Sound *integration* — `expo-audio`, mute toggle, respects the ringer switch
 - [ ] Sound *assets* — all 8 files are synthesised placeholders; see
       [assets/sfx/README.md](assets/sfx/README.md) for what each needs and the licence rules
-- [ ] App icon + splash (still the Expo default)
+- [x] App icon + splash
 - [x] Play Store listing drafted — [store/listing.md](store/listing.md); release
       restricted to Norway per research doc §7, set in the Play Console
-- [ ] Screenshots and feature graphic for the listing
-- [ ] First EAS build (`eas build -p android --profile preview`)
+- [x] Deployment guide — [store/deploying.md](store/deploying.md)
+- [x] Feature graphic + 512px store icon — [store/assets/](store/assets/)
+- [x] Privacy policy written — [store/privacy-policy.md](store/privacy-policy.md);
+      **required**, the app's audience includes children
+- [ ] Privacy policy hosted at a public URL
+- [ ] Screenshots (see the 2:1 trap in the deployment guide)
+- [ ] First EAS build (`npx eas build -p android --profile preview`)
+- [ ] Internal testing release, and the 11-year-old installs it from Play

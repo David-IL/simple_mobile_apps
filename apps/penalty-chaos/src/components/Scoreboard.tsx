@@ -9,6 +9,7 @@ import {
 } from "../game/match";
 import { useI18n } from "../i18n";
 import { outcomeColour, palette, spacing, text } from "../theme";
+import { PlayerBadge } from "./PlayerBadge";
 
 function pipsFor(state: MatchState, player: Player) {
   const taken = state.shots.filter((shot) => shot.player === player);
@@ -20,6 +21,7 @@ function Side({ state, player }: { state: MatchState; player: Player }) {
   const active = !state.shots.length || currentPlayer(state) === player;
   return (
     <View style={styles.side}>
+      <PlayerBadge name={state.names[player]} player={player} size={22} />
       <Text style={[styles.name, active && styles.nameActive]} numberOfLines={1}>
         {state.names[player]}
       </Text>

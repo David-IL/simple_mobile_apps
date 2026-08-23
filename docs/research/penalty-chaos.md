@@ -261,8 +261,12 @@ will actually get played.
 - **Distribution:** restrict the Play release to Norway. The audience is local (§6), global
   distribution means the strictest jurisdiction shipped to governs, and limiting it is simply
   honest about who this is for.
-- **Privacy policy:** not required — collects nothing, no analytics, no ads. The custom keeper
-  name never leaves the device.
+- **Privacy policy:** ~~not required~~ — **wrong, corrected 2026-08-23.** True for a
+  general-audience app, but Play requires one from any app whose target audience includes
+  children *"even apps that do not access any personal or sensitive user data"*. A cartoon
+  football game built for an 11-year-old is child-appealing however it is declared. Text
+  written at [apps/penalty-chaos/store/privacy-policy.md](../../apps/penalty-chaos/store/privacy-policy.md);
+  it still collects nothing, and the custom keeper name still never leaves the device.
 - **Monetization: none.** Not paid, no IAP, no ads. Per
   [ADR 6](../adr/0006-monetization-is-a-learning-goal.md), ads are a compliance exercise for when
   he wants to learn that, and this app is not that exercise. Keeping it ad-free is also the only

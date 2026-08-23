@@ -105,19 +105,38 @@ export function PitchInvader({ width, height }: Size) {
           transform="rotate(-30 19 44)"
         />
         <Circle cx={44} cy={20} r={4} fill="url(#piSkin)" strokeWidth={1.2} />
-        <Circle cx={13} cy={54} r={4} fill="url(#piSkin)" strokeWidth={1.2} />
+        {/*
+          This hand sits at the sleeve's actual rotated end, not the sleeve's
+          own unrotated coordinates — those two used to be different points,
+          which read as a hand floating a good distance from the wrist once
+          outlines made both shapes' edges visible.
+        */}
+        <Circle cx={24} cy={53} r={4} fill="url(#piSkin)" strokeWidth={1.2} />
         {/* Head, delighted with himself */}
         <Circle cx={29} cy={17} r={10} fill="url(#piSkin)" strokeWidth={1.4} />
         {/* Chin-beard */}
         <Path d="M20 19 Q 21 28, 29 28 Q 37 28, 38 19 Q 34 25, 29 25 Q 24 25, 20 19 Z" fill="#5b3a22" stroke="none" />
-        {/* Beanie, with a turned-up brim */}
+        {/*
+          Beanie. The brim used to be a separate flat rect sitting right at
+          eyebrow height — outlined, it read as a bar laid across his
+          forehead rather than a hat edge. The dome's own lower curve (the
+          "Q 34 8, 29 8 Q 24 8" arc below) already stops well above the eyes
+          and needs no second shape drawn under it; this just shades that
+          same curve rather than adding another bar on top of it.
+        */}
         <Path
           d="M18 13 Q 20 1, 29 1 Q 38 1, 40 13 Q 34 8, 29 8 Q 24 8, 18 13 Z"
           fill="#fbbf24"
           strokeWidth={1.3}
         />
+        <Path
+          d="M19.5 12.4 Q 29 9.5, 38.5 12.4"
+          stroke="#ca8a04"
+          strokeWidth={1.6}
+          strokeLinecap="round"
+          fill="none"
+        />
         <Ellipse cx={22} cy={11} rx={4} ry={2.4} fill="#fde68a" opacity={0.75} stroke="none" />
-        <Rect x={18} y={12} width={22} height={4} rx={2} fill="#ca8a04" strokeWidth={1} />
         <Circle cx={25.5} cy={17} r={1.6} fill="#1f2937" stroke="none" />
         <Circle cx={32.5} cy={17} r={1.6} fill="#1f2937" stroke="none" />
         <Circle cx={26.2} cy={16.4} r={0.55} fill="#fdfdfd" stroke="none" />
@@ -129,23 +148,24 @@ export function PitchInvader({ width, height }: Size) {
         <Path d="M22 20.5 Q 29 27, 36 20.5 Q 33 25.4, 29 25.4 Q 25 25.4, 22 20.5 Z" fill="#7f1d1d" strokeWidth={1} />
         <Path d="M24.4 21.2 L 33.6 21.2 L 32.2 23 L 25.8 23 Z" fill="#fdfdfd" stroke="none" />
         {/*
-          The sign, straight off the banner art, drawn last so it sits in front
-          of his head rather than being clipped by it — its left edge and the
-          head circle genuinely overlap at this rotation, and drawing order
-          decides who's on top.
+          The sign, straight off the banner art. Moved clear of the head
+          entirely rather than layered over or under it — either drawing
+          order left one of "his face" or "the K" hidden behind the other,
+          because the two shapes genuinely overlapped at the old position.
+          Held up and to the right, where the raised arm's hand already is.
         */}
-        <G transform="rotate(-12 51 14)">
+        <G transform="rotate(-8 57.5 10)">
           <Rect
-            x={34}
-            y={4}
-            width={34}
-            height={19}
+            x={43}
+            y={2}
+            width={29}
+            height={16}
             rx={3}
             fill="#dc2626"
             stroke="#7f1d1d"
             strokeWidth={1.5}
           />
-          <SvgText x={51} y={18} fontSize={11} fontWeight="bold" fill="#fde68a" textAnchor="middle" stroke="none">
+          <SvgText x={57.5} y={13.5} fontSize={9} fontWeight="bold" fill="#fde68a" textAnchor="middle" stroke="none">
             KAOS!
           </SvgText>
         </G>

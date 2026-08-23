@@ -133,8 +133,9 @@ describe("chooseDive", () => {
   it("guesses against an alternating player instead of shadowing them", () => {
     const alternating: Zone[] = ["left-low", "right-high", "left-low", "right-high"];
     // A shadowing keeper would return "right-high" — the last shot. The random
-    // branch with rng()=0 lands on left-low, proving the read did not fire.
-    expect(chooseDive(mindReader, alternating, NO_EFFECT, scriptedRng([0]))).toBe("left-low");
+    // branch with rng()=0 lands on centre-low (stillChance is checked first,
+    // and 0 is below any positive stillChance), proving the read did not fire.
+    expect(chooseDive(mindReader, alternating, NO_EFFECT, scriptedRng([0]))).toBe("centre-low");
   });
 
   it("does not jump straight onto a corner you have only just switched to", () => {
@@ -148,9 +149,10 @@ describe("chooseDive", () => {
     expect(chooseDive(mindReader, justSwitched, NO_EFFECT, scriptedRng([0]))).toBe("left-low");
 
     // Second shot at the new corner: window is 2-2, so there is no pattern to
-    // read and the keeper has to guess rather than sit on the new corner.
+    // read and the keeper has to guess (centre-low, per rng()=0 below)
+    // rather than sit on either corner.
     const twiceThere: Zone[] = [...justSwitched, "right-high"];
-    expect(chooseDive(mindReader, twiceThere, NO_EFFECT, scriptedRng([0]))).toBe("left-low");
+    expect(chooseDive(mindReader, twiceThere, NO_EFFECT, scriptedRng([0]))).toBe("centre-low");
 
     // Third shot there is a genuine new habit, and it gets punished.
     const newHabit: Zone[] = [...twiceThere, "right-high"];
@@ -174,7 +176,23 @@ describe("chooseDive", () => {
     // supports it, and this keeps that honest for the next gag that wants it.
     const distracted = { ...NO_EFFECT, readDepthMultiplier: 0 };
     const history: Zone[] = ["right-high", "right-high", "right-high"];
-    expect(chooseDive(reader, history, distracted, scriptedRng([0]))).toBe("left-low");
+    expect(chooseDive(reader, history, distracted, scriptedRng([0]))).toBe("centre-low");
+  });
+
+  /**
+   * The Statue's whole blurb is "does not move" — reported from real play as
+   * false, because `stillChance` did not exist yet and every keeper committed
+   * to a side on the same roll this one uses. r=0.1 is below the roster
+   * default (0.22) *and* below the Statue's real 0.75, so on its own this
+   * would only prove both configs land on centre — the `mover` case (0
+   * stillChance) is what proves the gate is actually being checked at all.
+   */
+  it("stillChance keeps a keeper in place on a roll that would send a zero-stillChance keeper to a side", () => {
+    const mover: KeeperArchetype = { ...baseKeeper, diveBias: 0, stillChance: 0 };
+    expect(chooseDive(mover, [], NO_EFFECT, scriptedRng([0.1]))).toBe("left-low");
+
+    const statueLike: KeeperArchetype = { ...baseKeeper, diveBias: 0, stillChance: 0.75 };
+    expect(chooseDive(statueLike, [], NO_EFFECT, scriptedRng([0.1]))).toBe("centre-low");
   });
 });
 

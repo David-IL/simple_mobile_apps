@@ -49,16 +49,17 @@ export function WindSock({ width, height, strength }: Size & { strength: number 
 }
 
 /**
- * The pitch itself: mow stripes, a 6-yard box at the goal line, and the D
- * arced behind the spot.
+ * The pitch itself: mow stripes, a 6-yard box at the goal line, and the
+ * penalty mark behind the spot.
  *
  * Real dimensions don't fit this camera — the box is 18 yards deep and the D
- * sits 10 yards beyond that, but the grass strip here is only the run-up
+ * arc sits 10 yards further out, but the grass strip here is only the run-up
  * compressed into the last ~30% of scene height. Drawing them at scale would
- * put the D off the bottom of the phone. So this is a stylised compression,
- * not a scale pitch: the 6-yard box anchored at the goal line, then the D
- * right behind the spot — it's the one mark that reads as "penalty" at a
- * glance, which matters more here than yardage accuracy.
+ * put either off the bottom of the phone. So this is a stylised compression,
+ * not a scale pitch: the 6-yard box anchored at the goal line, then a short
+ * straight mark behind the spot rather than the full arc — legible at this
+ * size as "there's a line here", where a shallow curve just read as an odd
+ * stray arc floating on the grass.
  *
  * Skipped entirely on the muddy round: `disruption.id === "muddy-spot"`
  * already swaps the whole surface to churned mud in `GoalScene`, and lines
@@ -79,8 +80,7 @@ export function PitchSurface({
   const boxWidth = goalWidth * 0.6;
   const boxLeft = centreX - boxWidth / 2;
   const boxHeight = height * 0.26;
-  const arcSpan = goalWidth * 0.2;
-  const arcBulge = arcSpan * 0.7;
+  const markSpan = goalWidth * 0.1;
 
   return (
     <Svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
@@ -106,13 +106,48 @@ export function PitchSurface({
               boxLeft + boxWidth
             } 0`}
           />
-          <Path
-            d={`M ${centreX - arcSpan} ${spotY} Q ${centreX} ${spotY + arcBulge}, ${
-              centreX + arcSpan
-            } ${spotY}`}
-          />
+          <Line x1={centreX - markSpan} y1={spotY} x2={centreX + markSpan} y2={spotY} />
         </G>
       ) : null}
+    </Svg>
+  );
+}
+
+/**
+ * Streaks of moving air across the scene, for the crosswind round.
+ *
+ * The sock already tells you the direction and rough strength — this sells
+ * that it's actually *moving*, not just tilted. Same trick as `Rain`: one
+ * static tile of streaks, drawn twice side by side so it repeats seamlessly,
+ * moved by a single `Animated` value on the caller's side. Not a particle
+ * system — a dozen static lines, one animated transform.
+ */
+export function WindStreaks({ width, height }: Size) {
+  const streaks = Array.from({ length: 14 }, (_, index) => {
+    // A fixed pseudo-scatter, same reasoning as Rain's: deterministic, so it
+    // never re-rolls on re-render.
+    const x = (index * 53) % 200;
+    const y = 6 + ((index * 31) % 88);
+    return { x, y, length: 12 + ((index * 17) % 18) };
+  });
+
+  return (
+    <Svg width={width} height={height} viewBox="0 0 400 100" preserveAspectRatio="none">
+      {[0, 200].map((offset) =>
+        streaks.map((streak, index) => (
+          <Line
+            key={`${offset}-${index}`}
+            x1={streak.x + offset}
+            y1={streak.y}
+            x2={streak.x + offset + streak.length}
+            y2={streak.y}
+            stroke="#f8fafc"
+            strokeWidth={0.6}
+            strokeLinecap="round"
+            opacity={0.22}
+          />
+        )),
+      )}
     </Svg>
   );
 }
