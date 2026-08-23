@@ -70,14 +70,45 @@ testers before anyone plays anything.
 
 ### 1. One-time, in the app directory
 
+**The package is `eas-cli`; the binary it installs is `eas`.** `npx eas …` fails
+with *"could not determine executable to run"* because npm looks for a package
+called `eas` and there isn't one. Two ways round it — install it once, which is
+worth doing since you will run it repeatedly:
+
 ```
-npx eas-cli login
-npx eas init          # links this project to your Expo account
+npm install -g eas-cli
+eas login
+eas init          # links this project to your Expo account
 ```
+
+Or without installing anything, naming the package every time:
+
+```
+npx eas-cli@latest login
+npx eas-cli@latest init
+```
+
+Verified 2026-08-23: `npx eas-cli@latest --version` → `eas-cli/22.2.0`.
 
 `eas build:configure` is not needed — `eas.json` already exists.
 
 ### 2. Build something installable and check it on a real phone
+
+**If the build fails on module resolution, this is why.** pnpm links dependencies
+in an isolated layout by default, and not every React Native library copes.
+Expo supports the isolated layout from SDK 54 onward and we are on 57, so try it
+as-is first — but the documented fallback is to add this to
+`pnpm-workspace.yaml` at the repo root and reinstall:
+
+```yaml
+nodeLinker: hoisted
+```
+
+Treat that as a fix for a build that actually failed, not a precaution. It
+changes the layout for every package in the workspace, and
+[ADR 1](../../../docs/adr/0001-package-manager-and-monorepo-tool.md) exists
+because guessing at pnpm layout problems is how the Metro config got broken
+last time. ([Expo monorepo guide](https://docs.expo.dev/guides/monorepos/))
 
 ```
 npx eas build -p android --profile preview
