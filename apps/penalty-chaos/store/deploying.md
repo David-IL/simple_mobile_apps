@@ -94,6 +94,18 @@ Verified 2026-08-23: `npx eas-cli@latest --version` → `eas-cli/22.2.0`.
 
 ### 2. Build something installable and check it on a real phone
 
+```
+eas build -p android --profile preview
+```
+
+This produces an **APK** and a download link. Install it on your own phone
+first. This is the last easy chance to catch something before it is on a store
+listing.
+
+Worth checking specifically: the app name under the icon reads *Straffe Kaos*,
+the icon is yours and not a placeholder, and sound still works — the built app
+does not go through Expo Go, so this is the first time the real runtime runs.
+
 **If the build fails on module resolution, this is why.** pnpm links dependencies
 in an isolated layout by default, and not every React Native library copes.
 Expo supports the isolated layout from SDK 54 onward and we are on 57, so try it
@@ -110,22 +122,10 @@ changes the layout for every package in the workspace, and
 because guessing at pnpm layout problems is how the Metro config got broken
 last time. ([Expo monorepo guide](https://docs.expo.dev/guides/monorepos/))
 
-```
-npx eas build -p android --profile preview
-```
-
-This produces an **APK** and a download link. Install it on your own phone
-first. This is the last easy chance to catch something before it is on a store
-listing.
-
-Worth checking specifically: the app name under the icon reads *Straffe Kaos*,
-the icon is yours and not a placeholder, and sound still works — the built app
-does not go through Expo Go, so this is the first time the real runtime runs.
-
 ### 3. Build the thing Play actually accepts
 
 ```
-npx eas build -p android --profile production
+eas build -p android --profile production
 ```
 
 An **AAB**. Note that `autoIncrement` bumps `versionCode` in `app.json`, so
@@ -210,7 +210,7 @@ governs you. Set under the release's countries/regions.
 
 Play Console → Testing → **Internal testing** → Create new release.
 
-- Upload the AAB from step 3 (or use `npx eas submit -p android`, which is
+- Upload the AAB from step 3 (or use `eas submit -p android`, which is
   configured to push to the internal track).
 - Add your son's Google account email to the tester list.
 - Send him the opt-in link. He accepts, then installs from Play like any app.
