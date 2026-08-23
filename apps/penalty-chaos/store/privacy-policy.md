@@ -39,13 +39,13 @@ Appen ber ikke om noen tillatelser på telefonen.
 
 ### Kontakt
 
-Spørsmål: **david.lindberg@intellectuallabs.no**
+Spørsmål: **davidgonzlin@gmail.com**
 
 ---
 
 ## English
 
-**Straffe Kaos collects no personal data.**
+**Straffe Kaos (Penalty Chaos) collects no personal data.**
 
 There is no sign-in, no account, no advertising, no analytics and no tracking.
 The app sends nothing to any server. It works entirely offline.
@@ -73,4 +73,4 @@ The app requests no device permissions.
 
 ### Contact
 
-Questions: **david.lindberg@intellectuallabs.no**
+Questions: **davidgonzlin@gmail.com**
