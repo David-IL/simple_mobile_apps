@@ -37,9 +37,9 @@ Skyt tre ganger i samme hjørne, og han står der. Varier, og han må gjette. Hv
 keeper i troppen bytter mellom to ting: hvor godt han leser deg, og hvor mye han
 røper før du skyter. Statuen viser deg alt. Tankeleseren viser deg ingenting.
 
-Innimellom skjer det noe. Sidevind. Gjørmete straffemerke. En diger grevling som
-danser bak målet. En tilfeldig onkel som løper ut på banen og sperrer det ene
-hjørnet.
+Innimellom skjer det noe. Sidevind. Gjørmete straffemerke. Lav sol rett i
+øynene. Bortefansen som setter i gang, så keeperen begynner å spille for
+galleriet. En tilfeldig onkel som løper ut på banen og sperrer det ene hjørnet.
 
 Du får alltid vite hva det er FØR du skyter. Ingenting dukker opp etter at du
 har bestemt deg — det er ikke morsomt, det er bare urettferdig.
@@ -81,9 +81,9 @@ to guess. Every keeper in the squad trades off two things: how well he reads you
 and how much he gives away before you shoot. The Statue shows you everything. The
 Mind-Reader shows you nothing.
 
-Every so often something gets in the way. A crosswind. A muddy penalty spot. A
-giant badger dancing behind the goal. Someone's uncle on the pitch, blocking one
-side of it.
+Every so often something gets in the way. A crosswind. A muddy penalty spot. Low
+sun straight in your eyes. The away end striking up, so the keeper starts playing
+to the crowd. Someone's uncle on the pitch, blocking one side of it.
 
 You are always told what it is BEFORE you shoot. Nothing is sprung on you after
 you have committed — that is not funny, it is just unfair.

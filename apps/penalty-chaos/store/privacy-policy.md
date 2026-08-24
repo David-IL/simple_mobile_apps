@@ -35,10 +35,19 @@ oss, med annonsører eller med tredjeparter.
 
 ### Tillatelser
 
-Appen ber aldri om tilgang som krever ditt samtykke. Den bruker kun
-`MODIFY_AUDIO_SETTINGS`, en teknisk lydinnstilling Android gir automatisk til
-alle apper som spiller lyd — den vises ikke som en tillatelsesforespørsel og
-gir ikke appen tilgang til noe på telefonen din utover dette.
+Appen ber aldri om tilgang som krever ditt samtykke, og du vil aldri se en
+tillatelsesforespørsel fra den.
+
+To tekniske tillatelser står oppført på appen:
+
+- **`MODIFY_AUDIO_SETTINGS`** — en lydinnstilling Android gir automatisk til
+  alle apper som spiller lyd.
+- **`INTERNET`** — står oppført fordi et av standardbibliotekene appen er bygget
+  på oppgir den. **Appen bruker den ikke.** Den kobler seg ikke til noe, laster
+  ikke ned noe og sender ikke noe. Alt innhold ligger inne i appen, og hele
+  spillet fungerer i flymodus.
+
+Ingen av dem gir appen tilgang til noe annet på telefonen din.
 
 ### Kontakt
 
@@ -72,10 +81,19 @@ with us, not with advertisers, not with third parties.
 
 ### Permissions
 
-The app never requests access that needs your consent. It uses only
-`MODIFY_AUDIO_SETTINGS`, a technical audio setting Android grants automatically
-to any app that plays sound — it is never shown to you as a permission
-request, and it gives the app no access to anything else on your phone.
+The app never requests access that needs your consent, and you will never see a
+permission prompt from it.
+
+Two technical permissions are listed against the app:
+
+- **`MODIFY_AUDIO_SETTINGS`** — an audio setting Android grants automatically to
+  any app that plays sound.
+- **`INTERNET`** — listed because one of the standard libraries the app is built
+  on declares it. **The app does not use it.** It connects to nothing, downloads
+  nothing and sends nothing. All content ships inside the app, and the whole game
+  works in aeroplane mode.
+
+Neither gives the app access to anything else on your phone.
 
 ### Contact
 
