@@ -41,8 +41,7 @@ licence is a row that must not ship.
 | `chant.mp3` | away end starts singing | **real** — 5.1s | Pixabay | Pixabay Content License |
 | `drum.mp3` | nothing — **source only**, kept to rebuild `row-drums.mp3` | **real** — 0.36s, trimmed from a 1.37s source. Not `require()`d, so it does not ship | Pixabay | Pixabay Content License |
 | `row-drums.mp3` | the row's two-beat call | **real** — 0.76s, `drum.mp3` twice with the 400ms gap baked in | Pixabay | Pixabay Content License |
-| `ro-shout.mp3` | the shout at the top of the row | **real** — 0.37s, re-cut from the 0.64s crop below | Own recording (David, 2026-08-24) | Own work — no third-party rights |
-| `ro-shout-copy.mp3` | nothing — **the previous 0.64s cut**, kept in case the shorter one is wrong | **real** — 0.64s. Not `require()`d, so it does not ship | Own recording (David, 2026-08-24) | Own work — no third-party rights |
+| `ro-shout.mp3` | the shout at the top of the row | **real** — 0.64s, cropped from a 126s own recording | Own recording (David, 2026-08-24) | Own work — no third-party rights |
 | `sunday-taunt.mp3` | Sunday Keeper taunts | **real** — 1.8s, trimmed+faded from a 7.0s source | Pixabay | Pixabay Content License |
 | `statue-taunt.mp3` | Statue taunts | **real** — 2.2s, trimmed+faded from a 7.0s source | Pixabay | Pixabay Content License |
 | `chatterbox-taunt.mp3` | Chatterbox taunts | **real** — 2.2s, trimmed+faded from a 2.4s source | Pixabay | Pixabay Content License |
@@ -122,18 +121,22 @@ It is an **own recording**, which is the cleanest possible answer to the rule at
 the top of this file and to [ADR 8](../../../../docs/adr/0008-no-real-person-likenesses-or-club-ip.md)'s
 voice clause: no third party's rights, no identifiable public figure.
 
-### The shout was 640ms, and that was longer than the gap it had to fit in
+### The shout is 640ms, and the schedule moved to fit it
 
-The first cut ran 0.64s. The row's rest collapses to `REST_FLOOR_MS` = 500ms, so
-**the shout outlasted the entire gap between cycles** — and the arithmetic of
-that is unforgiving. To finish before the next drum you would have had to answer
-by 660ms into the cycle; the gate does not open until 740ms. There was no legal
-tap at the fast end whose shout did not run over the next cycle's count-in. It
+Worth recording because it was tried the other way round first, and the other
+way round was wrong.
+
+The row's rest used to bottom out at 500ms while this clip runs 640ms, so **the
+shout outlasted the entire gap between cycles.** The arithmetic leaves no room
+to argue: to finish before the next drum you would have had to answer by 660ms
+into the cycle, and the gate does not open until 740ms. There was no legal tap
+at the fast end whose shout did not run over the next cycle's count-in. It
 covered the first drum, often both, and the two-beat call stopped reading as two
-beats — reported in play as "I stop hearing both drum beats", and only in the
-late cycles, because that is where the rest reaches the floor.
+beats — reported in play as "I stop hearing both drum beats", and only late in a
+row, because that is where the rest reaches the floor.
 
-Measuring the old file's envelope in 20ms windows showed where the length went:
+**The first fix cut the file to fit, and it sounded thin.** Measuring the
+envelope in 20ms windows showed where the length goes:
 
 ```
    0-37ms   silence           <- pure latency, the player waits through it
@@ -142,27 +145,33 @@ Measuring the old file's envelope in 20ms windows showed where the length went:
  606-640ms  fade tail
 ```
 
-Only the middle band is the sound. So the new cut keeps that and drops the rest:
+so the obvious move was to keep the middle band and drop the rest:
 
 ```
-ffmpeg -y -ss 0.037 -t 0.37 -i ro-shout-copy.mp3   -af "afade=t=in:st=0:d=0.005,afade=t=out:st=0.31:d=0.06"   -ac 1 -b:a 128k ro-shout.mp3
+# NOT what ships. Kept because it is the reasonable-looking thing to try.
+ffmpeg -y -ss 0.037 -t 0.37 -i ro-shout.mp3   -af "afade=t=in:st=0:d=0.005,afade=t=out:st=0.31:d=0.06"   -ac 1 -b:a 128k ro-shout-short.mp3
 ```
 
-**Cut from the previous crop, not from `RO.mp3`.** That costs one mp3 generation,
-which is inaudible on a 370ms noisy crowd shout at 128k, and it buys something
-worth more: `loudnorm` computes over the whole input, so re-deriving from source
-with a shorter window would have produced a *different level* and quietly undone
-the balance against the drum. Measured after: peak −5.1 dB against the old
-−4.6 dB, mean −16.4 against −17.2. Same sound, 270ms less of it.
+On paper it is a clean trade: 370ms, onset at 18ms instead of 55ms, level within
+0.5 dB of the original. In play it lost the shout. What the numbers call "decay"
+is most of what makes a crowd sound like a crowd, and a voice cut off before its
+own tail reads as a sample, not as people.
 
-The onset moved too — full level by 18ms rather than 55ms — which is 37ms off
-the perceived tap latency for free. See "A slow onset reads as lag" below.
+So `REST_FLOOR_MS` went from 500ms to 800ms instead, and `MAX_CYCLES` from 13 to
+11 to hold the twenty-second budget. **The recording is fixed and the schedule is
+not**, which is the general rule here: when a real sound and an invented number
+disagree, move the number. It also lands closer to the source — the real row's
+rests bottom out around 920ms, so 500ms was always tighter than the thing being
+imitated.
 
-**The length is now a rule, not a preference.** It lives as `SHOUT_MS` in
-`src/game/row.ts`, next to the rest it has to fit inside, and a test asserts
-both that it fits and that a player answering *on the beat* hears it finish
-before the next count-in. Re-cutting it longer will fail that test, which is the
-point.
+The cost is a gentler ending: the tightest answer window went from 560ms to
+860ms. That is a real loss of difficulty and it was accepted knowingly, because
+a celebration that sounds wrong is worth less than one that is hard.
+
+The constraint now lives as `SHOUT_MS` next to `REST_FLOOR_MS` in
+`src/game/row.ts`, with a test asserting both that the shout fits the floor and
+that a player answering *on the beat* hears it finish before the next count-in.
+Changing either number without the other fails that test, which is the point.
 
 ### `drum.mp3` — trimmed, and deliberately not loudness-normalised
 
@@ -203,7 +212,7 @@ wants that under about 50ms.
 ```
 goal      peak  -3.7 dB   lead-in 0.02s   4.36s
 drum      peak  -1.5 dB   lead-in 0.00s   0.36s
-ro-shout  peak  -5.1 dB   lead-in 0.02s   0.37s   <- re-cut, see above
+ro-shout  peak  -4.6 dB   lead-in 0.04s   0.64s
 whistle   peak -12.5 dB   lead-in 1.26s   4.13s   <- fine: it ends a match
 miss      peak -14.7 dB   lead-in 0.32s   3.12s   <- deliberate, it is a groan
 ```

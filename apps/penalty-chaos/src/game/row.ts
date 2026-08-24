@@ -65,40 +65,71 @@ export const AUDIO_LATENCY_MS = 90;
 /** The real recording opens with a ~10s rest. In a game that is dead air. */
 export const REST_START_MS = 1500;
 /**
- * The floor is set by the phone, not by taste: it has to leave a window
- * comfortably wider than the 266ms of tap scatter measured on the device, or
- * the last cycles start feeling rigged. A test pins that.
+ * How short the rest is allowed to get.
+ *
+ * Two things set this, and the *larger* of them wins.
+ *
+ * 1. **The phone.** It has to leave a window comfortably wider than the 266ms
+ *    of tap scatter measured on the device, or the last cycles feel rigged.
+ * 2. **The shout has to fit inside it.** `SHOUT_MS` is 640ms, and a player who
+ *    answers on the beat starts it at `armDurationMs()`. For that to finish
+ *    before the next count-in the floor must be at least
+ *    `armDurationMs() + SHOUT_MS - ANSWER_SLOT_MS` = 730ms. A test pins it.
+ *
+ * It was 500ms, which satisfied the first and quietly broke the second: at the
+ * fast end there was *no legal tap* whose shout did not run over the next
+ * cycle's drums, so the two-beat call stopped reading as two beats. The first
+ * attempt at a fix cut the shout down to 370ms to fit the floor; it sounded
+ * thin in play, which is the honest answer — the recording is what it is, and
+ * a celebration that sounds wrong is not worth a tighter difficulty curve.
+ *
+ * So the schedule moved instead of the audio. **This is also closer to the
+ * source**: the real row's rests bottom out around 920ms (see the measurements
+ * at the top of this file), so 500ms was always tighter than the thing being
+ * imitated. The cost is a gentler ending — see `REST_DECAY` and `MAX_CYCLES`.
  */
-export const REST_FLOOR_MS = 500;
-export const REST_DECAY = 0.85;
+export const REST_FLOOR_MS = 800;
+/**
+ * How fast the rest collapses.
+ *
+ * Raised from 0.85 when the floor went up. With less distance to fall, falling
+ * at the old rate slammed into the floor after four cycles and spent the rest
+ * of the row flat — the acceleration is the whole point, so it has to be spread
+ * over the room that is left rather than spent immediately.
+ */
+export const REST_DECAY = 0.9;
 
 /**
  * How long the RO shout sounds for. **It has to fit inside `REST_FLOOR_MS`.**
  *
  * This is a timing constant, not an audio detail, which is why it lives here
  * next to the rest it must fit in rather than beside the file it describes.
+ * `SFX_LENGTH_MS` in src/audio/sounds.ts reads it from here.
  *
- * The clip was 640ms against a 500ms floor, and the arithmetic of that is
- * unforgiving: to have the shout finish before the next drum you would have had
- * to answer by `REST_FLOOR_MS + ANSWER_SLOT_MS - 640` = 660ms, and the gate does
- * not open until `answerOpensMs()` = 740ms. **There was no legal tap at the fast
- * end that did not run over the next cycle's count-in.** The shout covered the
- * first drum, often both, and the two-beat call stopped reading as two beats —
- * exactly as reported in play, and only in the late cycles, because that is
- * where the rest collapses to the floor.
+ * Against the old 500ms floor the arithmetic was unforgiving: to have the shout
+ * finish before the next drum you would have had to answer by
+ * `REST_FLOOR_MS + ANSWER_SLOT_MS - 640` = 660ms, and the gate does not open
+ * until `answerOpensMs()` = 740ms. **There was no legal tap at the fast end
+ * that did not run over the next cycle's count-in**, which is why the two-beat
+ * call stopped reading as two beats, and why it only happened late in a row.
  *
- * The fix was the file, not the schedule: `ro-shout.mp3` was re-cut to 370ms
- * (see assets/sfx/README.md). Anything that lengthens it again re-opens the
- * bug, so a test pins it.
+ * The first fix cut the file down to 370ms to fit the floor. It sounded thin,
+ * and that is the end of that argument — **the recording is fixed and the
+ * schedule is not.** `REST_FLOOR_MS` went up instead. If this number ever
+ * changes, the floor is what has to move with it, and a test says so.
  */
-export const SHOUT_MS = 370;
+export const SHOUT_MS = 640;
 
 /**
  * Hard cap, which is what holds the whole thing to about twenty seconds — see
  * `totalMs`. A row that never ends is a row nobody finishes, and the first cut
  * at thirty seconds outstayed its welcome in play.
+ *
+ * Cut from 13 when `REST_FLOOR_MS` went up: longer rests mean longer cycles,
+ * and the twenty seconds is the budget that actually matters. Eleven cycles at
+ * the new schedule come to 19.8s, which is where thirteen used to sit.
  */
-export const MAX_CYCLES = 13;
+export const MAX_CYCLES = 11;
 
 /** One miss is bad luck. Two in a row is the crowd losing it. */
 export const MISSES_TO_END = 2;

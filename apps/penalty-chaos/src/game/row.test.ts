@@ -58,9 +58,13 @@ describe("the measured shape of the row", () => {
   });
 
   it("keeps the shout inside the rest, so it never covers the next count-in", () => {
-    // The clip was 640ms against a 500ms floor. Every legal tap at the fast end
-    // therefore ran over the next cycle's drums, which is why the two-beat call
-    // stopped sounding like two beats late in a row. Nothing may put it back.
+    // The clip is 640ms and it was once up against a 500ms floor. Every legal
+    // tap at the fast end therefore ran over the next cycle's drums, which is
+    // why the two-beat call stopped sounding like two beats late in a row.
+    //
+    // Cutting the shout down to fit sounded thin in play, so the floor moved
+    // instead. This pair of assertions is the contract between them: whichever
+    // one someone changes next, the other has to follow.
     expect(SHOUT_MS).toBeLessThanOrEqual(REST_FLOOR_MS);
 
     // The property that actually matters, at the fastest cycle there is: a
@@ -73,11 +77,25 @@ describe("the measured shape of the row", () => {
   });
 
   it("accelerates by shortening the rest, not the beat", () => {
-    const rests = Array.from({ length: 8 }, (_, cycle) => restMs(cycle));
-    for (const [a, b] of rests.map((r, i) => [r, rests[i + 1]] as const).slice(0, -1)) {
-      expect(b).toBeLessThan(a);
-    }
+    const rests = Array.from({ length: MAX_CYCLES }, (_, cycle) => restMs(cycle));
     expect(rests[0]).toBe(REST_START_MS);
+    for (let i = 1; i < rests.length; i += 1) {
+      const previous = rests[i - 1] ?? 0;
+      const current = rests[i] ?? 0;
+      // Strictly shorter every cycle until it lands on the floor, then flat.
+      // Written against the floor rather than against a fixed count so that
+      // moving REST_FLOOR_MS re-tunes the test instead of breaking it.
+      if (previous > REST_FLOOR_MS) expect(current).toBeLessThan(previous);
+      else expect(current).toBe(REST_FLOOR_MS);
+    }
+  });
+
+  it("spends the acceleration rather than slamming into the floor", () => {
+    // The ramp is the whole feel, so it has to survive a change of floor. When
+    // REST_FLOOR_MS went up, REST_DECAY had to go up with it or the rest hit
+    // bottom after four cycles and the back half was one flat tempo.
+    const rests = Array.from({ length: MAX_CYCLES }, (_, cycle) => restMs(cycle));
+    expect(new Set(rests).size).toBeGreaterThanOrEqual(6);
   });
 
   it("settles at a floor rather than collapsing to nothing", () => {
