@@ -239,9 +239,16 @@ export function MatchScreen({ keeper, keeperName, initialState, onFinish, onQuit
    *
    * See docs/design/penalty-chaos-stickiness.md.
    */
+  //
+  // Gated on `kind === "saved"`, not on the zones matching. `resolveShot` tests
+  // `effect.blockedCol` *before* it compares the shot to the dive, so a shot
+  // into the read zone that lands in a blocked column comes back as "blocked" —
+  // and crediting his read for what a pitch invader did is the wrong lesson from
+  // the wrong round. He still guessed you would repeat yourself, which is what
+  // `readBeaten` says, so that is the honest fallback.
   const readNote = !result?.read
     ? null
-    : result.zone === result.read.zone
+    : result.kind === "saved" && result.zone === result.read.zone
       ? t.match.readSaved(result.read.times)
       : t.match.readBeaten;
 

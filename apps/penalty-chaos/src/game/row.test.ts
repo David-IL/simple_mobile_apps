@@ -1,4 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { en } from "../i18n/en";
+import { ROW_PROPER } from "../i18n/messages";
+import { nb } from "../i18n/nb";
 import {
   ANSWER_SLOT_MS,
   AUDIO_LATENCY_MS,
@@ -183,5 +186,37 @@ describe("ending", () => {
     state = endCycle(endCycle(state));
     expect(state.over).toBe(true);
     expect(state.strokes).toBe(1);
+  });
+});
+
+/**
+ * The finish lines, pinned against the schedule that produces them.
+ *
+ * The copy originally topped out at `count >= 18`, which no row could ever
+ * reach: a perfect row is one answer per cycle, so `MAX_CYCLES` is the ceiling
+ * and the best line was unreachable in every locale. That is not the kind of
+ * defect a reader spots — the branch is right there and looks fine — so the
+ * pin is a test that walks the whole reachable range and counts the distinct
+ * lines that come back.
+ *
+ * It lives here rather than beside the locales because what makes a tier
+ * reachable is `MAX_CYCLES`, and this is the file that owns it.
+ */
+describe("finish copy", () => {
+  const LOCALES = { en, nb };
+
+  for (const [name, messages] of Object.entries(LOCALES)) {
+    it(`reaches every tier within MAX_CYCLES (${name})`, () => {
+      const lines = new Set<string>();
+      for (let strokes = 0; strokes <= MAX_CYCLES; strokes += 1) {
+        lines.add(messages.row.finished(strokes));
+      }
+      expect(lines.size).toBe(4);
+    });
+  }
+
+  it("orders the tiers so a better row never gets a lesser line", () => {
+    expect(ROW_PROPER).toBeGreaterThan(1);
+    expect(ROW_PROPER).toBeLessThan(MAX_CYCLES);
   });
 });

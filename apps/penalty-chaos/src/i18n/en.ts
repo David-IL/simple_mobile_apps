@@ -1,3 +1,6 @@
+import { MAX_CYCLES } from "../game/row";
+import { ROW_PROPER } from "./messages";
+
 import type { Messages } from "./messages";
 
 export const en: Messages = {
@@ -8,7 +11,6 @@ export const en: Messages = {
     titleLine2: "Chaos",
     solo: "Solo shootout",
     duel: "Two players, one phone",
-    lastOpponent: "Last opponent",
     rematch: "Rematch",
     footnote: "No ads. No accounts. No internet needed",
     language: "Language",
@@ -60,10 +62,18 @@ export const en: Messages = {
     // Not translated, on purpose — see messages.ts.
     ro: "RO",
     strokes: (count) => (count === 1 ? "1 stroke" : `${count} strokes`),
+    /**
+     * The tiers are pinned to `MAX_CYCLES` rather than written as bare numbers.
+     *
+     * They used to top out at 18, which no row could ever reach — a perfect row
+     * is one answer per cycle, so `MAX_CYCLES` is the ceiling and the best line
+     * was dead copy. Deriving them means the ceiling moves when the schedule
+     * does, and `row.test.ts` pins that every tier stays reachable.
+     */
     finished: (count) => {
       if (count === 0) return "Not one stroke. The crowd is baffled.";
-      if (count >= 18) return "The whole stand went with you.";
-      if (count >= 10) return "That is a proper row.";
+      if (count >= MAX_CYCLES) return "The whole stand went with you.";
+      if (count >= ROW_PROPER) return "That is a proper row.";
       return "The crowd will take it.";
     },
     close: "Done",
@@ -72,7 +82,6 @@ export const en: Messages = {
   },
 
   form: {
-    label: "Form",
     recent: (scored, of) => `${scored} of your last ${of}`,
   },
 

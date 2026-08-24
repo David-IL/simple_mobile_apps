@@ -19,7 +19,13 @@ import { LOCALES, useI18n, type Locale } from "../i18n";
 import { en } from "../i18n/en";
 import { nb } from "../i18n/nb";
 import { displayName, useKeeperNames } from "../state/keeperNames";
-import { FORM_SHOWN, recentScored, tallyFor, useKeeperRecord } from "../state/keeperRecord";
+import {
+  recentForm,
+  recentScored,
+  savePercent,
+  tallyFor,
+  useKeeperRecord,
+} from "../state/keeperRecord";
 import type { LastMatch } from "../state/lastMatch";
 import { palette, spacing, text } from "../theme";
 
@@ -117,6 +123,12 @@ function RematchCard({ last, onPress }: { last: LastMatch; onPress: () => void }
 
   const tally = tallyFor(record, last.keeperId);
   const name = displayName(last.keeperId, names, t.keepers[last.keeperId].name);
+  // Not `tally.faced`: a record migrated from before form existed keeps its
+  // career counters and starts `recent` empty, and sizing the line off the
+  // career count reported "0 of your last 5" for a keeper with a long history.
+  // See the note in SetupScreen.
+  const form = recentForm(tally);
+  const save = savePercent(tally);
 
   return (
     <Pressable
@@ -134,11 +146,13 @@ function RematchCard({ last, onPress }: { last: LastMatch; onPress: () => void }
           {name}
         </Text>
         <View style={styles.formLine}>
-          <FormRow tally={tally} dot={8} />
+          {form.length > 0 ? <FormRow tally={tally} dot={8} /> : null}
           <Text style={text.muted} numberOfLines={1}>
-            {tally.faced === 0
+            {save === null
               ? t.setup.neverFaced
-              : t.form.recent(recentScored(tally), Math.min(tally.faced, FORM_SHOWN))}
+              : form.length > 0
+                ? t.form.recent(recentScored(tally), form.length)
+                : t.setup.savePercent(save)}
           </Text>
         </View>
         <Text style={styles.cardMode} numberOfLines={1}>

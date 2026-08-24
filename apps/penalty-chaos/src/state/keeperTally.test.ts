@@ -163,4 +163,23 @@ describe("parseRecord form migration", () => {
       wall: { faced: 2, conceded: 1, recent: [] },
     });
   });
+
+  /**
+   * The invariant the two form displays now depend on.
+   *
+   * A migrated record has a career and no form, and those are *different*
+   * lengths — which is the bug the displays had: they sized the form line off
+   * `faced` and told a player with twelve shots behind him that he had scored
+   * "0 of your last 5". Anything asking "how many dots are there" has to ask
+   * `recentForm`, never `faced`.
+   */
+  it("has a career and no form until the next shot lands", () => {
+    const migrated = parseRecord('{"wall":{"faced":12,"conceded":4}}');
+    expect(recentForm(tallyFor(migrated, "wall"))).toEqual([]);
+    expect(savePercent(tallyFor(migrated, "wall"))).toBe(67);
+
+    const after = applyShot(migrated, "wall", "goal");
+    expect(recentForm(tallyFor(after, "wall"))).toEqual(["goal"]);
+    expect(recentScored(tallyFor(after, "wall"))).toBe(1);
+  });
 });

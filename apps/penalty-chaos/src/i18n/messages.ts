@@ -1,5 +1,21 @@
 import type { TraitId } from "../game/keepers";
 import type { DisruptionId, HeadlineKey, KeeperId, ShotResultKind } from "../game/types";
+import { MAX_CYCLES } from "../game/row";
+
+/**
+ * How many strokes make "a proper row", as a fraction of a perfect one.
+ *
+ * It lives here rather than in either locale so the two cannot drift apart, and
+ * it is derived from `MAX_CYCLES` rather than written as a number because the
+ * ceiling has moved once already. The previous copy topped out at 18, which no
+ * row could ever reach — a perfect row is one answer per cycle, so `MAX_CYCLES`
+ * is the ceiling — and the best line was therefore dead. `row.test.ts` pins
+ * that every tier stays reachable.
+ *
+ * Importing one constant out of the engine is not what ADR 10 forbids: the
+ * engine still hands over a number and the sentences still live in the locales.
+ */
+export const ROW_PROPER = Math.ceil(MAX_CYCLES * 0.6);
 
 export const LOCALES = ["nb", "en"] as const;
 export type Locale = (typeof LOCALES)[number];
@@ -22,8 +38,7 @@ export type Messages = {
     titleLine2: string;
     solo: string;
     duel: string;
-    /** Label above the rematch card. */
-    lastOpponent: string;
+    /** The rematch card's call to action, on the home screen. */
     rematch: string;
     footnote: string;
     language: string;
@@ -93,7 +108,11 @@ export type Messages = {
    * screen's rematch card and the setup screen's keeper card show it.
    */
   form: {
-    label: string;
+    /**
+     * `of` is how many outcomes are actually held, not how many shots have been
+     * faced — a record migrated from before form existed has the second without
+     * the first. See recentForm in src/state/keeperTally.ts.
+     */
     recent: (scored: number, of: number) => string;
   };
 

@@ -1,3 +1,6 @@
+import { MAX_CYCLES } from "../game/row";
+import { ROW_PROPER } from "./messages";
+
 import type { Messages } from "./messages";
 
 /**
@@ -14,7 +17,6 @@ export const nb: Messages = {
     titleLine2: "Kaos",
     solo: "Alene mot keeper",
     duel: "To spillere, én telefon",
-    lastOpponent: "Forrige motstander",
     rematch: "Omkamp",
     footnote: "Uten reklame. Uten innlogging. Uten internett",
     language: "Språk",
@@ -70,10 +72,18 @@ export const nb: Messages = {
     // Samme ord på alle språk — se messages.ts.
     ro: "RO",
     strokes: (count) => (count === 1 ? "1 tak" : `${count} tak`),
+    /**
+     * The tiers are pinned to `MAX_CYCLES` rather than written as bare numbers.
+     *
+     * They used to top out at 18, which no row could ever reach — a perfect row
+     * is one answer per cycle, so `MAX_CYCLES` is the ceiling and the best line
+     * was dead copy. Deriving them means the ceiling moves when the schedule
+     * does, and `row.test.ts` pins that every tier stays reachable.
+     */
     finished: (count) => {
       if (count === 0) return "Ikke ett tak. Publikum skjønner ingenting.";
-      if (count >= 18) return "Hele tribunen ble med.";
-      if (count >= 10) return "Det der var skikkelig roing.";
+      if (count >= MAX_CYCLES) return "Hele tribunen ble med.";
+      if (count >= ROW_PROPER) return "Det der var skikkelig roing.";
       return "Publikum tar det de får.";
     },
     close: "Ferdig",
@@ -82,7 +92,6 @@ export const nb: Messages = {
   },
 
   form: {
-    label: "Form",
     recent: (scored, of) => `${scored} av de siste ${of}`,
   },
 

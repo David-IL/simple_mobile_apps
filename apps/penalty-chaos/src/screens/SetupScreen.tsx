@@ -24,7 +24,7 @@ import { displayName, sanitiseName, type KeeperNames } from "../state/keeperName
 import { useLastMatch } from "../state/lastMatch";
 import { resolveTakers, usePlayerNames } from "../state/playerNames";
 import {
-  FORM_SHOWN,
+  recentForm,
   recentScored,
   savePercent,
   tallyFor,
@@ -198,6 +198,17 @@ export function SetupScreen({ mode, names, onRename, onStart, onBack }: Props) {
   const shippedName = t.keepers[selected.id].name;
   const selectedTally = tallyFor(record, selected.id);
   const selectedSave = savePercent(selectedTally);
+  /**
+   * The dots actually available, which is not the same as the shots faced.
+   *
+   * `parseRecord` migrates records written before form existed by keeping the
+   * career counters and starting `recent` empty. Sizing the form line off
+   * `faced` therefore told a player with forty shots behind him that he had
+   * scored "0 of your last 5" — a number that is not merely stale but wrong,
+   * and wrong on the one line this screen now leads with. The form guide is
+   * held back until there is form to guide with.
+   */
+  const selectedForm = recentForm(selectedTally);
   const selectedTraits = traitScores(selected);
 
   const start = () => {
@@ -249,26 +260,30 @@ export function SetupScreen({ mode, names, onRename, onStart, onBack }: Props) {
               moving once enough shots are in; the last five change every match,
               and that is the number the player is already keeping in his head.
             */}
-            {selectedTally.faced === 0 ? (
+            {selectedTally.faced === 0 || selectedSave === null ? (
               <Text style={styles.detailSave}>{t.setup.neverFaced}</Text>
+            ) : selectedForm.length === 0 ? (
+              // A migrated record: career is all there is, so career leads
+              // rather than an empty form guide pretending to be five losses.
+              <>
+                <Text style={styles.detailSave}>{t.setup.savePercent(selectedSave)}</Text>
+                <Text style={text.muted}>
+                  {t.setup.record(selectedTally.conceded, selectedTally.faced)}
+                </Text>
+              </>
             ) : (
               <>
                 <View style={styles.detailForm}>
                   <FormRow tally={selectedTally} dot={10} />
                   <Text style={styles.detailSave}>
-                    {t.form.recent(
-                      recentScored(selectedTally),
-                      Math.min(selectedTally.faced, FORM_SHOWN),
-                    )}
+                    {t.form.recent(recentScored(selectedTally), selectedForm.length)}
                   </Text>
                 </View>
                 <Text style={text.muted}>
-                  {selectedSave === null
-                    ? t.setup.record(selectedTally.conceded, selectedTally.faced)
-                    : `${t.setup.savePercent(selectedSave)} · ${t.setup.record(
-                        selectedTally.conceded,
-                        selectedTally.faced,
-                      )}`}
+                  {`${t.setup.savePercent(selectedSave)} · ${t.setup.record(
+                    selectedTally.conceded,
+                    selectedTally.faced,
+                  )}`}
                 </Text>
               </>
             )}
