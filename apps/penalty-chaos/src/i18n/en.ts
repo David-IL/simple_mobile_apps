@@ -8,6 +8,8 @@ export const en: Messages = {
     titleLine2: "Chaos",
     solo: "Solo shootout",
     duel: "Two players, one phone",
+    lastOpponent: "Last opponent",
+    rematch: "Rematch",
     footnote: "No ads. No accounts. Works on a coach with no signal.",
     language: "Language",
     sound: "Sound",
@@ -49,6 +51,13 @@ export const en: Messages = {
     calmName: "Still night",
     calmBrief: "Nothing in your way. No excuses.",
     soloTaker: "You",
+    readSaved: (times) => `He'd seen you go there ${times} times.`,
+    readBeaten: "He guessed you'd repeat yourself.",
+  },
+
+  form: {
+    label: "Form",
+    recent: (scored, of) => `${scored} of your last ${of}`,
   },
 
   verdict: { goal: "GOAL", saved: "SAVED", missed: "MISSED", blocked: "BLOCKED" },

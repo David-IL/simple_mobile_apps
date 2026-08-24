@@ -14,6 +14,8 @@ export const nb: Messages = {
     titleLine2: "Kaos",
     solo: "Alene mot keeper",
     duel: "To spillere, én telefon",
+    lastOpponent: "Forrige motstander",
+    rematch: "Omkamp",
     footnote: "Ingen reklame. Ingen innlogging. Funker på bussen uten dekning.",
     language: "Språk",
     sound: "Lyd",
@@ -56,6 +58,13 @@ export const nb: Messages = {
     calmName: "Blikkstille",
     calmBrief: "Ingenting i veien. Ingen unnskyldninger.",
     soloTaker: "Du",
+    readSaved: (times) => `Han hadde sett deg gå dit ${times} ganger.`,
+    readBeaten: "Han trodde du kom til å gjenta deg.",
+  },
+
+  form: {
+    label: "Form",
+    recent: (scored, of) => `${scored} av de siste ${of}`,
   },
 
   verdict: { goal: "MÅL", saved: "REDDET", missed: "BOM", blocked: "BLOKKERT" },

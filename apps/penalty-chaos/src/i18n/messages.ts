@@ -22,6 +22,9 @@ export type Messages = {
     titleLine2: string;
     solo: string;
     duel: string;
+    /** Label above the rematch card. */
+    lastOpponent: string;
+    rematch: string;
     footnote: string;
     language: string;
     sound: string;
@@ -59,6 +62,19 @@ export type Messages = {
     calmName: string;
     calmBrief: string;
     soloTaker: string;
+    /** Shown when the keeper read a repeated zone and the shot went there. */
+    readSaved: (times: number) => string;
+    /** Shown when he read a repeat and the player went somewhere else. */
+    readBeaten: string;
+  };
+
+  /**
+   * Recent form against one keeper. Its own group because both the home
+   * screen's rematch card and the setup screen's keeper card show it.
+   */
+  form: {
+    label: string;
+    recent: (scored: number, of: number) => string;
   };
 
   verdict: Record<ShotResultKind, string>;

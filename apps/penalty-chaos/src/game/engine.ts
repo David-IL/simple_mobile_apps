@@ -6,6 +6,7 @@ import {
   type DisruptionEffect,
   type HeadlineKey,
   type KeeperArchetype,
+  type KeeperRead,
   type Power,
   type Rng,
   type RoundSetup,
@@ -106,7 +107,7 @@ function randomZone(diveBias: number, stillChance: number, rng: Rng): Zone {
  * repeat makes "mix it up" the real counterplay, and makes an unread keeper
  * guess rather than shadow you.
  */
-export function readablePattern(history: readonly Zone[]): Zone | null {
+export function readPattern(history: readonly Zone[]): KeeperRead | null {
   if (history.length < 2) return null;
 
   const counts = new Map<Zone, number>();
@@ -125,26 +126,43 @@ export function readablePattern(history: readonly Zone[]): Zone | null {
     }
   }
 
-  if (bestCount < 2 || bestCount === runnerUp) return null;
-  return best;
+  if (best === null || bestCount < 2 || bestCount === runnerUp) return null;
+  return { zone: best, times: bestCount };
+}
+
+/**
+ * The zone alone. Kept because most callers and every existing test only care
+ * whether there *is* a pattern; `readPattern` adds the count that the verdict
+ * screen needs to say "he had seen you go there three times".
+ */
+export function readablePattern(history: readonly Zone[]): Zone | null {
+  return readPattern(history)?.zone ?? null;
 }
 
 /**
  * The keeper commits before the player aims. That ordering is what makes the
  * telegraph an honest tell rather than decoration.
  */
+export type DiveChoice = {
+  dive: Zone;
+  /** The pattern that drove the dive, or null when he guessed. */
+  read: KeeperRead | null;
+};
+
 export function chooseDive(
   keeper: KeeperArchetype,
   history: readonly Zone[],
   effect: DisruptionEffect,
   rng: Rng,
-): Zone {
+): DiveChoice {
   const depth = Math.floor(keeper.readDepth * effect.readDepthMultiplier);
   if (depth > 0) {
-    const pattern = readablePattern(history.slice(-depth));
-    if (pattern && rng() < keeper.readAccuracy) return pattern;
+    const pattern = readPattern(history.slice(-depth));
+    // The rng draw stays in the same place whether or not the read lands, so
+    // seeded tests keep their existing sequence.
+    if (pattern && rng() < keeper.readAccuracy) return { dive: pattern.zone, read: pattern };
   }
-  return randomZone(keeper.diveBias, keeper.stillChance, rng);
+  return { dive: randomZone(keeper.diveBias, keeper.stillChance, rng), read: null };
 }
 
 /** What the keeper shows. Null when it gives nothing away. */
@@ -171,12 +189,13 @@ export function setupRound(
   effect: DisruptionEffect,
   rng: Rng,
 ): RoundSetup {
-  const keeperDive = chooseDive(keeper, history, effect, rng);
+  const { dive: keeperDive, read: keeperRead } = chooseDive(keeper, history, effect, rng);
   return {
     disruption,
     effect,
     keeperDive,
     keeperTell: chooseTell(keeper, keeperDive, effect, rng),
+    keeperRead,
   };
 }
 
@@ -205,7 +224,7 @@ export function resolveShot(args: {
   rng: Rng;
 }): ShotResult {
   const { aim, power, keeper, setup, rng } = args;
-  const { effect, keeperDive } = setup;
+  const { effect, keeperDive, keeperRead: read } = setup;
 
   const usablePower = Math.min(power, effect.powerCap);
   const spread = BASE_SPREAD + POWER_SPREAD * usablePower;
@@ -218,22 +237,29 @@ export function resolveShot(args: {
 
   const zone = zoneOf(landing);
   if (!zone) {
-    return { kind: "missed", landing, zone: null, keeperDive, headline: missHeadline(landing) };
+    return {
+      kind: "missed",
+      landing,
+      zone: null,
+      keeperDive,
+      headline: missHeadline(landing),
+      read,
+    };
   }
 
   const { col } = splitZone(zone);
   if (effect.blockedCol === col) {
-    return { kind: "blocked", landing, zone, keeperDive, headline: "blocked" };
+    return { kind: "blocked", landing, zone, keeperDive, headline: "blocked", read };
   }
 
   if (zone === keeperDive) {
-    return { kind: "saved", landing, zone, keeperDive, headline: "saveGuessed" };
+    return { kind: "saved", landing, zone, keeperDive, headline: "saveGuessed", read };
   }
 
   const reach = clamp(keeper.reach + effect.reachBonus, 0, 1);
   if (areAdjacent(zone, keeperDive) && rng() < reach) {
-    return { kind: "saved", landing, zone, keeperDive, headline: "saveFingertips" };
+    return { kind: "saved", landing, zone, keeperDive, headline: "saveFingertips", read };
   }
 
-  return { kind: "goal", landing, zone, keeperDive, headline: goalHeadline(zone) };
+  return { kind: "goal", landing, zone, keeperDive, headline: goalHeadline(zone), read };
 }

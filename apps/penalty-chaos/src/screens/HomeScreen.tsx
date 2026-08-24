@@ -1,4 +1,4 @@
-import { useCallback, useState, type ReactNode } from "react";
+import { useCallback, useState } from "react";
 import {
   Image,
   LayoutChangeEvent,
@@ -10,10 +10,17 @@ import {
 import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 import { Button } from "@repo/ui";
 import { useSfx } from "../audio/SfxProvider";
+import { FormRow } from "../components/FormRow";
+import { ChevronRight, FLAGS, SoundIcon } from "../components/Icons";
+import { KeeperFigure } from "../components/art/KeeperFigure";
+import { looksFor } from "../components/art/keeperLooks";
 import type { MatchMode } from "../game/match";
 import { LOCALES, useI18n, type Locale } from "../i18n";
 import { en } from "../i18n/en";
 import { nb } from "../i18n/nb";
+import { displayName, useKeeperNames } from "../state/keeperNames";
+import { FORM_SHOWN, recentScored, tallyFor, useKeeperRecord } from "../state/keeperRecord";
+import type { LastMatch } from "../state/lastMatch";
 import { palette, spacing, text } from "../theme";
 
 /**
@@ -80,37 +87,81 @@ function BottomFade() {
   );
 }
 
-function Chip({
-  label,
-  selected,
-  onPress,
-}: {
-  label: string;
-  selected: boolean;
-  onPress: () => void;
-}) {
+/**
+ * The last opponent, his face, and one tap back into a match against him.
+ *
+ * This is the app opening onto a rivalry instead of onto a menu. Playtesting
+ * found the keepers get talked about by name and across sessions, and yet the
+ * setup screen reset to the first keeper in the roster on every launch — so the
+ * app forgot the only thing the player was keeping track of.
+ *
+ * It also *shortens* the way to the ball: rematch skips setup entirely, one tap
+ * instead of two, which is the constraint this screen is under.
+ *
+ * **The whole card is the button.** The first version had a caption row above it
+ * and a full-width button below it — three stacked bands for one action — and it
+ * cost enough height to shove the banner artwork up off its own wordmark. A
+ * portrait, a name and a pill in one row say the same thing in half the space.
+ *
+ * The name shown is the player's own, not the shipped one. That is the opposite
+ * of ResultScreen, deliberately: a result card is shareable content and a name a
+ * child typed in is not ours to publish (ADR 8), whereas this screen is his own
+ * phone and the custom name is the entire point of the feature. The consequence
+ * is a store-listing rule rather than a code one — do not screenshot this screen
+ * with a custom keeper name set.
+ */
+function RematchCard({ last, onPress }: { last: LastMatch; onPress: () => void }) {
+  const { t } = useI18n();
+  const { names } = useKeeperNames();
+  const { record } = useKeeperRecord();
+
+  const tally = tallyFor(record, last.keeperId);
+  const name = displayName(last.keeperId, names, t.keepers[last.keeperId].name);
+
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityState={{ selected }}
+      accessibilityLabel={`${t.home.rematch}: ${name}`}
       onPress={onPress}
-      style={[styles.chip, selected && styles.chipOn]}
+      style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
     >
-      <Text style={[styles.chipLabel, selected && styles.chipLabelOn]}>{label}</Text>
+      <View style={styles.portrait}>
+        <KeeperFigure height={50} looks={looksFor(last.keeperId)} pose="ready" direction={0} />
+      </View>
+
+      <View style={styles.cardCopy}>
+        <Text style={styles.cardName} numberOfLines={1}>
+          {name}
+        </Text>
+        <View style={styles.formLine}>
+          <FormRow tally={tally} dot={8} />
+          <Text style={text.muted} numberOfLines={1}>
+            {tally.faced === 0
+              ? t.setup.neverFaced
+              : t.form.recent(recentScored(tally), Math.min(tally.faced, FORM_SHOWN))}
+          </Text>
+        </View>
+        <Text style={styles.cardMode} numberOfLines={1}>
+          {last.mode === "duel" ? t.setup.modeDuel : t.setup.modeSolo}
+        </Text>
+      </View>
+
+      <View style={styles.pill}>
+        <Text style={styles.pillLabel}>{t.home.rematch}</Text>
+        <ChevronRight height={10} colour={palette.brandInk} />
+      </View>
     </Pressable>
   );
 }
 
-function SettingRow({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <View style={styles.settingRow}>
-      <Text style={text.label}>{label}</Text>
-      <View style={styles.settingOptions}>{children}</View>
-    </View>
-  );
-}
+type Props = {
+  onPick: (mode: MatchMode) => void;
+  /** Null on a first run, and until storage has been read. */
+  last: LastMatch | null;
+  onRematch: (last: LastMatch) => void;
+};
 
-export function HomeScreen({ onPick }: { onPick: (mode: MatchMode) => void }) {
+export function HomeScreen({ onPick, last, onRematch }: Props) {
   const { t, locale, setLocale } = useI18n();
   const { muted, setMuted } = useSfx();
   const [actionsHeight, setActionsHeight] = useState(0);
@@ -133,6 +184,13 @@ export function HomeScreen({ onPick }: { onPick: (mode: MatchMode) => void }) {
         composition, so the only spare material is sky, and that is what gets
         cropped. Measuring the controls rather than guessing an offset keeps this
         right on any screen size and for any replacement artwork.
+
+        What it measures is deliberately narrow: the *buttons* block, and not the
+        rematch card above it. Anything included here moves the picture, and the
+        first version of the card was included — which dragged the artwork up far
+        enough to crop its own wordmark off the top. The card now floats over the
+        faded bottom of the image instead, so the banner lands in exactly the same
+        place with a last opponent or without one.
       */}
       <View style={[styles.artLayer, { bottom: actionsHeight, aspectRatio: aspectOf(banner) }]}>
         <Image
@@ -146,35 +204,78 @@ export function HomeScreen({ onPick }: { onPick: (mode: MatchMode) => void }) {
       </View>
 
       <View style={styles.content}>
+        {/*
+          The card sits *outside* the measured block on purpose.
+
+          The artwork is anchored to the top of `actions` and overflows off the
+          top of the screen, so anything that makes that block taller drags the
+          picture up and crops its own wordmark away. Measuring only the buttons
+          leaves the anchor fixed and lets the card float over the bottom of the
+          art — the faded, near-solid part of it — so the banner sits in exactly
+          the same place whether or not there is a last opponent.
+        */}
+        {last ? (
+          <View style={styles.cardSlot}>
+            <RematchCard last={last} onPress={() => onRematch(last)} />
+          </View>
+        ) : null}
+
         <View style={styles.actions} onLayout={onActionsLayout}>
+          {/*
+            Amber is always the primary action, so the two mode buttons step
+            down a rank when the card is present rather than competing with it.
+          */}
           <Button
             label={t.home.solo}
             onPress={() => onPick("solo")}
-            color={palette.brand}
-            labelColor={palette.brandInk}
+            color={last ? palette.brandDeep : palette.brand}
+            labelColor={last ? palette.chalk : palette.brandInk}
           />
           <Button
             label={t.home.duel}
             onPress={() => onPick("duel")}
-            color={palette.brandDeep}
+            color={last ? palette.line : palette.brandDeep}
             labelColor={palette.chalk}
           />
 
-          <SettingRow label={t.home.language}>
-            {LOCALES.map((option) => (
-              <Chip
-                key={option}
-                label={LANGUAGE_NAMES[option]}
-                selected={option === locale}
-                onPress={() => setLocale(option)}
-              />
-            ))}
-          </SettingRow>
+          {/*
+            Two labelled rows of word-chips became one row of pictures. The
+            labels were the expensive part and the least informative: a speaker
+            with a cross through it, and a flag, are both faster to read than
+            "Sound / Off" — and they stay readable to someone who cannot read
+            the language currently selected, which was the original argument for
+            showing language names in their own language. That property survives
+            as the accessible name.
+          */}
+          <View style={styles.settings}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ selected: !muted }}
+              accessibilityLabel={`${t.home.sound}: ${muted ? t.home.off : t.home.on}`}
+              onPress={() => setMuted(!muted)}
+              style={[styles.iconButton, !muted && styles.iconButtonOn]}
+            >
+              <SoundIcon height={17} muted={muted} />
+            </Pressable>
 
-          <SettingRow label={t.home.sound}>
-            <Chip label={t.home.on} selected={!muted} onPress={() => setMuted(false)} />
-            <Chip label={t.home.off} selected={muted} onPress={() => setMuted(true)} />
-          </SettingRow>
+            <View style={styles.flags} accessibilityLabel={t.home.language}>
+              {LOCALES.map((option) => {
+                const Flag = FLAGS[option];
+                return (
+                  <Pressable
+                    key={option}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: option === locale }}
+                    accessibilityLabel={LANGUAGE_NAMES[option]}
+                    onPress={() => setLocale(option)}
+                    style={[styles.iconButton, option === locale && styles.iconButtonOn]}
+                  >
+                    <Flag height={15} />
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
 
           <Text style={styles.footnote}>{t.home.footnote}</Text>
         </View>
@@ -196,26 +297,62 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.lg,
     gap: spacing.md,
   },
-  settingRow: {
+  cardSlot: { paddingHorizontal: spacing.xl, paddingBottom: spacing.sm },
+  card: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    // Nearly opaque: this sits on top of the artwork, and the keeper's name has
+    // to stay readable over whatever happens to be behind it.
+    backgroundColor: "rgba(30,24,41,0.94)",
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: palette.brandDeep,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  cardPressed: { opacity: 0.85 },
+  portrait: {
+    width: 54,
+    height: 54,
+    alignItems: "center",
+    justifyContent: "flex-end",
+    borderRadius: 10,
+    backgroundColor: palette.night,
+    overflow: "hidden",
+  },
+  cardCopy: { flex: 1, gap: 2 },
+  cardName: { color: palette.chalk, fontSize: 18, fontWeight: "800" },
+  cardMode: { ...text.muted, fontSize: 11 },
+  formLine: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  pill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: palette.brand,
+    borderRadius: 999,
+    paddingLeft: spacing.md,
+    paddingRight: spacing.sm,
+    paddingVertical: 7,
+  },
+  pillLabel: { color: palette.brandInk, fontSize: 13, fontWeight: "800" },
+  settings: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     marginTop: spacing.xs,
   },
-  settingOptions: { flexDirection: "row", gap: spacing.xs },
-  chip: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: 6,
-    borderRadius: 999,
+  flags: { flexDirection: "row", gap: spacing.xs },
+  iconButton: {
+    width: 44,
+    height: 32,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: palette.line,
-    minWidth: 62,
-    alignItems: "center",
-    // Slightly opaque so a chip stays legible over whatever it lands on.
     backgroundColor: "rgba(20,16,28,0.55)",
   },
-  chipOn: { borderColor: palette.brand, backgroundColor: palette.brandWash },
-  chipLabel: { color: palette.chalkDim, fontSize: 13, fontWeight: "600" },
-  chipLabelOn: { color: palette.brand },
+  iconButtonOn: { borderColor: palette.brand, backgroundColor: palette.brandWash },
   footnote: { ...text.muted, textAlign: "center" },
 });
