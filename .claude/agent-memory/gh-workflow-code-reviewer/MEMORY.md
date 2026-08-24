@@ -1,0 +1,2 @@
+- [penalty-chaos structure](project_penalty-chaos.md) — pure game logic (engine/match) is solid; src/state/* persistence hooks are the recurring risk area
+- [penalty-chaos review approach](feedback_penalty-chaos-review.md) — weight runtime/state-timing bugs highly; that's where this project's real bugs have come from historically
