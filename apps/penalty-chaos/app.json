@@ -19,7 +19,12 @@
       "predictiveBackGestureEnabled": false,
       "package": "com.simplemobileapps.penaltychaos",
       "versionCode": 1,
-      "permissions": []
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -27,6 +32,12 @@
     "plugins": [
       "expo-localization",
       "expo-audio"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "2f79f42f-990c-4e73-9958-57ab09b86771"
+      }
+    },
+    "owner": "davidvl"
   }
 }
