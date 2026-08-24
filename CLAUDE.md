@@ -42,6 +42,13 @@ blueprint scaffold). **If an idea needs a physics engine or dozens of moving bod
 signal to change the idea, not the stack** — and that call belongs at the research stage, not
 mid-build.
 
+**No real people, no club IP** ([ADR 8](docs/adr/0008-no-real-person-likenesses-or-club-ip.md)).
+No real footballer's name or likeness, no club crests, kits, or competition names ship in a
+binary or a store listing — caricature is not an exemption, it makes identification *easier*.
+Characters are behaviour archetypes with invented names, renameable by the player on-device.
+Reasoning and sources in [docs/reference/likeness-and-ip.md](docs/reference/likeness-and-ip.md);
+read that rather than re-deriving the law.
+
 When ads *do* come up, read
 [docs/reference/families-policy-and-ads.md](docs/reference/families-policy-and-ads.md) rather
 than recalling policy — Families rules collide with rewarded video in non-obvious ways, and

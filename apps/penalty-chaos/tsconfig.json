@@ -1,0 +1,10 @@
+{
+  "extends": [
+    "expo/tsconfig.base",
+    "@repo/config/tsconfig/react-native"
+  ],
+  "include": [
+    "**/*.ts",
+    "**/*.tsx"
+  ]
+}
