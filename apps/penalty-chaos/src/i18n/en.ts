@@ -55,6 +55,22 @@ export const en: Messages = {
     readBeaten: "He guessed you'd repeat yourself.",
   },
 
+  row: {
+    invite: "Take the Viking row",
+    // Not translated, on purpose — see messages.ts.
+    ro: "RO",
+    strokes: (count) => (count === 1 ? "1 stroke" : `${count} strokes`),
+    finished: (count) => {
+      if (count === 0) return "Not one stroke. The crowd is baffled.";
+      if (count >= 18) return "The whole stand went with you.";
+      if (count >= 10) return "That is a proper row.";
+      return "The crowd will take it.";
+    },
+    close: "Done",
+    abort: "Stop",
+    abortHint: "Hold to stop the row",
+  },
+
   form: {
     label: "Form",
     recent: (scored, of) => `${scored} of your last ${of}`,

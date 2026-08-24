@@ -1,0 +1,143 @@
+import { describe, expect, it } from "vitest";
+import {
+  ANSWER_SLOT_MS,
+  AUDIO_LATENCY_MS,
+  EARLY_GRACE_MS,
+  HIT_GAP_MS,
+  MAX_CYCLES,
+  MISSES_TO_END,
+  REST_FLOOR_MS,
+  REST_START_MS,
+  answer,
+  answerClosesMs,
+  answerOpensMs,
+  armDurationMs,
+  cycleMs,
+  endCycle,
+  restMs,
+  startRow,
+  totalMs,
+} from "./row";
+
+describe("the measured shape of the row", () => {
+  it("keeps the beat constant — that is the whole point", () => {
+    // 45 gaps measured across two run-throughs: median 0.400s, p25 0.37, p75
+    // 0.44, from the slowest cycle to the fastest. Nothing here may make the
+    // beat a function of the cycle index.
+    expect(HIT_GAP_MS).toBe(400);
+    expect(ANSWER_SLOT_MS).toBe(HIT_GAP_MS * 2);
+  });
+
+  it("finishes filling exactly when a tap starts counting", () => {
+    // "Full" and "you may answer" have to be the same statement, or the button
+    // is lying about something. A blink at a single instant was tuned twice and
+    // read as out of sync both times - see AUDIO_LATENCY_MS.
+    expect(armDurationMs()).toBe(answerOpensMs());
+  });
+
+  it("starts filling from the top of the cycle, not from the second drum", () => {
+    // The fill spans both drums, so the player sees the beat approaching rather
+    // than being told about it after the fact.
+    expect(armDurationMs()).toBeGreaterThan(HIT_GAP_MS + AUDIO_LATENCY_MS);
+  });
+
+  it("opens the window a touch before the answer is due", () => {
+    // Anticipating the beat is rewarded, not swallowed.
+    expect(ANSWER_SLOT_MS + AUDIO_LATENCY_MS - answerOpensMs()).toBe(EARLY_GRACE_MS);
+  });
+
+  it("accelerates by shortening the rest, not the beat", () => {
+    const rests = Array.from({ length: 8 }, (_, cycle) => restMs(cycle));
+    for (const [a, b] of rests.map((r, i) => [r, rests[i + 1]] as const).slice(0, -1)) {
+      expect(b).toBeLessThan(a);
+    }
+    expect(rests[0]).toBe(REST_START_MS);
+  });
+
+  it("settles at a floor rather than collapsing to nothing", () => {
+    expect(restMs(0)).toBe(REST_START_MS);
+    expect(restMs(MAX_CYCLES - 1)).toBe(REST_FLOOR_MS);
+    expect(restMs(999)).toBe(REST_FLOOR_MS);
+  });
+
+  it("runs about twenty seconds, which is the budget", () => {
+    // Thirty was the first cut and it dragged. The cap is what enforces this,
+    // so the test guards the cap rather than trusting the constants.
+    const seconds = totalMs() / 1000;
+    expect(seconds).toBeGreaterThan(17);
+    expect(seconds).toBeLessThan(23);
+  });
+
+  it("shrinks the answer window without ever making it tight", () => {
+    // 266ms of measured tap scatter on the phone. Even the last, meanest window
+    // has to stay comfortably wider than that or the row starts feeling rigged.
+    const last = answerClosesMs(MAX_CYCLES - 1) - answerOpensMs();
+    expect(answerClosesMs(0) - answerOpensMs()).toBeGreaterThan(last);
+    // Wider than the 266ms scatter the phone actually produces, with margin.
+    // The rest floor is what buys this, so lowering the floor breaks the test
+    // rather than quietly making the endgame unfair.
+    expect(last).toBeGreaterThan(400);
+  });
+
+  it("closes the window exactly when the next cycle starts", () => {
+    expect(answerClosesMs(3)).toBe(cycleMs(3));
+  });
+});
+
+describe("answering", () => {
+  it("counts a stroke and clears the miss streak", () => {
+    const state = answer({ ...startRow(), misses: 1 });
+    expect(state.strokes).toBe(1);
+    expect(state.misses).toBe(0);
+    expect(state.answeredThisCycle).toBe(true);
+  });
+
+  it("ignores extra taps in the same cycle rather than punishing them", () => {
+    // Hammering the button is what a child does when it is working.
+    const once = answer(startRow());
+    expect(answer(answer(once)).strokes).toBe(1);
+  });
+
+  it("does nothing once the row is over", () => {
+    const dead = { ...startRow(), over: true };
+    expect(answer(dead)).toEqual(dead);
+  });
+});
+
+describe("ending", () => {
+  it("survives a single miss", () => {
+    const state = endCycle(startRow());
+    expect(state.misses).toBe(1);
+    expect(state.over).toBe(false);
+  });
+
+  it("ends on two misses in a row", () => {
+    const state = endCycle(endCycle(startRow()));
+    expect(state.misses).toBe(MISSES_TO_END);
+    expect(state.over).toBe(true);
+  });
+
+  it("forgives a miss that was answered for", () => {
+    // miss, answer, miss — never two consecutive, so the row goes on.
+    let state = endCycle(startRow());
+    state = endCycle(answer(state));
+    state = endCycle(state);
+    expect(state.misses).toBe(1);
+    expect(state.over).toBe(false);
+  });
+
+  it("stops at the cap even if every cycle is answered", () => {
+    let state = startRow();
+    for (let i = 0; i < MAX_CYCLES; i += 1) state = endCycle(answer(state));
+    expect(state.strokes).toBe(MAX_CYCLES);
+    expect(state.over).toBe(true);
+  });
+
+  it("keeps the score after it is over", () => {
+    let state = answer(startRow());
+    state = endCycle(state);
+    state = endCycle(endCycle(state));
+    expect(state.over).toBe(true);
+    expect(state.strokes).toBe(1);
+  });
+});

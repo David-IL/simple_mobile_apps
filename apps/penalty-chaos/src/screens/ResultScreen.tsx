@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { Button } from "@repo/ui";
 import { PlayerBadge } from "../components/PlayerBadge";
+import { VikingRow } from "../components/VikingRow";
 import { ShotMap } from "../components/ShotMap";
 import { KeeperFigure } from "../components/art/KeeperFigure";
 import { looksFor } from "../components/art/keeperLooks";
@@ -49,6 +51,7 @@ function Recap({ state, player }: { state: MatchState; player: Player }) {
 
 export function ResultScreen({ state, keeper, onPlayAgain, onChangeKeeper }: Props) {
   const { t } = useI18n();
+  const [rowing, setRowing] = useState(false);
   const champion = winner(state);
   const solo = state.mode === "solo";
   const beaten = solo
@@ -120,6 +123,23 @@ export function ResultScreen({ state, keeper, onPlayAgain, onChangeKeeper }: Pro
 
         <Text style={text.muted}>{t.result.versus(t.keepers[keeper.id].name)}</Text>
 
+        {/*
+          The reward moment, offered only after a win — celebrating a 1 of 5 is
+          absurd. It sits in the celebration content rather than in the footer
+          on purpose: "Igjen" is the loop this whole app is built around, and
+          nothing may end up between the player and it.
+        */}
+        {beaten ? (
+          <View style={styles.rowInvite}>
+            <Button
+              label={t.row.invite}
+              onPress={() => setRowing(true)}
+              color={palette.brand}
+              labelColor={palette.brandInk}
+            />
+          </View>
+        ) : null}
+
         <View style={styles.recap}>
           <Recap state={state} player={0} />
           {solo ? null : <Recap state={state} player={1} />}
@@ -140,6 +160,8 @@ export function ResultScreen({ state, keeper, onPlayAgain, onChangeKeeper }: Pro
           labelColor={palette.chalk}
         />
       </View>
+
+      {rowing ? <VikingRow onClose={() => setRowing(false)} /> : null}
     </View>
   );
 }
@@ -166,6 +188,7 @@ const styles = StyleSheet.create({
     backgroundColor: palette.nightSoft,
   },
   bigScore: { color: palette.chalk, fontSize: 56, fontWeight: "900", letterSpacing: -2 },
+  rowInvite: { marginTop: spacing.md },
   recap: { marginTop: spacing.xl, gap: spacing.md },
   recapRow: { gap: spacing.xs },
   recapName: { flexDirection: "row", alignItems: "center", gap: spacing.xs },

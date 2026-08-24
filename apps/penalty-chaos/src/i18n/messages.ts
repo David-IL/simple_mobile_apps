@@ -69,6 +69,26 @@ export type Messages = {
   };
 
   /**
+   * The Viking row celebration.
+   *
+   * `ro` is the crowd's own word and is **the same string in every locale** —
+   * translating it would be like translating "olé". It stays in the contract
+   * rather than being hardcoded so that a third language has to make that
+   * decision consciously instead of inheriting it (ADR 10).
+   */
+  row: {
+    /** The offer on the result screen, shown only after a win. */
+    invite: string;
+    ro: string;
+    strokes: (count: number) => string;
+    finished: (count: number) => string;
+    close: string;
+    /** Hold-to-leave, the same control the shootout uses. */
+    abort: string;
+    abortHint: string;
+  };
+
+  /**
    * Recent form against one keeper. Its own group because both the home
    * screen's rematch card and the setup screen's keeper card show it.
    */

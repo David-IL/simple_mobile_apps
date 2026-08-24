@@ -62,6 +62,24 @@ export const nb: Messages = {
     readBeaten: "Han trodde du kom til å gjenta deg.",
   },
 
+  row: {
+    // "Ta roen" was the first try and reads as "take the calm" - the exact
+    // opposite of what happens next. Naming the ritual removes the ambiguity.
+    invite: "Ta Viking-roen",
+    // Samme ord på alle språk — se messages.ts.
+    ro: "RO",
+    strokes: (count) => (count === 1 ? "1 tak" : `${count} tak`),
+    finished: (count) => {
+      if (count === 0) return "Ikke ett tak. Publikum skjønner ingenting.";
+      if (count >= 18) return "Hele tribunen ble med.";
+      if (count >= 10) return "Det der var skikkelig roing.";
+      return "Publikum tar det de får.";
+    },
+    close: "Ferdig",
+    abort: "Stopp",
+    abortHint: "Hold inne for å stoppe roingen",
+  },
+
   form: {
     label: "Form",
     recent: (scored, of) => `${scored} av de siste ${of}`,

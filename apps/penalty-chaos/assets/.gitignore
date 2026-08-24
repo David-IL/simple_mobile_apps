@@ -1,1 +1,4 @@
-*.jpg
+# The 10s source reel the three row backgrounds were cut from.
+# Only the three cut clips are bundled; this one is kept for re-cutting.
+row-backgrounds.mp4
+icon-suggestions.jpg
