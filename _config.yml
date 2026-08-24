@@ -1,0 +1,36 @@
+# GitHub Pages configuration.
+#
+# This site exists for exactly one reason: Google Play requires the privacy
+# policy to live at a public URL, and a *hosted copy* of a document is a second
+# copy that drifts. Two public claims had already drifted by the time the first
+# submission was attempted, so the point here is to not create a third.
+#
+# So Pages serves the canonical file — apps/penalty-chaos/store/privacy-policy.md,
+# the one the repo already treats as the source — directly, via a `permalink` in
+# its own front matter. There is no duplicate kept in sync by hand, and no build
+# step that could silently stop running. Editing the policy publishes the policy.
+#
+# Jekyll only converts files that have YAML front matter; everything else is
+# copied verbatim, which is what GitHub already serves. So *adding* a page means
+# adding front matter to that page, not editing this file.
+
+title: simple_mobile_apps
+description: >-
+  Small Expo/React Native apps, built as a hands-on way to learn mobile
+  development end to end.
+theme: jekyll-theme-primer
+
+# Source, tooling and generated output. None of it is content, and Jekyll would
+# otherwise copy all of it into the published site.
+exclude:
+  - node_modules/
+  - blueprint/
+  - packages/
+  - package.json
+  - pnpm-lock.yaml
+  - pnpm-workspace.yaml
+  - turbo.json
+  - CLAUDE.md
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.excalidraw"

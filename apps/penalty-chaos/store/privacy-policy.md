@@ -1,3 +1,13 @@
+---
+# Front matter, so GitHub Pages renders *this* file as the published policy.
+# The permalink is what Google Play is given; it is deliberately decoupled from
+# this file's path so the file can move without breaking the URL Play has on
+# record. A dead privacy-policy link is a policy violation, so that URL is now a
+# published contract — change it only by adding a redirect, never by editing.
+title: "Personvernerklæring / Privacy policy — Straffe Kaos"
+permalink: /privacy/penalty-chaos/
+---
+
 # Personvernerklæring / Privacy policy — Straffe Kaos
 
 **Sist oppdatert / Last updated: 2026-08-24**
