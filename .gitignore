@@ -22,6 +22,15 @@ apps/*/ios/
 .env.*
 !.env.example
 
+# Google Play service-account keys for `eas submit`.
+# Google generates these as api-<project>-<n>-<hash>.json. One of them can
+# publish to the Play account, so it must never be committed. Prefer
+# `eas credentials --platform android` — that stores the key with EAS and it
+# never lands in the repo at all.
+api-*.json
+*service-account*.json
+*serviceaccount*.json
+
 # Editor / OS
 .DS_Store
 Thumbs.db

@@ -143,6 +143,14 @@ Play Console → **Create app**.
 - Default language: **Norwegian (Norway) – no-NO**
 - App or game: **Game**
 - Free or paid: **Free** (this cannot be changed to paid later)
+- Package name: `com.simplemobileapps.penaltychaos`
+
+**Copy the package name, do not retype it.** It comes from `android.package` in
+[app.json](../app.json), and `eas submit` echoes the same string back at you if
+you want to check. It is the only irreversible field on this form: it cannot be
+changed after the app is created, cannot be reused on the account even if you
+delete the app, and must match the AAB byte for byte or Play refuses the upload.
+A typo means abandoning the app entry and filling in every form again.
 
 ### 5. Fill in App content — all of it
 
