@@ -48,10 +48,19 @@ type Props = {
  * `-22 0 104 96` spans -22..82, whose midpoint is 30 — the figure's own centre
  * line. That means a caller can still position it by centring the box, and the
  * extra width is pure headroom that costs nothing but layout space.
+ *
+ * The top edge had the same shape of bug, standing still. `stature` scales
+ * the figure vertically anchored at the feet (y=93), so a build taller than
+ * 1.0 pushes the head *above* y=0 rather than just making the figure bigger —
+ * measured, The Wall (stature 1.12) puts his hairline at y≈-6.7 and Line
+ * Dancer's wild hair (stature 1.03) reaches y≈-4.1, both silently clipped at
+ * the old top edge. `-10` gives headroom past the worst case on the current
+ * roster with a margin for the next tall keeper, the same reasoning as the
+ * horizontal fix above.
  */
-const VIEW_BOX = "-22 0 104 96";
+const VIEW_BOX = "-22 -10 104 106";
 const VIEW_BOX_WIDTH = 104;
-const VIEW_BOX_HEIGHT = 96;
+const VIEW_BOX_HEIGHT = 106;
 
 /** Box width for a given height. Exported so callers can reserve the space. */
 export function keeperBoxWidth(height: number): number {
