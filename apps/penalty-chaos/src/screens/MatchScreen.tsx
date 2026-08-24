@@ -213,7 +213,8 @@ export function MatchScreen({ keeper, keeperName, initialState, onFinish, onQuit
 
   // Solo now stores a real (or "You"-defaulted) name at the same slot duel
   // uses, set once at SetupScreen — no mode split needed here any more.
-  const takerName = state.names[currentPlayer(state)];
+  const shooter = currentPlayer(state);
+  const takerName = state.names[shooter];
   const showPreview = drag && !round.setup.effect.blindAim ? drag.aim : null;
 
   const taunts = t.keepers[keeper.id].taunts;
@@ -226,6 +227,30 @@ export function MatchScreen({ keeper, keeperName, initialState, onFinish, onQuit
         side: result.zone ? t.sides[splitZone(result.zone).col] : t.sides.centre,
       })
     : "";
+
+  /**
+   * What the keeper had worked out, said out loud.
+   *
+   * `readDepth` has driven this whole game since the first version and has never
+   * once been visible on screen — the same defect that got the badger deleted,
+   * applied to the central mechanic rather than to a gag. Two cases, because
+   * both teach the same lesson from opposite ends: he read you and got you, or
+   * he read you and you went somewhere else.
+   *
+   * See docs/design/penalty-chaos-stickiness.md.
+   */
+  //
+  // Gated on `kind === "saved"`, not on the zones matching. `resolveShot` tests
+  // `effect.blockedCol` *before* it compares the shot to the dive, so a shot
+  // into the read zone that lands in a blocked column comes back as "blocked" —
+  // and crediting his read for what a pitch invader did is the wrong lesson from
+  // the wrong round. He still guessed you would repeat yourself, which is what
+  // `readBeaten` says, so that is the honest fallback.
+  const readNote = !result?.read
+    ? null
+    : result.kind === "saved" && result.zone === result.read.zone
+      ? t.match.readSaved(result.read.times)
+      : t.match.readBeaten;
 
   return (
     <View style={styles.screen}>
@@ -256,6 +281,26 @@ export function MatchScreen({ keeper, keeperName, initialState, onFinish, onQuit
               {t.verdict[result.kind]}
             </Text>
             <Text style={styles.headline}>{headline}</Text>
+
+            {/*
+              The map is safe to show here and nowhere else: the ringed zone is
+              the zone he dived to, so during aiming it would be the answer key.
+              The shot just taken is folded in so the dots match what was seen.
+            */}
+            {result.read ? (
+              <View style={styles.readBlock}>
+                <ShotMap
+                  shots={shotsBy(
+                    recordShot(state, result.kind, result.zone, result.landing),
+                    shooter,
+                  )}
+                  width={132}
+                  readZone={result.read.zone}
+                />
+                <Text style={styles.readNote}>{readNote}</Text>
+              </View>
+            ) : null}
+
             <Text style={styles.tapHint}>{t.match.tapToContinue}</Text>
           </Pressable>
         ) : null}
@@ -320,6 +365,8 @@ const styles = StyleSheet.create({
   },
   verdict: { fontSize: 44, fontWeight: "900", letterSpacing: 2 },
   headline: { ...text.body, textAlign: "center" },
+  readBlock: { alignItems: "center", gap: spacing.sm, marginTop: spacing.sm },
+  readNote: { ...text.muted, color: palette.brand, textAlign: "center" },
   tapHint: { ...text.muted, marginTop: spacing.lg },
   controls: {
     paddingHorizontal: spacing.lg,

@@ -6,11 +6,13 @@ import { HomeScreen } from "./src/screens/HomeScreen";
 import { MatchScreen } from "./src/screens/MatchScreen";
 import { ResultScreen } from "./src/screens/ResultScreen";
 import { SetupScreen } from "./src/screens/SetupScreen";
+import { KEEPERS } from "./src/game/keepers";
 import { newMatch, type MatchMode, type MatchState } from "./src/game/match";
 import type { KeeperArchetype } from "./src/game/types";
 import { SfxProvider, useSfx } from "./src/audio/SfxProvider";
 import { I18nProvider, useI18n } from "./src/i18n";
 import { displayName, useKeeperNames } from "./src/state/keeperNames";
+import { useLastMatch, type LastMatch } from "./src/state/lastMatch";
 import { palette } from "./src/theme";
 
 /**
@@ -27,6 +29,7 @@ function Game() {
   const { t } = useI18n();
   const { names, rename } = useKeeperNames();
   const { setMusicActive, setAmbienceActive } = useSfx();
+  const { last, remember } = useLastMatch();
   const [screen, setScreen] = useState<Screen>({ kind: "home" });
 
   /**
@@ -69,9 +72,32 @@ function Game() {
 
   const startMatch = useCallback(
     (mode: MatchMode, keeper: KeeperArchetype, players: [string, string]) => {
+      remember(mode, keeper.id, players);
       setScreen({ kind: "match", keeper, state: newMatch(mode, players) });
     },
-    [],
+    [remember],
+  );
+
+  /**
+   * Straight from the home screen into a match against the last opponent,
+   * skipping setup.
+   *
+   * Everything needed was recorded when that match started, so this replays a
+   * fixture rather than rebuilding one — no second reading of the name store,
+   * and therefore no way for the two paths to disagree about who is taking.
+   */
+  const rematch = useCallback(
+    (target: LastMatch) => {
+      const keeper = KEEPERS.find((candidate) => candidate.id === target.keeperId);
+      // A stored id that no longer exists is not worth a crash: fall back to
+      // picking one by hand.
+      if (!keeper) {
+        setScreen({ kind: "setup", mode: target.mode });
+        return;
+      }
+      startMatch(target.mode, keeper, [target.takers[0], target.takers[1]]);
+    },
+    [startMatch],
   );
 
   const playAgain = useCallback(() => {
@@ -85,7 +111,11 @@ function Game() {
   return (
     <View style={styles.root}>
       {screen.kind === "home" ? (
-        <HomeScreen onPick={(mode) => setScreen({ kind: "setup", mode })} />
+        <HomeScreen
+          onPick={(mode) => setScreen({ kind: "setup", mode })}
+          last={last}
+          onRematch={rematch}
+        />
       ) : null}
 
       {screen.kind === "setup" ? (

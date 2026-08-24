@@ -251,3 +251,32 @@ an audio-latency spike on his phone, and if the tap doesn't feel tight there is 
 
   Revisit as a standalone app only if the son plays that celebration more than the penalties.
   That would be a real signal, gathered for free, from a user who tells the truth.
+
+## 10. Where it actually landed — 2026-08-24
+
+Built, as the recommendation above said to: a row celebration on penalty-chaos's
+result screen, offered only after a win. **Still shelved as a standalone app.**
+
+Two things were measured rather than guessed, and both changed the design:
+
+- **A two-minute recording of the real row** was analysed for onsets. The hits
+  sit a constant 0.40s apart — median of 45 gaps across two full run-throughs,
+  p25 0.37, p75 0.44 — and never accelerate. What accelerates is the *rest
+  between cycles*: 10.1s, 6.1, 5.1, 4.2, 2.7, 1.8, 1.1, 0.95. So the mechanic
+  ramps by shortening the gap between rows, not by speeding the beat up. The
+  measured constants live in `src/game/row.ts` and are covered by tests.
+- **§6b's audio-latency risk was real.** A throwaway lab screen measured **266ms
+  of tap scatter** on the actual phone, nearly triple the point at which a timing
+  window stops feeling fair. So there is no timing test at all: the crowd beats
+  twice, the player answers with RO, and **the shout fires on the tap rather
+  than on a grid** — you cannot be late against a sound you trigger yourself.
+  §6b's warning was the most useful line in this document.
+
+The drummer was never drawn, exactly as §9 required. The crowd carries it, so
+[ADR 8](../adr/0008-no-real-person-likenesses-or-club-ip.md) never binds — and
+`RowCrowd.tsx` carries a comment saying not to add one later.
+
+Run time is capped at 13 cycles, about 20 seconds, so it always finishes on the
+crowd's roar rather than fizzling. See
+[docs/design/penalty-chaos-stickiness.md](../design/penalty-chaos-stickiness.md)
+for the surrounding work.

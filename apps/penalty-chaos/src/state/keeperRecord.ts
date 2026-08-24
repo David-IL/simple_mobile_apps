@@ -3,7 +3,15 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { KeeperId, ShotResultKind } from "../game/types";
 import { applyShot, parseRecord, type KeeperRecord } from "./keeperTally";
 
-export { savePercent, tallyFor, type KeeperRecord, type KeeperTally } from "./keeperTally";
+export {
+  FORM_SHOWN,
+  recentForm,
+  recentScored,
+  savePercent,
+  tallyFor,
+  type KeeperRecord,
+  type KeeperTally,
+} from "./keeperTally";
 
 /**
  * How every keeper has done against this phone, for good.

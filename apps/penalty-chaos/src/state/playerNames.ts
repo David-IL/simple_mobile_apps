@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { limitName } from "./keeperNames";
+import type { MatchMode } from "../game/match";
+import { limitName, sanitiseName } from "./keeperNames";
 
 /**
  * The two takers' names in pass-the-phone mode, remembered on the device.
@@ -35,6 +36,31 @@ function parse(stored: string | null): PlayerNames {
     // Corrupt or hand-edited storage should not stop a match starting.
     return EMPTY;
   }
+}
+
+/**
+ * The two names a match actually starts with, with the stored values falling
+ * back to translated placeholders.
+ *
+ * Lives beside the store rather than in SetupScreen so the fallback rules sit
+ * with the data they fall back from. Labels are passed in so this file stays
+ * free of i18n — the same reason the engine returns headline keys instead of
+ * finished sentences (ADR 10).
+ *
+ * The rematch path does not call this: a finished match records the names it
+ * was played under, so going again replays them rather than resolving a fresh
+ * set. See src/state/lastMatch.ts.
+ */
+export function resolveTakers(
+  mode: MatchMode,
+  stored: PlayerNames,
+  labels: { solo: string; playerOne: string; playerTwo: string },
+): [string, string] {
+  if (mode === "solo") return [sanitiseName(stored[0]) || labels.solo, ""];
+  return [
+    sanitiseName(stored[0]) || labels.playerOne,
+    sanitiseName(stored[1]) || labels.playerTwo,
+  ];
 }
 
 export function usePlayerNames() {

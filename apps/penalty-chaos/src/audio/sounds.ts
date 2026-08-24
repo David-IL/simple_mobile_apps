@@ -13,6 +13,9 @@
  * and the licence rules for replacing it.
  */
 
+import { preload } from "expo-audio";
+
+import { SHOUT_MS } from "../game/row";
 import type { KeeperId } from "../game/types";
 
 export const SFX_IDS = [
@@ -23,6 +26,8 @@ export const SFX_IDS = [
   "blocked",
   "chant",
   "whistle",
+  "row-drums",
+  "ro-shout",
   "taunt-sunday",
   "taunt-statue",
   "taunt-chatterbox",
@@ -49,6 +54,8 @@ export const SFX_SOURCES: Record<SfxId, number> = {
   blocked: require("../../assets/sfx/blocked.mp3"),
   chant: require("../../assets/sfx/chant.mp3"),
   whistle: require("../../assets/sfx/whistle.mp3"),
+  "row-drums": require("../../assets/sfx/row-drums.mp3"),
+  "ro-shout": require("../../assets/sfx/ro-shout.mp3"),
   "taunt-sunday": require("../../assets/sfx/sunday-taunt.mp3"),
   "taunt-statue": require("../../assets/sfx/statue-taunt.mp3"),
   "taunt-chatterbox": require("../../assets/sfx/chatterbox-taunt.mp3"),
@@ -96,6 +103,26 @@ export const SFX_VOLUME: Record<SfxId, number> = {
   blocked: 0.9,
   chant: 0.85,
   whistle: 0.8,
+  // The row's metronome, at the player's ceiling.
+  //
+  // 1 is as loud as expo-audio goes — the property is 0..1 — and the file
+  // itself already peaks at 0 dBFS, so there is no gain left anywhere in the
+  // chain. If the drum still needs to feel bigger the levers are a fuller
+  // sample or bringing the *other* sounds down, not a bigger number here.
+  //
+  // Deliberately *not* loudness-normalised at export like the taunts are:
+  // `loudnorm`'s dynamic mode softens the attack, and the attack is the whole
+  // sound. See assets/sfx/README.md.
+  /**
+   * The row's call: two hits baked into one file, 400ms apart.
+   *
+   * Scheduling the second beat with a `setTimeout` put it at the mercy of the
+   * JS thread, and it showed — the second drum was routinely swallowed, so the
+   * call arrived as one hit instead of two. Baking the interval into the audio
+   * makes it sample-accurate and costs one `play()` per cycle instead of two.
+   */
+  "row-drums": 1,
+  "ro-shout": 1,
   // Short and speech-like: quiet enough to be atmosphere, loud enough to
   // hear. All eight are loudness-normalised to the same target during
   // trimming (see assets/sfx/README.md), so one shared level is enough —
@@ -108,6 +135,47 @@ export const SFX_VOLUME: Record<SfxId, number> = {
   "taunt-veteran": 0.85,
   "taunt-wall": 0.85,
   "taunt-mind-reader": 0.85,
+};
+
+/**
+ * How long each clip sounds for, in milliseconds. Measured with `ffprobe`, not
+ * estimated — `ffprobe -v error -show_entries format=duration -of csv=p=0 <f>`.
+ *
+ * This table exists so `SfxProvider` can answer "is that voice still busy?"
+ * with arithmetic instead of asking the player. That is not a micro-optimisation.
+ * In expo-audio every one of `currentTime`, `playing`, `play()` and `pause()` is
+ * wrapped in `runBlocking(mainQueue)` on Android, so reading them **blocks the
+ * JS thread until the Android main thread is free**. The old voice picker read
+ * `currentTime` once per voice and `playing` once more, which put three or four
+ * blocking hops inside a touch handler — on the one screen whose main thread is
+ * also decoding a looping video. That is why a shout did not always follow the
+ * finger. Knowing the lengths up front removes every one of those reads.
+ *
+ * **Re-measure when you replace a file.** A number that is too small here makes
+ * the provider think a voice is free while it is still sounding; too large and
+ * it hoards a voice that is already finished.
+ */
+export const SFX_LENGTH_MS: Record<SfxId, number> = {
+  kick: 792,
+  goal: 2000,
+  save: 624,
+  miss: 2000,
+  blocked: 624,
+  chant: 5068,
+  whistle: 4127,
+  "row-drums": 760,
+  // The one length that is a *rule* rather than a measurement: it has to fit
+  // inside the row's shortest rest, so it is owned by the row and asserted by a
+  // test there. See SHOUT_MS in src/game/row.ts.
+  "ro-shout": SHOUT_MS,
+  "taunt-sunday": 1800,
+  "taunt-statue": 2200,
+  "taunt-chatterbox": 2200,
+  "taunt-line-dancer": 1900,
+  "taunt-showboat": 1750,
+  "taunt-veteran": 2000,
+  "taunt-wall": 2300,
+  "taunt-mind-reader": 1900,
 };
 
 /** Which laugh a keeper's taunt plays. Kept here, not in `game/keepers.ts` — a
@@ -129,3 +197,32 @@ export function isTauntSfx(id: SfxId): boolean {
 export function tauntSfxId(keeper: KeeperId): SfxId {
   return `taunt-${keeper}`;
 }
+
+/**
+ * Start buffering the slow ones before React renders.
+ *
+ * The menu loop took over a second to come in on a cold start. It is not the
+ * file - it opens at full level on its first sample - it is a 481 kB mp3 being
+ * fetched and decoded while the home screen is already up. `preload` is the
+ * documented answer and the docs are explicit that it belongs in module scope,
+ * before any component mounts.
+ *
+ * Only four sources, not the whole roster: the two long loops, because they are
+ * by far the largest, and the row's pair, because those two have to answer a
+ * finger. The short outcome effects are a few tens of kB and arrive in time
+ * without help. Add to this list if another sound shows a first-play delay -
+ * preloading everything would just move the contention to app start.
+ *
+ * **Do not "fix" the loops by re-encoding them smaller.** `menu-music` is
+ * played with `loop = true` and mp3 re-encoding adds encoder padding at both
+ * ends, which is exactly how a seamless loop acquires an audible gap. See
+ * assets/sfx/README.md.
+ */
+const swallow = () => {
+  // A warm cache is an optimisation; failing to get one is not an error.
+};
+
+void preload(MUSIC_SOURCE).catch(swallow);
+void preload(AMBIENCE_SOURCE).catch(swallow);
+void preload(SFX_SOURCES["row-drums"]).catch(swallow);
+void preload(SFX_SOURCES["ro-shout"]).catch(swallow);

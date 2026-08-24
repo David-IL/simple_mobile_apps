@@ -12,6 +12,7 @@ import {
 import { Button } from "@repo/ui";
 import { useSfx } from "../audio/SfxProvider";
 import { tauntSfxId } from "../audio/sounds";
+import { FormRow } from "../components/FormRow";
 import { PlayerBadge } from "../components/PlayerBadge";
 import { KeeperFigure } from "../components/art/KeeperFigure";
 import { looksFor } from "../components/art/keeperLooks";
@@ -20,8 +21,15 @@ import type { MatchMode } from "../game/match";
 import type { KeeperArchetype } from "../game/types";
 import { useI18n } from "../i18n";
 import { displayName, sanitiseName, type KeeperNames } from "../state/keeperNames";
-import { usePlayerNames } from "../state/playerNames";
-import { savePercent, tallyFor, useKeeperRecord } from "../state/keeperRecord";
+import { useLastMatch } from "../state/lastMatch";
+import { resolveTakers, usePlayerNames } from "../state/playerNames";
+import {
+  recentForm,
+  recentScored,
+  savePercent,
+  tallyFor,
+  useKeeperRecord,
+} from "../state/keeperRecord";
 import { palette, spacing, text } from "../theme";
 
 type Props = {
@@ -31,6 +39,9 @@ type Props = {
   onStart: (keeper: KeeperArchetype, players: [string, string]) => void;
   onBack: () => void;
 };
+
+/** Where the roster starts before storage has said otherwise. */
+const INITIAL_KEEPER_ID = KEEPERS[0]?.id ?? "sunday";
 
 function useDifficultyScale() {
   return useMemo(() => {
@@ -92,7 +103,8 @@ function KeeperCard({
 
 export function SetupScreen({ mode, names, onRename, onStart, onBack }: Props) {
   const { t } = useI18n();
-  const [selectedId, setSelectedId] = useState(KEEPERS[0]?.id ?? "sunday");
+  const [selectedId, setSelectedId] = useState(INITIAL_KEEPER_ID);
+  const { last, loaded: lastLoaded } = useLastMatch();
   // Persisted, not local state: leaving this screen and coming back — which is
   // what "Different keeper" and "Give up" both do — used to wipe the names.
   const { names: players, setPlayerName, maxLength } = usePlayerNames();
@@ -140,6 +152,30 @@ export function SetupScreen({ mode, names, onRename, onStart, onBack }: Props) {
    * has been made.
    */
   const hasSelected = useRef(false);
+
+  /**
+   * Open on the last opponent rather than on the first keeper in the roster.
+   *
+   * This screen used to start at `KEEPERS[0]` every time, which is the easiest
+   * keeper — so arriving here always meant scrolling past the rivalry you were
+   * actually in. Storage resolves a beat after mount, hence an effect rather
+   * than a lazy initial value.
+   *
+   * `hasSelected` is reset alongside it so the seed does not fire the selection
+   * laugh: that sound is feedback for a choice, and nobody chose this one.
+   */
+  const seeded = useRef(false);
+  useEffect(() => {
+    if (seeded.current || !lastLoaded) return;
+    seeded.current = true;
+    // This runs once, immediately after mount, so the selection is still the
+    // roster default — comparing against that constant rather than against
+    // live state keeps the effect out of the business of tracking selections.
+    if (!last || last.keeperId === INITIAL_KEEPER_ID) return;
+    hasSelected.current = false;
+    setSelectedId(last.keeperId);
+  }, [lastLoaded, last]);
+
   useEffect(() => {
     pop.setValue(0.86);
     Animated.spring(pop, {
@@ -162,17 +198,28 @@ export function SetupScreen({ mode, names, onRename, onStart, onBack }: Props) {
   const shippedName = t.keepers[selected.id].name;
   const selectedTally = tallyFor(record, selected.id);
   const selectedSave = savePercent(selectedTally);
+  /**
+   * The dots actually available, which is not the same as the shots faced.
+   *
+   * `parseRecord` migrates records written before form existed by keeping the
+   * career counters and starting `recent` empty. Sizing the form line off
+   * `faced` therefore told a player with forty shots behind him that he had
+   * scored "0 of your last 5" — a number that is not merely stale but wrong,
+   * and wrong on the one line this screen now leads with. The form guide is
+   * held back until there is form to guide with.
+   */
+  const selectedForm = recentForm(selectedTally);
   const selectedTraits = traitScores(selected);
 
   const start = () => {
-    if (mode === "solo") {
-      onStart(selected, [sanitiseName(players[0]) || t.match.soloTaker, ""]);
-      return;
-    }
-    onStart(selected, [
-      sanitiseName(players[0]) || t.setup.playerOne,
-      sanitiseName(players[1]) || t.setup.playerTwo,
-    ]);
+    onStart(
+      selected,
+      resolveTakers(mode, players, {
+        solo: t.match.soloTaker,
+        playerOne: t.setup.playerOne,
+        playerTwo: t.setup.playerTwo,
+      }),
+    );
   };
 
   return (
@@ -208,14 +255,38 @@ export function SetupScreen({ mode, names, onRename, onStart, onBack }: Props) {
             <Text style={styles.detailName} numberOfLines={1}>
               {displayName(selected.id, names, shippedName)}
             </Text>
-            <Text style={styles.detailSave}>
-              {selectedSave === null ? t.setup.neverFaced : t.setup.savePercent(selectedSave)}
-            </Text>
-            {selectedTally.faced > 0 ? (
-              <Text style={text.muted}>
-                {t.setup.record(selectedTally.conceded, selectedTally.faced)}
-              </Text>
-            ) : null}
+            {/*
+              Form leads, career follows. A lifetime save percentage stops
+              moving once enough shots are in; the last five change every match,
+              and that is the number the player is already keeping in his head.
+            */}
+            {selectedTally.faced === 0 || selectedSave === null ? (
+              <Text style={styles.detailSave}>{t.setup.neverFaced}</Text>
+            ) : selectedForm.length === 0 ? (
+              // A migrated record: career is all there is, so career leads
+              // rather than an empty form guide pretending to be five losses.
+              <>
+                <Text style={styles.detailSave}>{t.setup.savePercent(selectedSave)}</Text>
+                <Text style={text.muted}>
+                  {t.setup.record(selectedTally.conceded, selectedTally.faced)}
+                </Text>
+              </>
+            ) : (
+              <>
+                <View style={styles.detailForm}>
+                  <FormRow tally={selectedTally} dot={10} />
+                  <Text style={styles.detailSave}>
+                    {t.form.recent(recentScored(selectedTally), selectedForm.length)}
+                  </Text>
+                </View>
+                <Text style={text.muted}>
+                  {`${t.setup.savePercent(selectedSave)} · ${t.setup.record(
+                    selectedTally.conceded,
+                    selectedTally.faced,
+                  )}`}
+                </Text>
+              </>
+            )}
           </View>
         </View>
 
@@ -371,6 +442,7 @@ const styles = StyleSheet.create({
   },
   detailTop: { flexDirection: "row", alignItems: "center", gap: spacing.md },
   detailPortrait: { width: 116, alignItems: "center" },
+  detailForm: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   detailCopy: { flex: 1, gap: 1 },
   detailName: { color: palette.chalk, fontSize: 20, fontWeight: "800" },
   detailSave: { color: palette.brand, fontSize: 22, fontWeight: "800" },

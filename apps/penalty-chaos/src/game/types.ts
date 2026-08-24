@@ -114,6 +114,17 @@ export type DisruptionEffect = {
   reachBonus: number;
 };
 
+/**
+ * A pattern the keeper spotted in this player's recent shots, and how often he
+ * had seen it.
+ *
+ * Carried out of the engine purely so the UI can *say so*. `readDepth` drove
+ * the whole design and was invisible on screen for every version up to now,
+ * which is the same failure that got the badger deleted: an effect nobody can
+ * see may as well not exist. See docs/design/penalty-chaos-stickiness.md.
+ */
+export type KeeperRead = { zone: Zone; times: number };
+
 export type RoundSetup = {
   disruption: Disruption | null;
   effect: DisruptionEffect;
@@ -121,6 +132,12 @@ export type RoundSetup = {
   keeperDive: Zone;
   /** What the keeper *shows*. Null when it gives nothing away. */
   keeperTell: Zone | null;
+  /**
+   * The read behind `keeperDive`, or null when he simply guessed. Non-null does
+   * not mean he was right — the player is free to go somewhere else, and being
+   * told he expected the old corner is exactly the feedback that teaches that.
+   */
+  keeperRead: KeeperRead | null;
 };
 
 export type ShotResultKind = "goal" | "saved" | "missed" | "blocked";
@@ -150,6 +167,8 @@ export type ShotResult = {
   zone: Zone | null;
   keeperDive: Zone;
   headline: HeadlineKey;
+  /** Copied off the round so the verdict can explain a read without the setup. */
+  read: KeeperRead | null;
 };
 
 export type Rng = () => number;

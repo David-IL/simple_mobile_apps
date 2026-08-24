@@ -1,3 +1,6 @@
+import { MAX_CYCLES } from "../game/row";
+import { ROW_PROPER } from "./messages";
+
 import type { Messages } from "./messages";
 
 /**
@@ -14,7 +17,8 @@ export const nb: Messages = {
     titleLine2: "Kaos",
     solo: "Alene mot keeper",
     duel: "To spillere, én telefon",
-    footnote: "Ingen reklame. Ingen innlogging. Funker på bussen uten dekning.",
+    rematch: "Omkamp",
+    footnote: "Uten reklame. Uten innlogging. Uten internett",
     language: "Språk",
     sound: "Lyd",
     on: "På",
@@ -56,6 +60,39 @@ export const nb: Messages = {
     calmName: "Blikkstille",
     calmBrief: "Ingenting i veien. Ingen unnskyldninger.",
     soloTaker: "Du",
+    readSaved: (times) => `Han hadde sett deg gå dit ${times} ganger.`,
+    readBeaten: "Han trodde du kom til å gjenta deg.",
+  },
+
+  row: {
+    // "Ta roen" was the first try and reads as "take the calm" - the exact
+    // opposite of what happens next. Naming the ritual removes that, and
+    // leading with the verb makes it an invitation rather than an errand.
+    invite: "Feire med Viking-roen",
+    // Samme ord på alle språk — se messages.ts.
+    ro: "RO",
+    strokes: (count) => (count === 1 ? "1 tak" : `${count} tak`),
+    /**
+     * The tiers are pinned to `MAX_CYCLES` rather than written as bare numbers.
+     *
+     * They used to top out at 18, which no row could ever reach — a perfect row
+     * is one answer per cycle, so `MAX_CYCLES` is the ceiling and the best line
+     * was dead copy. Deriving them means the ceiling moves when the schedule
+     * does, and `row.test.ts` pins that every tier stays reachable.
+     */
+    finished: (count) => {
+      if (count === 0) return "Ikke ett tak. Publikum skjønner ingenting.";
+      if (count >= MAX_CYCLES) return "Hele tribunen ble med.";
+      if (count >= ROW_PROPER) return "Det der var skikkelig roing.";
+      return "Publikum tar det de får.";
+    },
+    close: "Ferdig",
+    abort: "Stopp",
+    abortHint: "Hold inne for å stoppe roingen",
+  },
+
+  form: {
+    recent: (scored, of) => `${scored} av de siste ${of}`,
   },
 
   verdict: { goal: "MÅL", saved: "REDDET", missed: "BOM", blocked: "BLOKKERT" },

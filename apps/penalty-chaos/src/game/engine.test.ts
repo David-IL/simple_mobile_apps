@@ -24,12 +24,19 @@ function scriptedRng(values: number[]): Rng {
 
 const baseKeeper: KeeperArchetype = { ...keeperById("veteran"), tauntRate: 0 };
 
+/**
+ * `chooseDive` returns the read alongside the dive so the UI can say what he
+ * spotted. Most cases here only care where he went.
+ */
+const diveOf = (...args: Parameters<typeof chooseDive>) => chooseDive(...args).dive;
+
 function setupWith(overrides: Partial<RoundSetup> = {}): RoundSetup {
   return {
     disruption: null,
     effect: NO_EFFECT,
     keeperDive: "left-low",
     keeperTell: null,
+    keeperRead: null,
     ...overrides,
   };
 }
@@ -118,7 +125,7 @@ describe("chooseDive", () => {
   const reader: KeeperArchetype = { ...baseKeeper, readDepth: 3, readAccuracy: 1 };
 
   it("goes where you keep putting it — the core mechanic", () => {
-    expect(chooseDive(reader, ["right-high", "right-high"], NO_EFFECT, scriptedRng([0]))).toBe(
+    expect(diveOf(reader, ["right-high", "right-high"], NO_EFFECT, scriptedRng([0]))).toBe(
       "right-high",
     );
   });
@@ -135,38 +142,38 @@ describe("chooseDive", () => {
     // A shadowing keeper would return "right-high" — the last shot. The random
     // branch with rng()=0 lands on centre-low (stillChance is checked first,
     // and 0 is below any positive stillChance), proving the read did not fire.
-    expect(chooseDive(mindReader, alternating, NO_EFFECT, scriptedRng([0]))).toBe("centre-low");
+    expect(diveOf(mindReader, alternating, NO_EFFECT, scriptedRng([0]))).toBe("centre-low");
   });
 
   it("does not jump straight onto a corner you have only just switched to", () => {
     // Reported from a real device: three shots in one corner, then a switch, and
     // the keeper was waiting in the new corner on the very next shot.
     const settled: Zone[] = ["left-low", "left-low", "left-low"];
-    expect(chooseDive(mindReader, settled, NO_EFFECT, scriptedRng([0]))).toBe("left-low");
+    expect(diveOf(mindReader, settled, NO_EFFECT, scriptedRng([0]))).toBe("left-low");
 
     // First shot at the new corner: the old habit still dominates the window.
     const justSwitched: Zone[] = [...settled, "right-high"];
-    expect(chooseDive(mindReader, justSwitched, NO_EFFECT, scriptedRng([0]))).toBe("left-low");
+    expect(diveOf(mindReader, justSwitched, NO_EFFECT, scriptedRng([0]))).toBe("left-low");
 
     // Second shot at the new corner: window is 2-2, so there is no pattern to
     // read and the keeper has to guess (centre-low, per rng()=0 below)
     // rather than sit on either corner.
     const twiceThere: Zone[] = [...justSwitched, "right-high"];
-    expect(chooseDive(mindReader, twiceThere, NO_EFFECT, scriptedRng([0]))).toBe("centre-low");
+    expect(diveOf(mindReader, twiceThere, NO_EFFECT, scriptedRng([0]))).toBe("centre-low");
 
     // Third shot there is a genuine new habit, and it gets punished.
     const newHabit: Zone[] = [...twiceThere, "right-high"];
-    expect(chooseDive(mindReader, newHabit, NO_EFFECT, scriptedRng([0]))).toBe("right-high");
+    expect(diveOf(mindReader, newHabit, NO_EFFECT, scriptedRng([0]))).toBe("right-high");
   });
 
   it("only reads as far back as readDepth", () => {
     const shallow: KeeperArchetype = { ...reader, readDepth: 2 };
     const history: Zone[] = ["left-low", "left-low", "centre-high", "centre-high"];
-    expect(chooseDive(shallow, history, NO_EFFECT, scriptedRng([0]))).toBe("centre-high");
+    expect(diveOf(shallow, history, NO_EFFECT, scriptedRng([0]))).toBe("centre-high");
   });
 
   it("cannot read you at all with no history", () => {
-    expect(chooseDive(reader, [], NO_EFFECT, scriptedRng([0.5]))).toBeTruthy();
+    expect(diveOf(reader, [], NO_EFFECT, scriptedRng([0.5]))).toBeTruthy();
   });
 
   it("can be stopped from reading at all", () => {
@@ -176,7 +183,7 @@ describe("chooseDive", () => {
     // supports it, and this keeps that honest for the next gag that wants it.
     const distracted = { ...NO_EFFECT, readDepthMultiplier: 0 };
     const history: Zone[] = ["right-high", "right-high", "right-high"];
-    expect(chooseDive(reader, history, distracted, scriptedRng([0]))).toBe("centre-low");
+    expect(diveOf(reader, history, distracted, scriptedRng([0]))).toBe("centre-low");
   });
 
   /**
@@ -189,10 +196,10 @@ describe("chooseDive", () => {
    */
   it("stillChance keeps a keeper in place on a roll that would send a zero-stillChance keeper to a side", () => {
     const mover: KeeperArchetype = { ...baseKeeper, diveBias: 0, stillChance: 0 };
-    expect(chooseDive(mover, [], NO_EFFECT, scriptedRng([0.1]))).toBe("left-low");
+    expect(diveOf(mover, [], NO_EFFECT, scriptedRng([0.1]))).toBe("left-low");
 
     const statueLike: KeeperArchetype = { ...baseKeeper, diveBias: 0, stillChance: 0.75 };
-    expect(chooseDive(statueLike, [], NO_EFFECT, scriptedRng([0.1]))).toBe("centre-low");
+    expect(diveOf(statueLike, [], NO_EFFECT, scriptedRng([0.1]))).toBe("centre-low");
   });
 });
 
@@ -322,5 +329,33 @@ describe("resolveShot", () => {
       rng: scriptedRng([1, 1, 0.99]),
     });
     expect(Math.abs(capped.landing.x)).toBeLessThan(Math.abs(uncapped.landing.x));
+  });
+});
+
+describe("chooseDive read", () => {
+  it("reports the pattern it acted on, and how often it had seen it", () => {
+    const mindReader = { ...baseKeeper, readDepth: 6, readAccuracy: 1 };
+    const choice = chooseDive(
+      mindReader,
+      ["left-low", "right-high", "left-low", "left-low"],
+      NO_EFFECT,
+      scriptedRng([0]),
+    );
+    expect(choice).toEqual({ dive: "left-low", read: { zone: "left-low", times: 3 } });
+  });
+
+  it("reports no read when it simply guessed", () => {
+    // readDepth 0 is pure guesswork, so there is nothing to have spotted.
+    const guesser = { ...baseKeeper, readDepth: 0 };
+    expect(chooseDive(guesser, ["left-low", "left-low"], NO_EFFECT, scriptedRng([0.1])).read).toBeNull();
+  });
+
+  it("reports no read when the pattern was there but the read did not land", () => {
+    // readAccuracy 0 means he saw it and dived somewhere else anyway; claiming a
+    // read on screen would then be a lie about what just happened.
+    const distractible = { ...baseKeeper, readDepth: 6, readAccuracy: 0 };
+    expect(
+      chooseDive(distractible, ["left-low", "left-low"], NO_EFFECT, scriptedRng([0.9])).read,
+    ).toBeNull();
   });
 });

@@ -622,19 +622,25 @@ export function GoalScene({
         style={[
           styles.grass,
           {
-            top: geo.goalBottom - 6,
-            height: height - geo.goalBottom + 6,
+            // Starts *at* the goal line, not above it. The turf used to reach
+            // 6px higher to guarantee no seam against the frame, but the frame
+            // is only 4px of white border there — so the top 2px of the pitch,
+            // mowing stripes and all, showed through inside the goal, just
+            // above the line. The frame is drawn after this and its border
+            // covers the junction, so the overlap bought nothing.
+            top: geo.goalBottom,
+            height: height - geo.goalBottom,
             width,
           },
         ]}
       >
         <PitchSurface
           width={width}
-          height={height - geo.goalBottom + 6}
+          height={height - geo.goalBottom}
           base={disruption?.id === "muddy-spot" ? MUD : palette.grass}
           stripe={disruption?.id === "muddy-spot" ? "#3a2d16" : palette.grassDark}
           goalWidth={geo.goalWidth}
-          spotY={geo.spotY - (geo.goalBottom - 6)}
+          spotY={geo.spotY - geo.goalBottom}
           // The muddy round churns the whole pitch, not one patch by the spot —
           // a local splat was too small to read as "the conditions are against
           // you"; the surface itself has to change, markings and all.

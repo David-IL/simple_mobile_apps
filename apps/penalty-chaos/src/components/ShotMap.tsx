@@ -1,6 +1,8 @@
 import { View } from "react-native";
 import Svg, { Circle, Line, Rect } from "react-native-svg";
+import { splitZone } from "../game/engine";
 import type { ShotRecord } from "../game/match";
+import { ZONE_COLS, type Zone } from "../game/types";
 import { outcomeColour, palette } from "../theme";
 
 /**
@@ -22,9 +24,20 @@ const ASPECT = 50 / 78;
 /** Room around the frame so a shot that went wide still has somewhere to sit. */
 const MARGIN_RATIO = 7 / 78;
 
-type Props = { shots: readonly ShotRecord[]; width?: number };
+type Props = {
+  shots: readonly ShotRecord[];
+  width?: number;
+  /**
+   * A zone to ring, used to show which pattern the keeper had spotted.
+   *
+   * **Only ever pass this after the shot has been resolved.** The zone he read
+   * is the zone he dived to, so showing it while the player is still aiming
+   * would hand over the answer and take the mechanic apart.
+   */
+  readZone?: Zone | null;
+};
 
-export function ShotMap({ shots, width = DEFAULT_WIDTH }: Props) {
+export function ShotMap({ shots, width = DEFAULT_WIDTH, readZone = null }: Props) {
   const height = width * ASPECT;
   const margin = width * MARGIN_RATIO;
   const frameWidth = width - margin * 2;
@@ -75,6 +88,22 @@ export function ShotMap({ shots, width = DEFAULT_WIDTH }: Props) {
           strokeWidth={0.5 * scale}
           opacity={0.4}
         />
+        {readZone ? (
+          (() => {
+            const { col, row } = splitZone(readZone);
+            return (
+              <Rect
+                x={margin + (frameWidth / 3) * ZONE_COLS.indexOf(col)}
+                y={margin + (row === "high" ? 0 : frameHeight / 2)}
+                width={frameWidth / 3}
+                height={frameHeight / 2}
+                fill={palette.brandWash}
+                stroke={palette.brand}
+                strokeWidth={1.5 * scale}
+              />
+            );
+          })()
+        ) : null}
         {shots.map((shot, index) => {
           const { cx, cy } = toPixels(shot.landing);
           // The most recent shot is the one you are about to repeat, so it is

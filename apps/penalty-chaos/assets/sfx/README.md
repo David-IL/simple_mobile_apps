@@ -34,11 +34,14 @@ licence is a row that must not ship.
 | `whistle.mp3` | shootout ends | **real** — 4.1s | Pixabay | Pixabay Content License |
 | `menu-music.mp3` | any menu screen | **real** — 15s loop | Pixabay | Pixabay Content License |
 | `stadium-crowd.mp3` | under a match, looping | **real** — 17.5s loop | Pixabay | Pixabay Content License |
-| `goal.mp3` | goal | **real** — 5.1s | Pixabay | Pixabay Content License |
-| `miss.mp3` | **any non-goal** — wide, saved or blocked | **real** — 3.1s | Pixabay | Pixabay Content License |
+| `goal.mp3` | goal | **real** — 2.0s: 0.75s of swell off the front, tail cut so it cannot overlap itself | Pixabay | Pixabay Content License |
+| `miss.mp3` | **any non-goal** — wide, saved or blocked | **real** — 2.0s, tail cut for the same reason as `goal` | Pixabay | Pixabay Content License |
 | `save.mp3` | keeper saves | **real** — 0.6s | Pixabay | Pixabay Content License |
 | `blocked.mp3` | hits the pitch invader | **real** — 0.6s | Pixabay | Pixabay Content License |
 | `chant.mp3` | away end starts singing | **real** — 5.1s | Pixabay | Pixabay Content License |
+| `drum.mp3` | nothing — **source only**, kept to rebuild `row-drums.mp3` | **real** — 0.36s, trimmed from a 1.37s source. Not `require()`d, so it does not ship | Pixabay | Pixabay Content License |
+| `row-drums.mp3` | the row's two-beat call | **real** — 0.76s, `drum.mp3` twice with the 400ms gap baked in | Pixabay | Pixabay Content License |
+| `ro-shout.mp3` | the shout at the top of the row | **real** — 0.64s, cropped from a 126s own recording | Own recording (David, 2026-08-24) | Own work — no third-party rights |
 | `sunday-taunt.mp3` | Sunday Keeper taunts | **real** — 1.8s, trimmed+faded from a 7.0s source | Pixabay | Pixabay Content License |
 | `statue-taunt.mp3` | Statue taunts | **real** — 2.2s, trimmed+faded from a 7.0s source | Pixabay | Pixabay Content License |
 | `chatterbox-taunt.mp3` | Chatterbox taunts | **real** — 2.2s, trimmed+faded from a 2.4s source | Pixabay | Pixabay Content License |
@@ -82,6 +85,163 @@ Pick `<start>`/`<end>` from where the laugh is actually loud — `showboat-taunt
 source had a quiet ~0.9s lead-in before the laugh started, and trimming from 0
 caught mostly silence. A quick look at the waveform (`ffmpeg ... showwavespic`)
 before committing to a trim window is worth it.
+
+## The Viking row sounds
+
+Two files, added for the row celebration on the result screen. Both were treated
+offline, once, exactly like the taunts — there is no runtime trimming.
+
+### `ro-shout.mp3` — cropped from a 126-second own recording
+
+The source is `RO.mp3`, a full row performance: sparse isolated calls at the
+start, then claps getting denser and louder to a crescendo. **It contains three
+isolated calls before the continuous clapping takes over** — at ~2.4s, ~13.4s and
+~20.4s. The second one was chosen: it is the loudest (−9.1 dB peak) and sits in
+the quietest part of the recording (−27.9 dB room tone versus −25.4 dB at the
+start).
+
+```
+ffmpeg -ss 13.14 -t 0.76 -i RO.mp3 \
+  -af "highpass=f=85,loudnorm=I=-16:TP=-1.5:LRA=11,\
+       afade=t=in:st=0:d=0.03,afade=t=out:st=0.60:d=0.16" \
+  -ac 1 -b:a 128k ro-shout.mp3
+```
+
+The source has only ~16 dB between room tone and the shout, so the crop carries
+audible room noise. **That is deliberate and should stay** — it is supposed to
+sound like a crowd, not a studio. `afftdn=nr=12:nf=-32` cleans it up if that ever
+changes, at the cost of some life in the shout.
+
+**`RO.mp3` itself does not ship**, verified rather than assumed: `expo export`
+bundles only assets reached by a `require()`, and nothing requires it. It stays
+in the repo as the re-croppable source — 2 MB in git, 0 bytes in the APK. If the
+crop ever needs redoing, the timestamps above are the whole recipe.
+
+It is an **own recording**, which is the cleanest possible answer to the rule at
+the top of this file and to [ADR 8](../../../../docs/adr/0008-no-real-person-likenesses-or-club-ip.md)'s
+voice clause: no third party's rights, no identifiable public figure.
+
+### The shout is 640ms, and the schedule moved to fit it
+
+Worth recording because it was tried the other way round first, and the other
+way round was wrong.
+
+The row's rest used to bottom out at 500ms while this clip runs 640ms, so **the
+shout outlasted the entire gap between cycles.** The arithmetic leaves no room
+to argue: to finish before the next drum you would have had to answer by 660ms
+into the cycle, and the gate does not open until 740ms. There was no legal tap
+at the fast end whose shout did not run over the next cycle's count-in. It
+covered the first drum, often both, and the two-beat call stopped reading as two
+beats — reported in play as "I stop hearing both drum beats", and only late in a
+row, because that is where the rest reaches the floor.
+
+**The first fix cut the file to fit, and it sounded thin.** Measuring the
+envelope in 20ms windows showed where the length goes:
+
+```
+   0-37ms   silence           <- pure latency, the player waits through it
+  37-410ms  the shout, -5 to -8 dB
+ 423-606ms  decay, -12 to -23 dB
+ 606-640ms  fade tail
+```
+
+so the obvious move was to keep the middle band and drop the rest:
+
+```
+# NOT what ships. Kept because it is the reasonable-looking thing to try.
+ffmpeg -y -ss 0.037 -t 0.37 -i ro-shout.mp3   -af "afade=t=in:st=0:d=0.005,afade=t=out:st=0.31:d=0.06"   -ac 1 -b:a 128k ro-shout-short.mp3
+```
+
+On paper it is a clean trade: 370ms, onset at 18ms instead of 55ms, level within
+0.5 dB of the original. In play it lost the shout. What the numbers call "decay"
+is most of what makes a crowd sound like a crowd, and a voice cut off before its
+own tail reads as a sample, not as people.
+
+So `REST_FLOOR_MS` went from 500ms to 800ms instead, and `MAX_CYCLES` from 13 to
+11 to hold the twenty-second budget. **The recording is fixed and the schedule is
+not**, which is the general rule here: when a real sound and an invented number
+disagree, move the number. It also lands closer to the source — the real row's
+rests bottom out around 920ms, so 500ms was always tighter than the thing being
+imitated.
+
+The cost is a gentler ending: the tightest answer window went from 560ms to
+860ms. That is a real loss of difficulty and it was accepted knowingly, because
+a celebration that sounds wrong is worth less than one that is hard.
+
+The constraint now lives as `SHOUT_MS` next to `REST_FLOOR_MS` in
+`src/game/row.ts`, with a test asserting both that the shout fits the floor and
+that a player answering *on the beat* hears it finish before the next count-in.
+Changing either number without the other fails that test, which is the point.
+
+### `drum.mp3` — trimmed, and deliberately not loudness-normalised
+
+The source ran 1.37s but had decayed to −30 dB by 0.38s, so roughly 0.9s of it
+was dead tail. Trimmed to 0.46s with a fade: **43,776 → 8,492 bytes.**
+
+```
+ffmpeg -ss 0.015 -t 0.46 -i <source>.mp3 \
+  -af "afade=t=out:st=0.34:d=0.12" -ac 1 -b:a 128k drum.mp3
+```
+
+Two things here are on purpose and should survive a replacement:
+
+- **No `loudnorm`,** unlike every taunt. It already peaks at −2.7 dB, and
+  loudnorm's dynamic mode softens the attack — which on a drum is the entire
+  sound. Match the level by ear instead.
+- **The 15 ms of lead-in silence was trimmed off.** Silence at the head of a
+  sample adds directly to perceived tap latency, and this clip is played on
+  every beat of a rhythm mechanic. It is the cheapest millisecond available.
+
+## A slow onset reads as lag
+
+Three separate "the sound is late" reports turned out to be one lesson, and it
+is worth stating plainly because it will happen again:
+
+**A player hears an effect when it gets loud, not when it starts.**
+
+`goal.mp3` opened at −13 dB and did not reach full roar until about 1.1s in. Its
+first sample was on time; the *cheer* was a second late, which is exactly how it
+was reported. The same shape, less severely, applied to the RO shout, whose
+crop carried ~150ms of soft lead-in before the voice.
+
+So the roster now carries a fourth number alongside licence and length: **dead
+lead-in**, measured as the point a clip first comes within 18 dB of its own
+peak. Anything that has to feel instantaneous — an outcome, a tap response —
+wants that under about 50ms.
+
+```
+goal      peak  -3.7 dB   lead-in 0.02s   4.36s
+drum      peak  -1.5 dB   lead-in 0.00s   0.36s
+ro-shout  peak  -4.6 dB   lead-in 0.04s   0.64s
+whistle   peak -12.5 dB   lead-in 1.26s   4.13s   <- fine: it ends a match
+miss      peak -14.7 dB   lead-in 0.32s   3.12s   <- deliberate, it is a groan
+```
+
+`whistle` and `miss` keep their slow starts on purpose. A referee's whistle
+closing a shootout is not a reaction to a frame, and `miss` is a crowd groan
+whose swell is the point. **Trim the ones that answer an action; leave the ones
+that comment on it.**
+
+**Length is a latency feature, not just a size one.** `goal` and `miss` are the
+two effects a player can retrigger quickly — score twice in a few seconds, or
+face two saves — and a clip that is still sounding when it is asked to play
+again has to be rewound first, which costs a round trip and reads as lag. Both
+are cut to 2.0s so that path is rarely taken at all. If another effect starts
+feeling late on a second, quick trigger, its length is the first thing to look
+at.
+
+**A rhythm belongs in the file, not in a timer.** The row's two beats were
+originally two `play()` calls 400ms apart on a `setTimeout`, and the second was
+routinely swallowed — the call arrived as one hit instead of two. `row-drums.mp3`
+is `drum.mp3` twice with the gap baked in, so the interval is sample-accurate
+and the cycle costs one `play()` instead of two. Anything else with a fixed
+internal rhythm should be built the same way.
+
+`drum.mp3` has a second constraint: it fires every 400ms during the row, so it
+is cut to **0.36s — deliberately shorter than the gap between beats**. A clip
+that outlives its own retrigger interval forces a rewind on every hit, and
+rewinding is what made sounds arrive late in the first place. See the note at
+the top of `src/audio/SfxProvider.tsx`.
 
 ## The Pixabay licence, checked
 
