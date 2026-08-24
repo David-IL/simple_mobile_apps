@@ -73,6 +73,27 @@ export const REST_FLOOR_MS = 500;
 export const REST_DECAY = 0.85;
 
 /**
+ * How long the RO shout sounds for. **It has to fit inside `REST_FLOOR_MS`.**
+ *
+ * This is a timing constant, not an audio detail, which is why it lives here
+ * next to the rest it must fit in rather than beside the file it describes.
+ *
+ * The clip was 640ms against a 500ms floor, and the arithmetic of that is
+ * unforgiving: to have the shout finish before the next drum you would have had
+ * to answer by `REST_FLOOR_MS + ANSWER_SLOT_MS - 640` = 660ms, and the gate does
+ * not open until `answerOpensMs()` = 740ms. **There was no legal tap at the fast
+ * end that did not run over the next cycle's count-in.** The shout covered the
+ * first drum, often both, and the two-beat call stopped reading as two beats —
+ * exactly as reported in play, and only in the late cycles, because that is
+ * where the rest collapses to the floor.
+ *
+ * The fix was the file, not the schedule: `ro-shout.mp3` was re-cut to 370ms
+ * (see assets/sfx/README.md). Anything that lengthens it again re-opens the
+ * bug, so a test pins it.
+ */
+export const SHOUT_MS = 370;
+
+/**
  * Hard cap, which is what holds the whole thing to about twenty seconds — see
  * `totalMs`. A row that never ends is a row nobody finishes, and the first cut
  * at thirty seconds outstayed its welcome in play.
@@ -106,21 +127,41 @@ export function cycleMs(cycle: number): number {
  * precision component anywhere.
  */
 export function answerOpensMs(): number {
-  return ANSWER_SLOT_MS + AUDIO_LATENCY_MS - EARLY_GRACE_MS;
+  return answerBeatMs() - EARLY_GRACE_MS;
+}
+
+/**
+ * When the answer is actually *due* — the beat itself, on the heard clock.
+ *
+ * This is the moment the music points at: one beat after the second drum, plus
+ * the delay before the phone makes a noise. It is what the button fills toward.
+ */
+export function answerBeatMs(): number {
+  return ANSWER_SLOT_MS + AUDIO_LATENCY_MS;
 }
 
 /**
  * How long the button takes to fill, measured from the start of the cycle.
  *
- * It completes exactly when a tap starts counting, so "full" and "you may
- * answer" are the same statement. A continuous fill replaced a highlight that
- * blinked on at one instant: a blink is either before or after the player's
- * thumb and both read as broken, whereas a gradient that is nearly full when
- * they tap reads as in time even if the estimate above is off by a hundred
- * milliseconds.
+ * **It fills to the beat, not to the moment the gate opens.** Those were the
+ * same number until playtesting caught what that costs: `EARLY_GRACE_MS` exists
+ * to *widen the gate* so an anticipated tap is not swallowed, and tying the fill
+ * to the gate quietly moved the visual target `EARLY_GRACE_MS` earlier than the
+ * beat as well. A player who trusts the ring — and the design tells them to,
+ * because "full" is the only cue there is — then shouted 150ms ahead of the
+ * drum on every single cycle. The grace was silently teaching the wrong beat.
+ *
+ * So the two are now separate statements. The fill says *here is the beat*; the
+ * gate says *near enough counts*. The 150ms between them is forgiveness the
+ * player never has to see, which is the only way forgiveness works.
+ *
+ * A continuous fill still beats the highlight it replaced: a blink is either
+ * before or after the player's thumb and both read as broken, whereas a ring
+ * that is nearly closed when they tap reads as in time even if
+ * `AUDIO_LATENCY_MS` is off by a hundred milliseconds.
  */
 export function armDurationMs(): number {
-  return answerOpensMs();
+  return answerBeatMs();
 }
 
 export function answerClosesMs(cycle: number): number {

@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -14,6 +15,7 @@ import {
   AMBIENCE_VOLUME,
   MUSIC_SOURCE,
   MUSIC_VOLUME,
+  SFX_LENGTH_MS,
   SFX_SOURCES,
   SFX_VOLUME,
   TAUNT_SFX_IDS,
@@ -35,6 +37,20 @@ import {
  * overlapping; that is fine for this game, where no two identical effects fire
  * within a few hundred milliseconds.
  *
+ * ## Nothing here asks the player anything
+ *
+ * On Android every one of `currentTime`, `playing`, `play()` and `pause()` is
+ * `runBlocking(mainQueue)` inside expo-audio — reading a property **blocks the
+ * JS thread until the Android main thread is free.** The voice picker used to
+ * read `currentTime` per voice and `playing` once more, so a single trigger
+ * made three or four blocking hops, inside a touch handler, on the one screen
+ * whose main thread is also decoding a looping video. That is why a shout did
+ * not reliably follow the finger.
+ *
+ * We started every sound, so we already know which voice is busy and until
+ * when. `VoiceState` holds that, `SFX_LENGTH_MS` supplies the durations, and
+ * the hot path is down to one blocking call: `play()` itself.
+ *
  * ## Rewinding happens on finish, not on trigger
  *
  * The first version seeked to zero and called `play()` in the same breath,
@@ -46,6 +62,14 @@ import {
  * So the rewind moved to the other end. Each player seeks itself back to zero
  * when it finishes, which leaves it armed at the start, and the ordinary
  * trigger path becomes a single synchronous `play()` with nothing to race.
+ *
+ * **That handler must not believe a late event.** Status updates reach JS
+ * asynchronously, so a `didJustFinish` emitted for one playback can arrive
+ * after the next has begun — and the handler's whole job is to pause. A stale
+ * one therefore silences the sound now playing. It is guarded by elapsed time
+ * against the clip's own length, and that guard is load-bearing: without it a
+ * pause landing in the 400ms between the row's two drums delivers the call as
+ * one hit instead of two.
  *
  * ## Two voices for the sounds that overlap
  *
@@ -96,6 +120,45 @@ const FADE_MS = 320;
 const FADE_STEPS = 8;
 
 /**
+ * How early a `didJustFinish` may arrive and still be believed.
+ *
+ * `SFX_LENGTH_MS` is the file's own duration and the event fires when playback
+ * truly ends, so it is never genuinely earlier. This only covers rounding and
+ * decoder trimming; it is not slack for a late event, which is the whole point.
+ */
+const FINISH_TOLERANCE_MS = 60;
+
+/**
+ * What the provider remembers about one voice, so it never has to ask.
+ *
+ * See "Nothing here asks the player anything" above: every question put to the
+ * native side blocks the JS thread. We started the sound, so we already know.
+ */
+type VoiceState = {
+  /** When `play()` was last called on it. `-Infinity` when it never has been. */
+  startedAt: number;
+  /** How long that clip runs, from `SFX_LENGTH_MS`. */
+  lengthMs: number;
+  /**
+   * True when the voice is known to be sitting at zero, ready for a bare
+   * `play()`. A fresh player is; so is one the finish listener has rewound.
+   *
+   * Tracked rather than inferred from elapsed time, because a status event can
+   * go missing — and a voice whose clip *should* have ended but was never
+   * rewound is parked at the end, where `play()` on an ended ExoPlayer does
+   * nothing at all. Anything not known to be parked takes the rewind path.
+   */
+  parked: boolean;
+  /** Cancels a fade in progress. See `duck`. */
+  cancelFade: (() => void) | null;
+};
+
+/** A player nobody has touched yet is loaded and sitting at zero. */
+function freshVoice(): VoiceState {
+  return { startedAt: -Infinity, lengthMs: 0, parked: true, cancelFade: null };
+}
+
+/**
  * Duck a voice that is being replaced, then park it.
  *
  * Cutting the outgoing roar dead is what a single-player restart did, and it is
@@ -105,25 +168,48 @@ const FADE_STEPS = 8;
  * Stepped with timers rather than an animation: `expo-audio` has no volume
  * ramp, and eight writes spread over a third of a second is not worth a
  * dependency.
+ *
+ * **The fade is cancellable, and that is not optional.** Its last act is to set
+ * the volume to zero and pause. If the voice is restarted while those timers
+ * are still pending they land on the *new* playback and silence it — and a
+ * sound that plays at volume zero is indistinguishable from one that never
+ * played at all.
  */
-function duck(player: AudioPlayer, from: number): void {
+function duck(player: AudioPlayer, state: VoiceState, from: number): void {
+  state.cancelFade?.();
+
   let step = 0;
+  let cancelled = false;
+  let timer: ReturnType<typeof setTimeout> | null = null;
+
+  const stop = () => {
+    cancelled = true;
+    if (timer) clearTimeout(timer);
+    timer = null;
+    state.cancelFade = null;
+  };
+
   const tick = () => {
+    if (cancelled) return;
     step += 1;
-    const next = from * (1 - step / FADE_STEPS);
     try {
-      player.volume = Math.max(0, next);
+      player.volume = Math.max(0, from * (1 - step / FADE_STEPS));
       if (step >= FADE_STEPS) {
         player.pause();
         void player.seekTo(0);
+        state.parked = true;
+        stop();
         return;
       }
     } catch {
-      return; // player went away mid-fade; nothing to clean up
+      stop(); // player went away mid-fade; nothing to clean up
+      return;
     }
-    setTimeout(tick, FADE_MS / FADE_STEPS);
+    timer = setTimeout(tick, FADE_MS / FADE_STEPS);
   };
-  setTimeout(tick, FADE_MS / FADE_STEPS);
+
+  state.cancelFade = stop;
+  timer = setTimeout(tick, FADE_MS / FADE_STEPS);
 }
 
 const SfxContext = createContext<SfxValue | null>(null);
@@ -202,6 +288,22 @@ export function SfxProvider({ children }: { children: ReactNode }) {
     ],
   );
 
+  /**
+   * What we know about each voice, keyed by the player itself.
+   *
+   * A ref rather than state: none of it should ever cause a render, and it has
+   * to be readable and writable synchronously from inside a touch handler.
+   */
+  const voiceState = useRef(new Map<AudioPlayer, VoiceState>());
+  const stateOf = useCallback((voice: AudioPlayer): VoiceState => {
+    let state = voiceState.current.get(voice);
+    if (!state) {
+      state = freshVoice();
+      voiceState.current.set(voice, state);
+    }
+    return state;
+  }, []);
+
   useEffect(() => {
     // `playsInSilentMode: true` on purpose, after getting this wrong once.
     //
@@ -251,52 +353,89 @@ export function SfxProvider({ children }: { children: ReactNode }) {
       if (muted) return;
       const pool = voices[id];
       const level = SFX_VOLUME[id];
+      const lengthMs = SFX_LENGTH_MS[id];
+      const now = Date.now();
+      /** Still audible, by the clock rather than by asking. */
+      const sounding = (state: VoiceState) => now - state.startedAt < state.lengthMs;
+      /** About to be the voice that plays: cancel any fade, and claim it. */
+      const claim = (state: VoiceState) => {
+        state.cancelFade?.();
+        state.cancelFade = null;
+        state.startedAt = now;
+        state.lengthMs = lengthMs;
+        state.parked = false;
+      };
+
       try {
         // Only one keeper talks at a time. Flicking through the roster fires a
         // taunt per tap, and without this they pile on top of each other into
-        // noise — every clip has its own player, so nothing stops them
+        // an unreadable mush — expo-audio gives each sound its own player, so
         // overlapping by default.
         if (isTauntSfx(id)) {
           for (const other of TAUNT_SFX_IDS) {
             if (other === id) continue;
-            // Rewound as well as stopped, so an interrupted taunt is left armed
-            // at zero like a finished one and its next trigger needs no seek.
             for (const voice of voices[other]) {
+              // Only the ones actually talking. This used to pause and rewind
+              // all eight on every taunt: eight blocking calls to the main
+              // thread to stop seven sounds that were not playing.
+              const state = stateOf(voice);
+              if (state.parked) continue;
+              state.cancelFade?.();
+              state.cancelFade = null;
+              state.parked = true;
               voice.pause();
+              // Rewound as well as stopped, so an interrupted taunt is left
+              // armed at zero like a finished one and its next trigger needs
+              // no seek.
               void voice.seekTo(0);
             }
           }
         }
 
-        // The fast path, and the one nearly every trigger takes: a voice parked
-        // at zero — either never used or rewound when it last finished — plays
-        // with one synchronous call, nothing to wait for and nothing to race.
-        const idle = pool.find((voice) => voice.currentTime === 0);
-        if (idle) {
+        // The fast path, and the one nearly every trigger takes: a voice known
+        // to be parked at zero plays with one call — nothing to wait for and
+        // nothing to race.
+        const ready = pool.find((voice) => stateOf(voice).parked);
+        if (ready) {
           // Anything still sounding is on its way out; ride it down rather than
-          // cutting it. With a single voice this is a no-op.
+          // cutting it. With a single voice this loop does nothing.
           for (const voice of pool) {
-            if (voice !== idle && voice.playing) duck(voice, level);
+            const state = stateOf(voice);
+            if (voice !== ready && sounding(state)) duck(voice, state, level);
           }
-          idle.volume = level;
-          idle.play();
+          claim(stateOf(ready));
+          ready.volume = level;
+          ready.play();
           return;
         }
 
-        // Every voice busy. Rare — it needs two triggers inside one clip on a
-        // sound that only has one voice. A rewind is genuinely needed and **it
-        // has to complete before playback starts**: firing `seekTo` and `play`
-        // together without waiting lets the seek land mid-playback and drag the
-        // position back under it, which is exactly how the second of two quick
-        // goals used to arrive late.
-        const player = pool[0];
-        if (!player) return;
-        player.pause();
-        void player
+        // Nothing parked. Either every voice is genuinely still sounding — rare,
+        // it needs two triggers inside one clip on a sound with one voice — or a
+        // finish event went missing and left one stranded at the end. Either way
+        // the least recently started is the one to take.
+        let stolen = pool[0];
+        if (!stolen) return;
+        for (const voice of pool) {
+          if (stateOf(voice).startedAt < stateOf(stolen).startedAt) stolen = voice;
+        }
+        const taken = stolen;
+
+        for (const voice of pool) {
+          const state = stateOf(voice);
+          if (voice !== taken && sounding(state)) duck(voice, state, level);
+        }
+        claim(stateOf(taken));
+
+        // A rewind is genuinely needed and **it has to complete before playback
+        // starts**: firing `seekTo` and `play` together without waiting lets the
+        // seek land mid-playback and drag the position back under it, which is
+        // exactly how the second of two quick goals used to arrive late.
+        taken.pause();
+        void taken
           .seekTo(0)
           .then(() => {
-            player.volume = level;
-            player.play();
+            taken.volume = level;
+            taken.play();
           })
           .catch((error: unknown) => {
             if (__DEV__) console.warn(`[sfx] ${id} retrigger failed`, error);
@@ -310,7 +449,7 @@ export function SfxProvider({ children }: { children: ReactNode }) {
         if (__DEV__) console.warn(`[sfx] ${id} failed`, error);
       }
     },
-    [voices, muted],
+    [voices, muted, stateOf],
   );
 
   /**
@@ -323,6 +462,25 @@ export function SfxProvider({ children }: { children: ReactNode }) {
       voices[id].map((player) =>
         player.addListener("playbackStatusUpdate", (status) => {
           if (!status.didJustFinish) return;
+          const state = stateOf(player);
+          if (state.parked) return;
+
+          // **A finish cannot arrive before the clip has had time to run.**
+          //
+          // Status updates reach JS asynchronously, so one emitted for the
+          // *previous* playback can turn up after the next has already started —
+          // and this handler's entire job is to pause. Believing a stale event
+          // therefore silences the sound that is currently playing.
+          //
+          // That is not theoretical: it is how an RO shout went missing, and how
+          // a two-beat drum arrived as one hit. The row leaves only 540ms
+          // between a drum finishing and the next cycle starting, and the pause
+          // landing anywhere in the 400ms between the two beats eats the second
+          // one. Anything that shortens the gap between triggers makes the
+          // window this guard covers wider, not narrower.
+          if (Date.now() - state.startedAt < state.lengthMs - FINISH_TOLERANCE_MS) return;
+
+          state.parked = true;
           // **Pause before rewinding.** Seeking a player that still considers
           // itself playing makes it start again from the new position, so the
           // first version of this turned every one-shot into an endless loop -
@@ -336,7 +494,7 @@ export function SfxProvider({ children }: { children: ReactNode }) {
     return () => {
       for (const subscription of subscriptions) subscription.remove();
     };
-  }, [voices]);
+  }, [voices, stateOf]);
 
   // Two long files on repeat, each gated by a screen and by the mute toggle.
   // `loop` has to be set on the player itself; there is no per-play option.

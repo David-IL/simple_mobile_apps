@@ -46,6 +46,15 @@ import { SCENE_LAYOUT, pickScene } from "./art/rowScenes";
  */
 const SHOUT_LEAN = 1;
 
+/**
+ * How close together two shouts may be.
+ *
+ * The button answers *every* press now, so a child hammering it gets a shout
+ * per hammer — which is the right answer right up to the point where the
+ * shouts stop being separable. This is a floor on that, not a gate on scoring.
+ */
+const SHOUT_COOLDOWN_MS = 200;
+
 export function VikingRow({ onClose }: { onClose: () => void }) {
   const { t } = useI18n();
   const { play, setMusicActive } = useSfx();
@@ -57,6 +66,8 @@ export function VikingRow({ onClose }: { onClose: () => void }) {
   const [scene] = useState(pickScene);
 
   const cycleStart = useRef(0);
+  /** When the last shout went out, so hammering cannot outrun the clip. */
+  const lastShout = useRef(0);
   const lean = useRef(new Animated.Value(0)).current;
   /** 0 at the top of a cycle, 1 when the answer is due. Drives the whole cue. */
   const arm = useRef(new Animated.Value(0)).current;
@@ -88,10 +99,17 @@ export function VikingRow({ onClose }: { onClose: () => void }) {
   useEffect(() => {
     if (state.over) return;
 
-    cycleStart.current = Date.now();
     // One call, two hits. The gap lives in the audio file rather than in a
     // timer — see the note on `row-drums` in src/audio/sounds.ts.
+    //
+    // Dispatched *before* the clock starts, deliberately. `play()` still makes
+    // one blocking call into the Android main thread, and taking `t0` ahead of
+    // it meant the gate counted from one instant while the ring started from a
+    // later one — the two drifting apart by however long that call happened to
+    // block. Everything the player is timed and cued against now shares a
+    // single origin, taken the moment the drum goes out.
     play("row-drums");
+    cycleStart.current = Date.now();
 
     // The button fills across both drums and completes as the answer falls due,
     // so the player watches the beat arrive instead of being flashed at once it
@@ -100,8 +118,12 @@ export function VikingRow({ onClose }: { onClose: () => void }) {
     Animated.timing(arm, {
       toValue: 1,
       duration: armDurationMs(),
+      // Linear on purpose: the fill *is* the clock, so easing it would make the
+      // ring lie about where the beat is.
       easing: Easing.linear,
-      useNativeDriver: false,
+      // Native, which is the whole reason the ring stopped animating its own
+      // border colour — see the note on the ring styles below.
+      useNativeDriver: true,
     }).start();
 
     const closes = setTimeout(() => setState(endCycle), cycleMs(state.cycle));
@@ -116,30 +138,78 @@ export function VikingRow({ onClose }: { onClose: () => void }) {
   }, [state.over, state.strokes, play]);
 
   const onRo = useCallback(() => {
-    if (state.over || state.answeredThisCycle) return;
-    // Still on the drums. Answering early is enthusiasm, not error — it just
-    // does not count yet, and it is never punished.
-    if (Date.now() - cycleStart.current < answerOpensMs()) return;
+    if (state.over) return;
+    const now = Date.now();
 
-    play("ro-shout");
-    pull(SHOUT_LEAN);
+    // **The shout comes first, and unconditionally.**
+    //
+    // This used to sit *below* the timing gate, so a tap before the window
+    // opened produced nothing whatsoever — no shout, no movement, no score. The
+    // comment there claimed an early answer "is never punished". Silence is the
+    // harshest punishment a button has, and it is indistinguishable from the
+    // button being broken.
+    //
+    // It also bit hardest exactly where it was least affordable. The gate opens
+    // at a fixed 740ms while the cycle collapses to 1300ms, so a player holding
+    // the tempo of the previous, longer cycle drifts later until a tap crosses
+    // the boundary and lands early in the *next* one. That tap made no sound,
+    // so they tapped again — also early, also silent — and two unanswered
+    // cycles is the end of the row. Answering every press breaks that loop.
+    if (!state.answeredThisCycle && now - lastShout.current >= SHOUT_COOLDOWN_MS) {
+      lastShout.current = now;
+      play("ro-shout");
+      pull(SHOUT_LEAN);
+    }
+
+    // Scoring is unchanged — too early does not count, and a second answer in
+    // the same cycle does not count twice. The only difference is that both of
+    // those now make a noise on the way past.
+    if (state.answeredThisCycle) return;
+    if (now - cycleStart.current < answerOpensMs()) return;
+
     // Discharge the ring the moment it is spent, so the next fill reads as a
     // fresh approach rather than a bar that was already sitting full.
     Animated.timing(arm, {
       toValue: 0,
       duration: 140,
       easing: Easing.out(Easing.quad),
-      useNativeDriver: false,
+      useNativeDriver: true,
     }).start();
     setState(answer);
   }, [state.over, state.answeredThisCycle, play, pull, arm]);
 
   const armed = arm.interpolate({ inputRange: [0, 1], outputRange: [0, 1] });
-  const ringColour = arm.interpolate({
-    inputRange: [0, 0.65, 1],
-    outputRange: [palette.line, palette.brandDeep, palette.brand],
+  /**
+   * The ring closing in, with a small kick as it lands.
+   *
+   * The close is the anticipation; the kick at the very end is what turns the
+   * arrival into an event rather than an asymptote. It fires on the beat now
+   * that `armDurationMs` fills to the beat rather than to the gate.
+   */
+  const ringScale = arm.interpolate({
+    inputRange: [0, 0.9, 1],
+    outputRange: [1.18, 1, 1.06],
   });
-  const ringScale = arm.interpolate({ inputRange: [0, 1], outputRange: [1.16, 1] });
+  /**
+   * Three rings cross-fading, rather than one ring interpolating its colour.
+   *
+   * `borderColor` cannot be driven natively, and animating it forced the whole
+   * `arm` value onto the JS thread — the same thread that has to service
+   * expo-audio's blocking calls into the Android main thread. The ring and the
+   * sound were competing for it, which is a poor trade for a colour.
+   *
+   * Opacity can be driven natively, and stacked rings at fixed colours fade
+   * between exactly the same three shades. The player sees no difference; the
+   * animation no longer touches JS after the frame it starts on.
+   */
+  const ringIdle = arm.interpolate({ inputRange: [0, 0.1, 1], outputRange: [0, 1, 1] });
+  const ringDeep = arm.interpolate({ inputRange: [0, 0.1, 0.65], outputRange: [0, 0, 1] });
+  const ringFull = arm.interpolate({ inputRange: [0, 0.65, 1], outputRange: [0, 0, 1] });
+  const rings = [
+    { key: "idle", style: styles.ringIdle, opacity: ringIdle },
+    { key: "deep", style: styles.ringDeep, opacity: ringDeep },
+    { key: "full", style: styles.ringFull, opacity: ringFull },
+  ];
 
   return (
     <View
@@ -189,13 +259,17 @@ export function VikingRow({ onClose }: { onClose: () => void }) {
           onPress={onRo}
           style={({ pressed }) => [styles.ro, pressed && styles.roPressed]}
         >
-          <Animated.View
-            pointerEvents="none"
-            style={[
-              styles.ring,
-              { borderColor: ringColour, transform: [{ scale: ringScale }], opacity: armed },
-            ]}
-          />
+          {rings.map((ring) => (
+            <Animated.View
+              key={ring.key}
+              pointerEvents="none"
+              style={[
+                styles.ring,
+                ring.style,
+                { opacity: ring.opacity, transform: [{ scale: ringScale }] },
+              ]}
+            />
+          ))}
           <Animated.Text style={[styles.roLabel, { opacity: armed }]}>{t.row.ro}</Animated.Text>
         </Pressable>
       )}
@@ -273,6 +347,10 @@ const styles = StyleSheet.create({
   roPressed: { backgroundColor: palette.brandDeep },
   // The ring closes in as the answer falls due. A continuous approach rather
   // than a flash: see armDurationMs in src/game/row.ts for why.
+  //
+  // Three of them, stacked and cross-faded on opacity, because colour cannot be
+  // animated on the native driver. Same three shades, none of the JS-thread
+  // cost — see the interpolations above.
   ring: {
     position: "absolute",
     top: -10,
@@ -282,5 +360,8 @@ const styles = StyleSheet.create({
     borderRadius: 105,
     borderWidth: 5,
   },
+  ringIdle: { borderColor: palette.line },
+  ringDeep: { borderColor: palette.brandDeep },
+  ringFull: { borderColor: palette.brand },
   roLabel: { color: palette.brand, fontSize: 54, fontWeight: "900", letterSpacing: 4 },
 });

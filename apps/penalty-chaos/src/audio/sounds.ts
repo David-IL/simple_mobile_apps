@@ -15,6 +15,7 @@
 
 import { preload } from "expo-audio";
 
+import { SHOUT_MS } from "../game/row";
 import type { KeeperId } from "../game/types";
 
 export const SFX_IDS = [
@@ -134,6 +135,47 @@ export const SFX_VOLUME: Record<SfxId, number> = {
   "taunt-veteran": 0.85,
   "taunt-wall": 0.85,
   "taunt-mind-reader": 0.85,
+};
+
+/**
+ * How long each clip sounds for, in milliseconds. Measured with `ffprobe`, not
+ * estimated — `ffprobe -v error -show_entries format=duration -of csv=p=0 <f>`.
+ *
+ * This table exists so `SfxProvider` can answer "is that voice still busy?"
+ * with arithmetic instead of asking the player. That is not a micro-optimisation.
+ * In expo-audio every one of `currentTime`, `playing`, `play()` and `pause()` is
+ * wrapped in `runBlocking(mainQueue)` on Android, so reading them **blocks the
+ * JS thread until the Android main thread is free**. The old voice picker read
+ * `currentTime` once per voice and `playing` once more, which put three or four
+ * blocking hops inside a touch handler — on the one screen whose main thread is
+ * also decoding a looping video. That is why a shout did not always follow the
+ * finger. Knowing the lengths up front removes every one of those reads.
+ *
+ * **Re-measure when you replace a file.** A number that is too small here makes
+ * the provider think a voice is free while it is still sounding; too large and
+ * it hoards a voice that is already finished.
+ */
+export const SFX_LENGTH_MS: Record<SfxId, number> = {
+  kick: 792,
+  goal: 2000,
+  save: 624,
+  miss: 2000,
+  blocked: 624,
+  chant: 5068,
+  whistle: 4127,
+  "row-drums": 760,
+  // The one length that is a *rule* rather than a measurement: it has to fit
+  // inside the row's shortest rest, so it is owned by the row and asserted by a
+  // test there. See SHOUT_MS in src/game/row.ts.
+  "ro-shout": SHOUT_MS,
+  "taunt-sunday": 1800,
+  "taunt-statue": 2200,
+  "taunt-chatterbox": 2200,
+  "taunt-line-dancer": 1900,
+  "taunt-showboat": 1750,
+  "taunt-veteran": 2000,
+  "taunt-wall": 2300,
+  "taunt-mind-reader": 1900,
 };
 
 /** Which laugh a keeper's taunt plays. Kept here, not in `game/keepers.ts` — a

@@ -8,7 +8,9 @@ import {
   MISSES_TO_END,
   REST_FLOOR_MS,
   REST_START_MS,
+  SHOUT_MS,
   answer,
+  answerBeatMs,
   answerClosesMs,
   answerOpensMs,
   armDurationMs,
@@ -28,11 +30,20 @@ describe("the measured shape of the row", () => {
     expect(ANSWER_SLOT_MS).toBe(HIT_GAP_MS * 2);
   });
 
-  it("finishes filling exactly when a tap starts counting", () => {
-    // "Full" and "you may answer" have to be the same statement, or the button
-    // is lying about something. A blink at a single instant was tuned twice and
-    // read as out of sync both times - see AUDIO_LATENCY_MS.
-    expect(armDurationMs()).toBe(answerOpensMs());
+  it("fills to the beat, not to the moment the gate opens", () => {
+    // The two were the same number once, and that is how EARLY_GRACE_MS ended
+    // up moving the *visual* target as well as the gate: the ring closed a full
+    // grace period before the drum, so a player following it shouted early on
+    // every cycle. The fill has to point at the beat.
+    expect(armDurationMs()).toBe(answerBeatMs());
+    expect(armDurationMs()).toBe(ANSWER_SLOT_MS + AUDIO_LATENCY_MS);
+  });
+
+  it("keeps the grace invisible - the gate opens before the ring closes", () => {
+    // Forgiveness the player can see is not forgiveness, it is an instruction.
+    // The gate has to open first and say nothing about it.
+    expect(armDurationMs() - answerOpensMs()).toBe(EARLY_GRACE_MS);
+    expect(answerOpensMs()).toBeLessThan(armDurationMs());
   });
 
   it("starts filling from the top of the cycle, not from the second drum", () => {
@@ -44,6 +55,21 @@ describe("the measured shape of the row", () => {
   it("opens the window a touch before the answer is due", () => {
     // Anticipating the beat is rewarded, not swallowed.
     expect(ANSWER_SLOT_MS + AUDIO_LATENCY_MS - answerOpensMs()).toBe(EARLY_GRACE_MS);
+  });
+
+  it("keeps the shout inside the rest, so it never covers the next count-in", () => {
+    // The clip was 640ms against a 500ms floor. Every legal tap at the fast end
+    // therefore ran over the next cycle's drums, which is why the two-beat call
+    // stopped sounding like two beats late in a row. Nothing may put it back.
+    expect(SHOUT_MS).toBeLessThanOrEqual(REST_FLOOR_MS);
+
+    // The property that actually matters, at the fastest cycle there is: a
+    // player who answers *on the beat* must hear their shout finish before the
+    // next count-in starts. A tap at the very close of the window will still
+    // spill over, but that player was late already - the beat is the contract.
+    const fastest = cycleMs(MAX_CYCLES - 1);
+    expect(armDurationMs() + SHOUT_MS).toBeLessThanOrEqual(fastest);
+    expect(answerOpensMs() + SHOUT_MS).toBeLessThanOrEqual(fastest);
   });
 
   it("accelerates by shortening the rest, not the beat", () => {
