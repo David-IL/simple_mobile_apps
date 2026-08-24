@@ -16,7 +16,7 @@ export const nb: Messages = {
     duel: "To spillere, én telefon",
     lastOpponent: "Forrige motstander",
     rematch: "Omkamp",
-    footnote: "Ingen reklame. Ingen innlogging. Funker på bussen uten dekning.",
+    footnote: "Uten reklame. Uten innlogging. Uten internett",
     language: "Språk",
     sound: "Lyd",
     on: "På",

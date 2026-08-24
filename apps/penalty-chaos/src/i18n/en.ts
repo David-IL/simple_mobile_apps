@@ -10,7 +10,7 @@ export const en: Messages = {
     duel: "Two players, one phone",
     lastOpponent: "Last opponent",
     rematch: "Rematch",
-    footnote: "No ads. No accounts. Works on a coach with no signal.",
+    footnote: "No ads. No accounts. No internet needed",
     language: "Language",
     sound: "Sound",
     on: "On",
