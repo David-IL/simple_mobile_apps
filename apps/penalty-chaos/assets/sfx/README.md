@@ -36,7 +36,6 @@ licence is a row that must not ship.
 | `stadium-crowd.mp3` | under a match, looping | **real** — 17.5s loop | Pixabay | Pixabay Content License |
 | `goal.mp3` | goal | **real** — 5.1s | Pixabay | Pixabay Content License |
 | `miss.mp3` | **any non-goal** — wide, saved or blocked | **real** — 3.1s | Pixabay | Pixabay Content License |
-| `mascot.mp3` | badger appears | **real** — 2.0s | Pixabay | Pixabay Content License |
 | `save.mp3` | keeper saves | **real** — 0.6s | Pixabay | Pixabay Content License |
 | `blocked.mp3` | hits the pitch invader | **real** — 0.6s | Pixabay | Pixabay Content License |
 | `chant.mp3` | away end starts singing | **real** — 5.1s | Pixabay | Pixabay Content License |
@@ -140,7 +139,7 @@ would roughly quarter them** with no audible loss on a phone. Not urgent, but th
 two loops are ~1 MB of the bundle between them and that is the easy win when APK
 size starts to matter.
 
-Keep effects under about half a second. `mascot` and `chant` fire at the
+Keep effects under about half a second. `chant` fires at the
 start of a round and will overlap the player thinking; anything long gets annoying
 fast. The eight `*-taunt.mp3` files are the deliberate exception — a laugh needs
 more like 1.5–2.5s to read as a laugh at all — but they are trimmed and faded
@@ -175,8 +174,11 @@ placeholders were. Two need watching:
 
 ## Behaviour worth knowing
 
-The app calls `setAudioModeAsync({ playsInSilentMode: false })`, so **sound
-respects the phone's ringer switch**. If the phone is on silent or vibrate there
-will be no audio, and that is deliberate — a crowd erupting from a silenced phone
-in a classroom is the wrong first impression. There is also a Sound on/off toggle
-on the home screen, stored on the device.
+The app calls `setAudioModeAsync({ playsInSilentMode: true })`, so **sound
+ignores the phone's ringer switch and only the in-app Sound toggle controls it**.
+An earlier version set this to `false` to respect the ringer switch, which
+sounded polite but was a bug: a player who explicitly turns Sound on in the
+app gets silence with no way to tell why, since there's nothing on screen that
+explains the OS is overriding it. See the comment in
+[`SfxProvider.tsx`](../../src/audio/SfxProvider.tsx). The Sound on/off toggle
+lives on the home screen and is stored on the device.
