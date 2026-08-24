@@ -1,4 +1,4 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { Button } from "@repo/ui";
 import { PlayerBadge } from "../components/PlayerBadge";
 import { ShotMap } from "../components/ShotMap";
@@ -133,9 +133,12 @@ export function ResultScreen({ state, keeper, onPlayAgain, onChangeKeeper }: Pro
           color={palette.brand}
           labelColor={palette.brandInk}
         />
-        <Pressable onPress={onChangeKeeper} style={styles.link} accessibilityRole="button">
-          <Text style={styles.linkLabel}>{t.result.differentKeeper}</Text>
-        </Pressable>
+        <Button
+          label={t.result.differentKeeper}
+          onPress={onChangeKeeper}
+          color={palette.line}
+          labelColor={palette.chalk}
+        />
       </View>
     </View>
   );
@@ -176,6 +179,4 @@ const styles = StyleSheet.create({
     borderTopColor: palette.line,
     backgroundColor: palette.nightSoft,
   },
-  link: { alignSelf: "center", padding: spacing.sm },
-  linkLabel: { color: palette.chalkDim, fontSize: 13, textDecorationLine: "underline" },
 });
