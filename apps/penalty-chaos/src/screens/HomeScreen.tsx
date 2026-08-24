@@ -51,7 +51,7 @@ const BANNERS: Record<Locale, number> = {
  */
 function aspectOf(source: number): number {
   const meta = Image.resolveAssetSource(source) as { width?: number; height?: number } | null;
-  if (!meta?.width || !meta.height) return 1080 / 1935;
+  if (!meta?.width || !meta?.height) return 1080 / 1935;
   return meta.width / meta.height;
 }
 

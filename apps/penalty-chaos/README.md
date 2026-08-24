@@ -97,8 +97,8 @@ Two seams worth not breaking:
       ([day one observed](testing/2026-08-22-day-two.md))
 - [ ] Real-device performance check on the SVG version
 - [x] Sound *integration* — `expo-audio`, mute toggle, respects the ringer switch
-- [ ] Sound *assets* — all 8 files are synthesised placeholders; see
-      [assets/sfx/README.md](assets/sfx/README.md) for what each needs and the licence rules
+- [x] Sound *assets* — all real audio, licensed and credited; see
+      [assets/sfx/README.md](assets/sfx/README.md) for the source/licence table
 - [x] App icon + splash
 - [x] Play Store listing drafted — [store/listing.md](store/listing.md); release
       restricted to Norway per research doc §7, set in the Play Console

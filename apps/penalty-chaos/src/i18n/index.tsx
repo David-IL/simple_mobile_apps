@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -49,12 +50,16 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   // Start from the device language so the first launch is already right; a
   // stored choice overrides it as soon as it loads.
   const [locale, setLocaleState] = useState<Locale>(deviceLocale);
+  // The provider mounts once, so this window is effectively unreachable in
+  // practice, but it's the same "load clobbers an in-flight edit" shape as
+  // the name-storage hooks, so it gets the same guard for consistency.
+  const dirty = useRef(false);
 
   useEffect(() => {
     let active = true;
     void AsyncStorage.getItem(STORAGE_KEY)
       .then((stored) => {
-        if (active && isLocale(stored)) setLocaleState(stored);
+        if (active && !dirty.current && isLocale(stored)) setLocaleState(stored);
       })
       .catch(() => {
         // Storage unavailable — the device language is a fine answer.
@@ -65,6 +70,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const setLocale = useCallback((next: Locale) => {
+    dirty.current = true;
     setLocaleState(next);
     void AsyncStorage.setItem(STORAGE_KEY, next).catch(() => {
       // Best effort; the choice still applies for this session.

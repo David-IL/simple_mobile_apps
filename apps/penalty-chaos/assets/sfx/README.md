@@ -40,14 +40,14 @@ licence is a row that must not ship.
 | `save.mp3` | keeper saves | **real** — 0.6s | Pixabay | Pixabay Content License |
 | `blocked.mp3` | hits the pitch invader | **real** — 0.6s | Pixabay | Pixabay Content License |
 | `chant.mp3` | away end starts singing | **real** — 5.1s | Pixabay | Pixabay Content License |
-| `sunday-taunt.mp3` | Sunday Keeper taunts | **real** — 1.8s, trimmed+faded from a 7.0s source | *fill in* | *fill in* |
-| `statue-taunt.mp3` | Statue taunts | **real** — 2.2s, trimmed+faded from a 7.0s source | *fill in* | *fill in* |
-| `chatterbox-taunt.mp3` | Chatterbox taunts | **real** — 2.2s, trimmed+faded from a 2.4s source | *fill in* | *fill in* |
-| `line-dancer-taunt.mp3` | Line-Dancer taunts | **real** — 1.9s, trimmed+faded from a 7.0s source | *fill in* | *fill in* |
-| `showboat-taunt.mp3` | Showboat taunts | **real** — 1.7s, trimmed+faded from an 8.7s source | *fill in* | *fill in* |
-| `veteran-taunt.mp3` | Veteran taunts | **real** — 2.0s, trimmed+faded from a 4.1s source | *fill in* | *fill in* |
-| `wall-taunt.mp3` | Wall taunts | **real** — 2.3s, trimmed+faded from a 3.0s source | *fill in* | *fill in* |
-| `mind-reader-taunt.mp3` | Mind-Reader taunts | **real** — 1.9s, trimmed+faded from a 2.0s source | *fill in* | *fill in* |
+| `sunday-taunt.mp3` | Sunday Keeper taunts | **real** — 1.8s, trimmed+faded from a 7.0s source | Pixabay | Pixabay Content License |
+| `statue-taunt.mp3` | Statue taunts | **real** — 2.2s, trimmed+faded from a 7.0s source | Pixabay | Pixabay Content License |
+| `chatterbox-taunt.mp3` | Chatterbox taunts | **real** — 2.2s, trimmed+faded from a 2.4s source | Pixabay | Pixabay Content License |
+| `line-dancer-taunt.mp3` | Line-Dancer taunts | **real** — 1.9s, trimmed+faded from a 7.0s source | Pixabay | Pixabay Content License |
+| `showboat-taunt.mp3` | Showboat taunts | **real** — 1.75s, trimmed+faded from a 7.8s source, re-sourced 2026-08-24 (see below) | Pixabay | Pixabay Content License |
+| `veteran-taunt.mp3` | Veteran taunts | **real** — 2.0s, trimmed+faded from a 4.1s source | Pixabay | Pixabay Content License |
+| `wall-taunt.mp3` | Wall taunts | **real** — 2.3s, trimmed+faded from a 3.0s source | Pixabay | Pixabay Content License |
+| `mind-reader-taunt.mp3` | Mind-Reader taunts | **real** — 1.9s, trimmed+faded from a 2.0s source | Pixabay | Pixabay Content License |
 
 No placeholders left. Every synthesised file has been replaced and deleted.
 
@@ -117,13 +117,14 @@ voice, check it.** ADR 8 covers voices as much as faces, so a clip of an
 identifiable person laughing or singing is the same class of problem as their
 picture. A wordless laugh, a synthesised voice, or your own recording is fine.
 
-**`mind-reader-taunt.mp3`'s source was uploaded under a name referencing an
-anime character's laugh.** That is not itself an ADR 8 problem — ADR 8 is
+**`showboat-taunt.mp3`'s original source was uploaded under a name referencing
+an anime character's laugh.** That is not itself an ADR 8 problem — ADR 8 is
 about real people and real clubs — but the README rule above is broader:
-never rip audio from someone else's copyrighted work. Worth confirming this
-was an original stock recording and not a lift from the show before it ships.
-The `Source`/`Licence` columns for all eight are still blank for the same
-reason — fill them in before release, same as any other row.
+never rip audio from someone else's copyrighted work, and a clip that reads as
+lifted from a specific show is worth avoiding even when the licence is clean.
+Re-sourced 2026-08-24 with a different Pixabay clip (`freesound_community`,
+"Male Laugh Hysterical 01", pixabay.com/sound-effects/people-male-laugh-hysterical-01-99650/)
+that carries no such reference.
 
 The research doc argues the crowd reacting to a miss and to a goal carries more
 of the comedy than any animation does. Those two are now real, which means the

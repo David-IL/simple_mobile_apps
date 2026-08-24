@@ -1,6 +1,6 @@
 # Personvernerklæring / Privacy policy — Straffe Kaos
 
-**Sist oppdatert / Last updated: 2026-08-23**
+**Sist oppdatert / Last updated: 2026-08-24**
 
 > This has to be published at a public URL and linked from the Play Console
 > listing. See `deploying.md` — it is **required**, not optional, because the
@@ -35,7 +35,10 @@ oss, med annonsører eller med tredjeparter.
 
 ### Tillatelser
 
-Appen ber ikke om noen tillatelser på telefonen.
+Appen ber aldri om tilgang som krever ditt samtykke. Den bruker kun
+`MODIFY_AUDIO_SETTINGS`, en teknisk lydinnstilling Android gir automatisk til
+alle apper som spiller lyd — den vises ikke som en tillatelsesforespørsel og
+gir ikke appen tilgang til noe på telefonen din utover dette.
 
 ### Kontakt
 
@@ -69,7 +72,10 @@ with us, not with advertisers, not with third parties.
 
 ### Permissions
 
-The app requests no device permissions.
+The app never requests access that needs your consent. It uses only
+`MODIFY_AUDIO_SETTINGS`, a technical audio setting Android grants automatically
+to any app that plays sound — it is never shown to you as a permission
+request, and it gives the app no access to anything else on your phone.
 
 ### Contact
 

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { KeeperId } from "../game/types";
 
@@ -68,12 +68,16 @@ function parse(stored: string | null): KeeperNames {
 export function useKeeperNames() {
   const [names, setNames] = useState<KeeperNames>({});
   const [ready, setReady] = useState(false);
+  // Mounted once for the app's lifetime, so this window is narrow in
+  // practice — but the same "load clobbers an in-flight edit" bug as
+  // playerNames.ts is possible in principle, so it gets the same guard.
+  const dirty = useRef(false);
 
   useEffect(() => {
     let active = true;
     void AsyncStorage.getItem(STORAGE_KEY)
       .then((stored) => {
-        if (active) setNames(parse(stored));
+        if (active && !dirty.current) setNames(parse(stored));
       })
       .catch(() => {
         // Storage unavailable — fall back to shipped names rather than failing.
@@ -87,6 +91,7 @@ export function useKeeperNames() {
   }, []);
 
   const rename = useCallback((keeperId: string, raw: string) => {
+    dirty.current = true;
     setNames((previous) => {
       const clean = limitName(raw);
       const next = { ...previous };

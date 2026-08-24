@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { limitName } from "./keeperNames";
 
@@ -39,12 +39,17 @@ function parse(stored: string | null): PlayerNames {
 
 export function usePlayerNames() {
   const [names, setNames] = useState<PlayerNames>(EMPTY);
+  // SetupScreen remounts this hook every time a match ends ("Give up",
+  // "Different keeper"), so the load below races a player who starts typing
+  // straight away. `dirty` remembers that a real edit already happened, so
+  // the load never clobbers it once it finally resolves.
+  const dirty = useRef(false);
 
   useEffect(() => {
     let active = true;
     void AsyncStorage.getItem(STORAGE_KEY)
       .then((stored) => {
-        if (active) setNames(parse(stored));
+        if (active && !dirty.current) setNames(parse(stored));
       })
       .catch(() => {
         // Storage unavailable — empty fields are a workable fallback.
@@ -55,6 +60,7 @@ export function usePlayerNames() {
   }, []);
 
   const setPlayerName = useCallback((index: 0 | 1, raw: string) => {
+    dirty.current = true;
     setNames((previous) => {
       const next: [string, string] = [previous[0], previous[1]];
       next[index] = limitName(raw, MAX_PLAYER_NAME);

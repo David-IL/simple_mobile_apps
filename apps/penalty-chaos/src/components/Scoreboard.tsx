@@ -18,7 +18,7 @@ function pipsFor(state: MatchState, player: Player) {
 }
 
 function Side({ state, player }: { state: MatchState; player: Player }) {
-  const active = !state.shots.length || currentPlayer(state) === player;
+  const active = currentPlayer(state) === player;
   return (
     <View style={styles.side}>
       <PlayerBadge name={state.names[player]} player={player} size={22} />

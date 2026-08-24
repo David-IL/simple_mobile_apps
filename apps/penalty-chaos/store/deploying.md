@@ -44,8 +44,10 @@ testers before anyone plays anything.
 - `eas.json` with three build profiles. `preview` produces an **APK** (installable
   directly), `production` produces an **AAB** (what Play wants).
 - `app.json`: the app is now called **Straffe Kaos** on the device rather than
-  `penalty-chaos`, has `versionCode: 1`, and declares **no Android permissions**
-  at all.
+  `penalty-chaos`, has `versionCode: 1`, and the `expo-audio` plugin is
+  configured with `recordAudioAndroid: false` and `enableBackgroundPlayback:
+  false` so it only carries `MODIFY_AUDIO_SETTINGS` — a normal permission
+  Android grants automatically, never shown to the user as a request.
 - Store listing copy in both languages, within Play's limits:
   [listing.md](listing.md).
 - Privacy policy text in both languages: [privacy-policy.md](privacy-policy.md).

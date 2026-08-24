@@ -574,6 +574,16 @@ export function GoalScene({
         if (settled) onFlightEnd();
       });
     });
+
+    // Quitting mid-shot (the hold-to-quit button isn't gated by phase) can
+    // unmount or re-key this component while `flight`/`deflection` are still
+    // running. Without stopping them, their completion callbacks still fire
+    // afterward — a stray sound effect and a state update landing on whatever
+    // screen replaced this one.
+    return () => {
+      flight.stop();
+      deflection.stop();
+    };
   }, [
     phase,
     result,
