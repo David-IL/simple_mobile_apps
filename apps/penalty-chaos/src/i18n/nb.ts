@@ -64,8 +64,9 @@ export const nb: Messages = {
 
   row: {
     // "Ta roen" was the first try and reads as "take the calm" - the exact
-    // opposite of what happens next. Naming the ritual removes the ambiguity.
-    invite: "Ta Viking-roen",
+    // opposite of what happens next. Naming the ritual removes that, and
+    // leading with the verb makes it an invitation rather than an errand.
+    invite: "Feire med Viking-roen",
     // Samme ord på alle språk — se messages.ts.
     ro: "RO",
     strokes: (count) => (count === 1 ? "1 tak" : `${count} tak`),

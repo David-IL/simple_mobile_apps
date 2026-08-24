@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Button } from "@repo/ui";
 import { PlayerBadge } from "../components/PlayerBadge";
+import { ChevronRight } from "../components/Icons";
 import { VikingRow } from "../components/VikingRow";
 import { ShotMap } from "../components/ShotMap";
 import { KeeperFigure } from "../components/art/KeeperFigure";
@@ -128,16 +129,29 @@ export function ResultScreen({ state, keeper, onPlayAgain, onChangeKeeper }: Pro
           absurd. It sits in the celebration content rather than in the footer
           on purpose: "Igjen" is the loop this whole app is built around, and
           nothing may end up between the player and it.
+
+          It is deliberately **not** a `Button`. As an amber one it was the same
+          component, colour and shape as "Igjen" directly below it, and the two
+          competed — which they should never do, because they are different
+          kinds of thing. The footer is navigation; this is a reward. So it
+          wears the crowd's own red and the flag stripe off the supporters'
+          shirts, a combination nothing else in the app uses, and reads as an
+          invitation rather than as a third way out of this screen.
         */}
         {beaten ? (
-          <View style={styles.rowInvite}>
-            <Button
-              label={t.row.invite}
-              onPress={() => setRowing(true)}
-              color={palette.brand}
-              labelColor={palette.brandInk}
-            />
-          </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t.row.invite}
+            onPress={() => setRowing(true)}
+            style={({ pressed }) => [styles.ribbon, pressed && styles.ribbonPressed]}
+          >
+            <View style={styles.stripeWhite} />
+            <View style={styles.stripeBlue} />
+            <Text style={styles.ribbonLabel} numberOfLines={1}>
+              {t.row.invite}
+            </Text>
+            <ChevronRight height={13} colour="#ffffff" />
+          </Pressable>
         ) : null}
 
         <View style={styles.recap}>
@@ -188,7 +202,28 @@ const styles = StyleSheet.create({
     backgroundColor: palette.nightSoft,
   },
   bigScore: { color: palette.chalk, fontSize: 56, fontWeight: "900", letterSpacing: -2 },
-  rowInvite: { marginTop: spacing.md },
+  /**
+   * The crowd's red, not the brand amber: amber is this app's chrome and every
+   * control wears it, so an amber celebration reads as one more control. See
+   * the note at the call site.
+   */
+  ribbon: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    marginTop: spacing.md,
+    backgroundColor: "#ba0c2f",
+    borderRadius: 14,
+    paddingLeft: spacing.xl,
+    paddingRight: spacing.md,
+    paddingVertical: 14,
+    overflow: "hidden",
+  },
+  ribbonPressed: { opacity: 0.85 },
+  // The flag stripe from the supporters' shirts, running down the leading edge.
+  stripeWhite: { position: "absolute", left: 8, top: 0, bottom: 0, width: 10, backgroundColor: "#eef2f6" },
+  stripeBlue: { position: "absolute", left: 11, top: 0, bottom: 0, width: 4, backgroundColor: "#00205b" },
+  ribbonLabel: { flex: 1, color: "#ffffff", fontSize: 16, fontWeight: "800" },
   recap: { marginTop: spacing.xl, gap: spacing.md },
   recapRow: { gap: spacing.xs },
   recapName: { flexDirection: "row", alignItems: "center", gap: spacing.xs },

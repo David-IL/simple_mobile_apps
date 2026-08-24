@@ -56,7 +56,7 @@ export const en: Messages = {
   },
 
   row: {
-    invite: "Take the Viking row",
+    invite: "Celebrate with the Viking row",
     // Not translated, on purpose — see messages.ts.
     ro: "RO",
     strokes: (count) => (count === 1 ? "1 stroke" : `${count} strokes`),
