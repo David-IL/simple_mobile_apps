@@ -50,7 +50,13 @@ testers before anyone plays anything.
   Android grants automatically, never shown to the user as a request.
 - Store listing copy in both languages, within Play's limits:
   [listing.md](listing.md).
-- Privacy policy text in both languages: [privacy-policy.md](privacy-policy.md).
+- Privacy policy text in both languages: [privacy-policy.md](privacy-policy.md),
+  **published** at <https://david-il.github.io/simple_mobile_apps/privacy/penalty-chaos/>.
+  GitHub Pages renders that exact file — the permalink lives in its own front
+  matter — so there is no hosted copy to drift out of step with the repo. Play
+  keeps the URL on record and a dead privacy-policy link is a policy violation,
+  so treat the URL as a published contract: the file may move, the permalink
+  may not.
 - Derived store graphics in [store/assets/](assets/) — a 512×512 icon and a
   1024×500 feature graphic per language, generated from the app artwork.
 
@@ -60,11 +66,11 @@ testers before anyone plays anything.
    intend to keep — the account owns the app, and moving apps between accounts
    is painful.
 2. **An [expo.dev](https://expo.dev) account**, free.
-3. **Host the privacy policy** at a public URL. GitHub Pages on this repo is the
-   least effort; a public gist also works. Play needs a URL, not a file.
-4. **Take the screenshots.** See the trap below.
-5. **Every Play Console form.** None of it is scriptable without a service
+3. **Take the screenshots.** See the trap below.
+4. **Every Play Console form.** None of it is scriptable without a service
    account, and setting that up is more work than clicking through it once.
+   `eas submit` *can* create the first release, but it still cannot fill in a
+   content rating questionnaire — so the first pass is manual either way.
 
 ---
 
@@ -158,7 +164,7 @@ Play blocks releases until these are done.
 
 | Declaration | Answer for this app |
 | --- | --- |
-| **Privacy policy** | Your hosted URL. **Required** — see below. |
+| **Privacy policy** | `https://david-il.github.io/simple_mobile_apps/privacy/penalty-chaos/` **Required** — see below. |
 | **Ads** | No ads. |
 | **App access** | All functionality available, no login. |
 | **Content rating** | Complete the questionnaire. No violence, no bad language, no user interaction, no data shared, no purchases. Expect PEGI 3 / Everyone. |
