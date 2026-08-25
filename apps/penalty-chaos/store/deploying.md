@@ -23,8 +23,13 @@ testing**, not production, and the difference is enormous.
 **The 12-testers rule is the thing that would otherwise stop you.** A personal
 developer account created on or after 13 November 2023 must run a *closed* test
 with **at least 12 testers opted in continuously for 14 days** before it can even
-apply for production access. The clock starts when the twelfth tester opts in.
-([Play Console Help](https://support.google.com/googleplay/android-developer/answer/14151465))
+apply for production access. The fourteen days are counted **per tester and
+consecutively**, not from the day the test opened — so replacing someone who
+drops out in week two starts *their* clock from scratch, and recruiting only
+twelve leaves no margin for that.
+([Play Console Help](https://support.google.com/googleplay/android-developer/answer/14151465) ·
+tracks, gates and the full sequence in
+[docs/reference/google-play-release-tracks.md](../../../docs/reference/google-play-release-tracks.md))
 
 Internal testing is exempt from all of that, and its testers do **not** count
 toward the twelve. So:
@@ -233,6 +238,12 @@ Play Console → Testing → **Internal testing** → Create new release.
 
 That is the whole thing. He downloads Straffe Kaos from the Play Store, on his
 own phone, with your name on it.
+
+**And that is where this doc stops on purpose.** Going public is a different
+job with a two-week gate in the middle of it — closed testing, twelve testers,
+then a production application. It is written up separately in
+[docs/reference/google-play-release-tracks.md](../../../docs/reference/google-play-release-tracks.md);
+do not start it by accident while looking for a screenshot upload.
 
 ---
 
