@@ -88,6 +88,61 @@ less, but can occasionally take longer."*
 **So the floor is roughly three weeks** from the first closed-test opt-in to a production
 release, and that assumes twelve people opt in on day one and none of them drop out.
 
+### What "opted in" actually means
+
+Not "opened the app daily". **(A)** Opting in is a *membership state*, entered once:
+
+> *"After clicking the opt-in link, testers receive an explanation of tester
+> responsibilities and a link to opt in. Each tester needs to opt in using the link."*
+
+A tester clicks the link, accepts, and is opted in. They stay opted in until they
+explicitly opt out. **(A)** Nothing in the requirement mandates installing the app, and
+nothing mandates opening it on any schedule — the countable bar is twelve people holding
+that membership state across fourteen consecutive days.
+
+**(C)** Note what is *not* stated: the page never says opt-in alone is sufficient. It
+simply never addresses usage. So the literal requirement is a membership count, but do not
+read that as Google promising twelve dormant opt-ins will pass.
+
+Because the second bar is separate, and it is qualitative.
+
+#### The second bar: engagement, which you write yourself
+
+**(A)** *"Insufficient tester engagement"* is a listed rejection reason. But engagement is
+not a number Google shows you a threshold for — it is **narrative the application asks you
+to supply**. The *About your closed test* section requires you to:
+
+> - *"Provide details about tester engagement during your closed test"*
+> - *"Summarize the feedback received from testers and describe how feedback was collected"*
+
+and to describe *"whether testers used all available app features"* and *"whether tester
+usage matched expected production user behavior, including details on any observed
+differences."*
+
+**That is the honest shape of the requirement.** Twelve opt-ins is what makes you
+*eligible* to apply. What decides the application is whether you can write a truthful
+paragraph about what twelve people actually did with the app and what they told you.
+
+So the practical answer to "is downloading enough?":
+
+- **For the count: yes.** Opt-in is the state being counted.
+- **For the application: no.** Twelve people who opted in and never played leave you
+  nothing to write, and the form is three questions deep on exactly that.
+
+Aim for a handful who genuinely play and tell you things, plus enough opted-in bodies to
+clear twelve with margin. Collect the feedback somewhere you can quote it later — the form
+asks *how* it was collected, so a group chat you can summarise beats memory.
+
+#### Uninstalling is not opting out
+
+**(C)** The help pages do not cover this directly. But the two are distinct states:
+opt-in is a Play account setting, install is a device state. A tester who uninstalls the
+app without opting out **(B)** remains opted in and continues to count toward the twelve.
+
+That cuts both ways — it protects the count against someone clearing space on their phone,
+and it means the count can look healthy while the engagement story quietly hollows out.
+The count is not the thing that gets assessed.
+
 ### The continuity trap
 
 **(A)** The 14 days must be *consecutive*, per tester:
@@ -104,8 +159,7 @@ Consequences worth planning around:
 - Recruit **more than twelve**. Twelve is the floor, not the target — one person tidying
   up their phone in week two puts you under the line and you find out at rejection.
 - **(A)** Rejection reasons include *"having fewer than 12 opted-in testers or insufficient
-  tester engagement"*, so bodies alone are not obviously enough; people should actually
-  open it.
+  tester engagement"* — the two bars above, and you can fail on either.
 
 ---
 
