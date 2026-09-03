@@ -146,6 +146,7 @@ function Game() {
         <ResultScreen
           state={screen.state}
           keeper={screen.keeper}
+          keeperName={displayName(screen.keeper.id, names, t.keepers[screen.keeper.id].name)}
           onPlayAgain={playAgain}
           onChangeKeeper={() => setScreen({ kind: "setup", mode: screen.state.mode })}
         />

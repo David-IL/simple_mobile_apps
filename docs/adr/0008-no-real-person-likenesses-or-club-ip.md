@@ -70,6 +70,15 @@ Instead:
   shipped name, never the user's custom one. Otherwise a private on-device name becomes
   published content — and if a kid names a keeper after a real local person, that is a named
   minor in a shared image, which is a plain privacy problem on top of the likeness one.
+
+  **The boundary is export, not the result screen** (clarified 2026-09-03). penalty-chaos read
+  this consequence as "the result *screen* shows the shipped name", which produced a real bug:
+  you beat a keeper you had renamed and full time congratulated you on beating The Wall — the
+  rename feature visibly failing on the one screen that summarises the match. On-device
+  rendering is not publication; the phone showing you a name you typed into it is the feature
+  working. The rule binds content that *leaves* the device — a share/save image, a store
+  screenshot, anything transmitted — and such a renderer must resolve the shipped name itself
+  rather than reuse an on-screen component tree.
 - Applies repo-wide, not just to games. A stats or coaching tool must not ship real player
   names, club crests, or league marks either.
 - Revisit only if an app ever has a real licence, or if the target is a person who has

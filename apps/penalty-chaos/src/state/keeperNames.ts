@@ -8,8 +8,10 @@ import type { KeeperId } from "../game/types";
  * This is the whole point of the rename feature, per ADR 8: shipping a real
  * goalkeeper's name in the binary is a personality-rights problem, but a name
  * typed on a phone and kept on that phone is the user's own business. It must
- * therefore never be transmitted, and must never appear on anything shareable —
- * result cards render the archetype's shipped name instead.
+ * therefore never be transmitted, and must never appear on anything that leaves
+ * the device. On-screen it is used everywhere, the result screen included; the
+ * rule binds exported content — a share image, a store screenshot — which must
+ * render the archetype's shipped name instead.
  */
 const STORAGE_KEY = "penalty-chaos/keeper-names";
 const MAX_NAME_LENGTH = 18;

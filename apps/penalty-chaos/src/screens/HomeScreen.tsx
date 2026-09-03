@@ -109,11 +109,11 @@ function BottomFade() {
  * cost enough height to shove the banner artwork up off its own wordmark. A
  * portrait, a name and a pill in one row say the same thing in half the space.
  *
- * The name shown is the player's own, not the shipped one. That is the opposite
- * of ResultScreen, deliberately: a result card is shareable content and a name a
- * child typed in is not ours to publish (ADR 8), whereas this screen is his own
- * phone and the custom name is the entire point of the feature. The consequence
- * is a store-listing rule rather than a code one — do not screenshot this screen
+ * The name shown is the player's own, not the shipped one — as on setup, the
+ * scoreboard and the result screen. Every screen is his own phone, and the
+ * custom name is the entire point of the feature. ADR 8's shipped-name rule
+ * binds content that *leaves* the device, so the consequence here is a
+ * store-listing rule rather than a code one — do not screenshot this screen
  * with a custom keeper name set.
  */
 function RematchCard({ last, onPress }: { last: LastMatch; onPress: () => void }) {

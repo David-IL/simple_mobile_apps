@@ -22,6 +22,13 @@ import { outcomeColour, palette, spacing, text } from "../theme";
 type Props = {
   state: MatchState;
   keeper: KeeperArchetype;
+  /**
+   * Already resolved by the caller, exactly as MatchScreen's is. Reading the
+   * name store a second time down here would let this screen and the match it
+   * is reporting on disagree about who was in goal, and would flash the shipped
+   * name for a frame while AsyncStorage resolves.
+   */
+  keeperName: string;
   onPlayAgain: () => void;
   onChangeKeeper: () => void;
 };
@@ -50,7 +57,13 @@ function Recap({ state, player }: { state: MatchState; player: Player }) {
   );
 }
 
-export function ResultScreen({ state, keeper, onPlayAgain, onChangeKeeper }: Props) {
+export function ResultScreen({
+  state,
+  keeper,
+  keeperName,
+  onPlayAgain,
+  onChangeKeeper,
+}: Props) {
   const { t } = useI18n();
   const [rowing, setRowing] = useState(false);
   const champion = winner(state);
@@ -107,11 +120,6 @@ export function ResultScreen({ state, keeper, onPlayAgain, onChangeKeeper }: Pro
             )}
           </View>
 
-          {/*
-            Deliberately the keeper's *shipped* name, never the on-device custom
-            one. A result card is shareable content; a name a kid typed in is not
-            ours to publish. See ADR 8.
-          */}
           <View style={styles.portrait}>
             <KeeperFigure
               height={86}
@@ -122,7 +130,20 @@ export function ResultScreen({ state, keeper, onPlayAgain, onChangeKeeper }: Pro
           </View>
         </View>
 
-        <Text style={text.muted}>{t.result.versus(t.keepers[keeper.id].name)}</Text>
+        {/*
+          The player's own name for him, the same one the scoreboard used for
+          the previous five rounds. This screen once showed the *shipped* name
+          on ADR 8 grounds, which read as a bug: you beat Bendik and full time
+          congratulated you on beating The Wall.
+
+          ADR 8's constraint is on a share *image* — content that leaves the
+          device — and this screen does not leave the device any more than the
+          home screen or the scoreboard do. If a share or save-image feature is
+          ever built, its renderer must resolve `t.keepers[keeper.id].name`
+          itself and must not reuse this tree; that is where the shipped name is
+          actually required.
+        */}
+        <Text style={text.muted}>{t.result.versus(keeperName)}</Text>
 
         {/*
           The reward moment, offered only after a win — celebrating a 1 of 5 is
