@@ -31,5 +31,14 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
+  "expo": {
+    "autolinking": {
+      "android": {
+        "buildFromSource": [
+          ".*"
+        ]
+      }
+    }
+  },
   "private": true
 }
